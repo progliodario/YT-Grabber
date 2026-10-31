@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">YT Grabber</string>
+    <string name="notif_channel">Downloads in progress</string>
+    <string name="notif_title">YT Grabber</string>
+    <string name="notif_starting">Starting…</string>
+    <string name="notif_stop">Close</string>
+    <string name="status_preparing">Preparing the app (first start only)…</string>
+    <string name="status_starting">Starting the download engine…</string>
+    <string name="status_ready">Ready</string>
+    <string name="retry">Retry</string>
+    <string name="storage_title">Save to the Download folder</string>
+    <string name="storage_msg">To save files to the phone\'s Download folder (visible from Gallery, Music and Files) the \"All files access\" permission is required.\n\nIf you do not grant it, files are saved to a private app folder, which is harder to reach.</string>
+    <string name="storage_ok">Open settings</string>
+    <string name="storage_no">Not now</string>
+    <string name="battery_title">Downloads with the screen off</string>
+    <string name="battery_msg">To keep downloading while the screen is off, exclude YT Grabber from battery optimization.</string>
+    <string name="battery_ok">Allow</string>
+    <string name="battery_no">No, thanks</string>
+    <string name="dlg_ok">OK</string>
+    <string name="dlg_cancel">Cancel</string>
+</resources>

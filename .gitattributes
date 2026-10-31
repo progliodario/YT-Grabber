@@ -1,0 +1,14 @@
+# Normalize line endings so the scripts work on every system
+* text=auto
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.sh text eol=lf
+*.py text eol=lf
+
+# Binary files
+*.png binary
+*.ico binary
+*.jks binary
+*.zip binary
+*.apk binary
+*.exe binary

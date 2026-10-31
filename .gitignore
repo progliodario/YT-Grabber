@@ -1,0 +1,20 @@
+# folder created by the program: downloaded tools (ffmpeg, yt-dlp), settings, download list, cookies, logs, exe build files
+generated/
+__pycache__/
+*.pyc
+
+# build results (rebuilt with build-exe\build-exe.bat and build-apk\build-apk.bat)
+/YT-Grabber.exe
+/APK/
+
+# Android app: signing key (secret: if you lose it you can no longer update the installed app, keep a copy)
+build-apk/keystore/
+build-apk/**/*.jks
+build-apk/**/*.keystore
+
+# Android app: Gradle caches, local paths and generated packages
+build-apk/.gradle/
+build-apk/app/build/
+build-apk/build/
+build-apk/local.properties
+build-apk/app/src/main/assets/ytg-libs.zip
