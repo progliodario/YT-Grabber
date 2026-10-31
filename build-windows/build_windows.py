@@ -9,9 +9,11 @@ PyInstaller and yt-dlp are fetched automatically the first time.
 """
 import os
 import re
+import shutil
 import subprocess
 import sys
 
+PYINSTALLER_VERSION = '6.22.3'   # used when the launcher is compiled from source (YTG_PYINSTALLER_FROM_SOURCE=1)
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SRC = os.path.join(ROOT, 'program')
@@ -50,11 +52,16 @@ def build_exe():
         run([py, os.path.join(SRC, 'setup_tools.py')])
     pyi = os.path.join(OUT, 'pyinstaller')
     if not os.path.isdir(os.path.join(pyi, 'PyInstaller')):
-        cmd = [py, '-m', 'pip', 'install', '--disable-pip-version-check', '--target', pyi, 'pyinstaller']
+        target = 'pyinstaller'
         if os.environ.get('YTG_PYINSTALLER_FROM_SOURCE'):
-            # compile PyInstaller's small launcher here instead of using the prebuilt one that many antivirus programs flag
-            cmd += ['--no-binary', 'pyinstaller']
-        run(cmd)
+            # Compile PyInstaller's small launcher on this machine (it needs a C compiler: Visual Studio) instead of
+            # using the prebuilt one, which many antivirus programs flag. Installing from a git checkout builds it.
+            checkout = os.path.join(OUT, 'pyinstaller-src')
+            shutil.rmtree(checkout, ignore_errors=True)
+            run(['git', 'clone', '--quiet', '--depth', '1', '--branch', 'v' + PYINSTALLER_VERSION,
+                 'https://github.com/pyinstaller/pyinstaller.git', checkout])
+            target = checkout
+        run([py, '-m', 'pip', 'install', '--disable-pip-version-check', '--target', pyi, target])
     icon = os.path.join(HERE, 'icon.ico')
     if not os.path.exists(icon):
         run([py, os.path.join(HERE, 'make_icon.py')])
