@@ -199,7 +199,6 @@ window.I18N.tr = {
 
   'subs.title': 'Abonelikler',
   'subs.lead': 'Otomatik kontrol edilen listeler ve kanallar: yeni videolar aynı klasöre indirilir. Programın çalışıyor olması gerekir (Windows\'ta bildirim alanında kalır).',
-  'subs.empty': 'Henüz abonelik yok. Liste veya kanal eklerken "Listeleri ve kanalları güncel tut" seçeneğini işaretleyin.',
   'subs.every': 'Kontrol et',
   'every.1': 'her saat',
   'every.3': 'her 3 saatte',

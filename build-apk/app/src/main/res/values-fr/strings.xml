@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">Téléchargements en cours</string>
+    <string name="notif_starting">Démarrage…</string>
+    <string name="notif_stop">Fermer</string>
+    <string name="status_preparing">Préparation de l\'application (premier démarrage seulement)…</string>
+    <string name="status_starting">Démarrage du moteur de téléchargement…</string>
+    <string name="status_ready">Prêt</string>
+    <string name="retry">Réessayer</string>
+    <string name="storage_title">Enregistrer dans le dossier Téléchargements</string>
+    <string name="storage_msg">Pour enregistrer les fichiers dans le dossier Téléchargements du téléphone (visible depuis Galerie, Musique et Fichiers), l\'autorisation « Accès à tous les fichiers » est nécessaire.\n\nSi vous ne l\'accordez pas, les fichiers seront enregistrés dans un dossier privé de l\'application, plus difficile à atteindre.</string>
+    <string name="storage_ok">Ouvrir les réglages</string>
+    <string name="storage_no">Pas maintenant</string>
+    <string name="battery_title">Téléchargements écran éteint</string>
+    <string name="battery_msg">Pour continuer à télécharger écran éteint, excluez YT Grabber de l\'optimisation de la batterie.</string>
+    <string name="battery_ok">Autoriser</string>
+    <string name="battery_no">Non, merci</string>
+    <string name="dlg_cancel">Annuler</string>
+    <string name="notif_idle">Prêt. Aucun téléchargement en cours.</string>
+    <string name="notif_progress">%1$d en téléchargement · %2$d en conversion · %3$d en attente</string>
+    <string name="err_install">Échec de l\'installation : %1$s</string>
+    <string name="err_start">Échec du démarrage : %1$s</string>
+    <string name="err_engine_stopped">Le moteur de téléchargement s\'est arrêté aussitôt (code %1$d).</string>
+    <string name="err_service">Impossible de démarrer le service : %1$s</string>
+    <string name="err_no_response">Le moteur de téléchargement ne répond pas.</string>
+    <string name="saved_to">Enregistré : %1$s</string>
+    <string name="save_failed">Échec de l\'enregistrement : %1$s</string>
+</resources>

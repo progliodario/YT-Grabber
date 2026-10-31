@@ -1,0 +1,18 @@
+#!/bin/sh
+# Launcher of the Flatpak: runs YT Grabber with the Python that is part of the Flatpak.
+APP=/app/share/yt-grabber/program
+PY=/app/bin/python3
+
+# Inside the sandbox XDG_DATA_HOME is ~/.var/app/io.github.progliodario.YTGrabber/data
+export YTG_DATA_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/yt-grabber"
+export PYTHONDONTWRITEBYTECODE=1
+mkdir -p "$YTG_DATA_ROOT" || exit 1
+
+"$PY" "$APP/setup_tools.py" || { echo "Setup failed. Check your Internet connection and try again."; exit 1; }
+[ -f "$YTG_DATA_ROOT/vendor/certifi/cacert.pem" ] && export SSL_CERT_FILE="$YTG_DATA_ROOT/vendor/certifi/cacert.pem"
+
+# No window to close: the program quits by itself after 10 idle minutes. Exit code 75 = restart (yt-dlp update)
+while :; do
+  "$PY" "$APP/server.py" --idle-exit 10 "$@"
+  [ $? -eq 75 ] || break
+done

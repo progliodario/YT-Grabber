@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">التنزيلات الجارية</string>
+    <string name="notif_starting">جارٍ التشغيل…</string>
+    <string name="notif_stop">إغلاق</string>
+    <string name="status_preparing">جارٍ تجهيز التطبيق (عند التشغيل الأول فقط)…</string>
+    <string name="status_starting">جارٍ تشغيل محرك التنزيل…</string>
+    <string name="status_ready">جاهز</string>
+    <string name="retry">إعادة المحاولة</string>
+    <string name="storage_title">الحفظ في مجلد التنزيلات</string>
+    <string name="storage_msg">لحفظ الملفات في مجلد التنزيلات في الهاتف (الظاهر في المعرض والموسيقى والملفات) يلزم إذن «الوصول إلى كل الملفات».\n\nإذا لم تمنحه فستُحفظ الملفات في مجلد خاص بالتطبيق يصعب الوصول إليه.</string>
+    <string name="storage_ok">فتح الإعدادات</string>
+    <string name="storage_no">ليس الآن</string>
+    <string name="battery_title">التنزيل والشاشة مطفأة</string>
+    <string name="battery_msg">لمواصلة التنزيل والشاشة مطفأة، استثنِ YT Grabber من تحسين البطارية.</string>
+    <string name="battery_ok">سماح</string>
+    <string name="battery_no">لا، شكرًا</string>
+    <string name="dlg_cancel">إلغاء</string>
+    <string name="notif_idle">جاهز. لا توجد تنزيلات جارية.</string>
+    <string name="notif_progress">%1$d قيد التنزيل · %2$d قيد التحويل · %3$d في الانتظار</string>
+    <string name="err_install">فشل التثبيت: %1$s</string>
+    <string name="err_start">فشل التشغيل: %1$s</string>
+    <string name="err_engine_stopped">توقف محرك التنزيل فورًا (الرمز %1$d).</string>
+    <string name="err_service">تعذّر تشغيل الخدمة: %1$s</string>
+    <string name="err_no_response">محرك التنزيل لا يستجيب.</string>
+    <string name="saved_to">تم الحفظ: %1$s</string>
+    <string name="save_failed">فشل الحفظ: %1$s</string>
+</resources>

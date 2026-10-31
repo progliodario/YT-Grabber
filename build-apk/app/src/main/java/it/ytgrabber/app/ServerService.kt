@@ -79,7 +79,7 @@ class ServerService : Service() {
             YtgRuntime.ensureInstalled(this) { status = it }
         } catch (e: Throwable) {
             Log.e(YtgRuntime.TAG, "installation failed", e)
-            fail("Installation failed: ${e.message ?: e.javaClass.simpleName}")
+            fail(getString(R.string.err_install, e.message ?: e.javaClass.simpleName))
             return
         }
         var quickFails = 0
@@ -96,7 +96,7 @@ class ServerService : Service() {
                 launchOnce()
             } catch (e: Throwable) {
                 Log.e(YtgRuntime.TAG, "server start failed", e)
-                fail("Start failed: ${e.message ?: e.javaClass.simpleName}")
+                fail(getString(R.string.err_start, e.message ?: e.javaClass.simpleName))
                 return
             }
             if (stopping) break
@@ -106,7 +106,7 @@ class ServerService : Service() {
                 ran < 15_000 -> {
                     quickFails++
                     if (quickFails >= 3) {
-                        fail("The download engine stopped right away (code $code).\n" + tail())
+                        fail(getString(R.string.err_engine_stopped, code) + "\n" + tail())
                         return
                     }
                     Thread.sleep(2000)
@@ -214,8 +214,8 @@ class ServerService : Service() {
                         done += j.optInt("processed"); total += j.optInt("total")
                     }
                 }
-                val text = if (active + conv + queued == 0) "Ready. No downloads in progress."
-                else "$active downloading · $conv converting · $queued queued" +
+                val text = if (active + conv + queued == 0) getString(R.string.notif_idle)
+                else getString(R.string.notif_progress, active, conv, queued) +
                     (if (total > 0) " · ${done * 100 / total}%" else "")
                 if (text != last) {
                     last = text

@@ -183,22 +183,17 @@ def run_app(args):
     first_start = not setup_tools.ffmpeg_ok()
     icon = os.path.join(getattr(sys, '_MEIPASS', HERE), 'icon.ico')
     if first_start:
-        subtitle = 'First start: downloading the tools needed for conversions.\nThis happens only once.'
-        text = 'Preparing YT Grabber for the first time...'
+        subtitle, text = winapp._t('splash.first'), winapp._t('splash.first.text')
     else:
-        subtitle, text = 'Starting the program...', 'Starting YT Grabber...'
+        subtitle, text = winapp._t('splash.start'), winapp._t('splash.start.text')
     thread, port, tools_ok = winapp.run_with_splash(
         lambda report: start_server(args, start_port, report, ytcommon, setup_tools, first_start),
         icon, subtitle, text)
     if not port:
-        winapp.message_box('YT Grabber could not start. Details are in the log file in\n'
-                           '%LOCALAPPDATA%\\YT-Grabber\\data\\logs\\app.log')
+        winapp.message_box(winapp._t('err.start'))
         return 1
     if not tools_ok:
-        winapp.message_box('YT Grabber could not download ffmpeg, which it needs to convert audio and video.\n\n'
-                           'Check your Internet connection. The program works, but conversions will fail until '
-                           'ffmpeg is installed: quit it from the tray icon and open it again to retry.',
-                           winapp.MB_ICONWARNING)
+        winapp.message_box(winapp._t('warn.ffmpeg'), winapp.MB_ICONWARNING)
     if not no_window and not restarted:   # after an update restart the open window reloads itself
         winapp.open_window(port, profile)
     winapp.Tray(port, thread, profile).run()
@@ -249,8 +244,12 @@ if __name__ == '__main__':
         if '--worker' not in sys.argv and '--choose-dir' not in sys.argv and os.name == 'nt':
             try:
                 import ctypes
-                ctypes.windll.user32.MessageBoxW(None, 'YT Grabber hit an error and has to close.\n\n' + text[-900:],
-                                                 'YT Grabber', 0x10)
+                try:
+                    import winapp
+                    headline = winapp._t('err.fatal')
+                except Exception:
+                    headline = 'YT Grabber hit an error and has to close.'
+                ctypes.windll.user32.MessageBoxW(None, headline + '\n\n' + text[-900:], 'YT Grabber', 0x10)
             except Exception:
                 pass
         code = 1

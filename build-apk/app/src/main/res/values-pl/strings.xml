@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">Trwające pobierania</string>
+    <string name="notif_starting">Uruchamianie…</string>
+    <string name="notif_stop">Zamknij</string>
+    <string name="status_preparing">Przygotowywanie aplikacji (tylko przy pierwszym uruchomieniu)…</string>
+    <string name="status_starting">Uruchamianie silnika pobierania…</string>
+    <string name="status_ready">Gotowe</string>
+    <string name="retry">Ponów</string>
+    <string name="storage_title">Zapisz w folderze Pobrane</string>
+    <string name="storage_msg">Aby zapisywać pliki w folderze Pobrane na telefonie (widocznym w Galerii, Muzyce i Plikach), potrzebne jest uprawnienie „Dostęp do wszystkich plików”.\n\nJeśli go nie przyznasz, pliki będą zapisywane w prywatnym folderze aplikacji, do którego trudniej dotrzeć.</string>
+    <string name="storage_ok">Otwórz ustawienia</string>
+    <string name="storage_no">Nie teraz</string>
+    <string name="battery_title">Pobieranie przy wyłączonym ekranie</string>
+    <string name="battery_msg">Aby pobieranie trwało przy wyłączonym ekranie, wyłącz YT Grabber z optymalizacji baterii.</string>
+    <string name="battery_ok">Zezwól</string>
+    <string name="battery_no">Nie, dziękuję</string>
+    <string name="dlg_cancel">Anuluj</string>
+    <string name="notif_idle">Gotowe. Brak trwających pobierań.</string>
+    <string name="notif_progress">pobierane: %1$d · konwertowane: %2$d · w kolejce: %3$d</string>
+    <string name="err_install">Instalacja nie powiodła się: %1$s</string>
+    <string name="err_start">Uruchomienie nie powiodło się: %1$s</string>
+    <string name="err_engine_stopped">Silnik pobierania zatrzymał się od razu (kod %1$d).</string>
+    <string name="err_service">Nie można uruchomić usługi: %1$s</string>
+    <string name="err_no_response">Silnik pobierania nie odpowiada.</string>
+    <string name="saved_to">Zapisano: %1$s</string>
+    <string name="save_failed">Zapis nie powiódł się: %1$s</string>
+</resources>

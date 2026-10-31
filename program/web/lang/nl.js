@@ -199,7 +199,6 @@ window.I18N.nl = {
 
   'subs.title': 'Abonnementen',
   'subs.lead': 'Afspeellijsten en kanalen die automatisch worden gecontroleerd: nieuwe video\'s worden in dezelfde map gedownload. Het programma moet draaien (onder Windows blijft het in het systeemvak).',
-  'subs.empty': 'Nog geen abonnementen. Vink "Afspeellijsten en kanalen up-to-date houden" aan wanneer je een lijst of kanaal toevoegt.',
   'subs.every': 'Controleer',
   'every.1': 'elk uur',
   'every.3': 'elke 3 uur',

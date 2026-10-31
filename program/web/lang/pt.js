@@ -199,7 +199,6 @@ window.I18N.pt = {
 
   'subs.title': 'Assinaturas',
   'subs.lead': 'Playlists e canais verificados automaticamente: os vídeos novos são baixados na mesma pasta. O programa precisa estar em execução (no Windows ele fica na área de notificação).',
-  'subs.empty': 'Nenhuma assinatura ainda. Marque «Manter playlists e canais atualizados» ao adicionar uma playlist ou um canal.',
   'subs.every': 'Verificar',
   'every.1': 'a cada hora',
   'every.3': 'a cada 3 horas',

@@ -1,0 +1,22 @@
+#!/bin/sh
+# Entry point of the AppImage: runs YT Grabber with the portable Python that is inside it.
+HERE="$(dirname "$(readlink -f "$0")")"
+PY="$HERE/usr/python/bin/python3"
+APP="$HERE/usr/share/yt-grabber/program"
+
+# Everything the program creates (yt-dlp, ffmpeg if the system has none, settings, download list, logs)
+export YTG_DATA_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/yt-grabber"
+export PYTHONDONTWRITEBYTECODE=1
+mkdir -p "$YTG_DATA_ROOT" || exit 1
+
+# First start only: installs yt-dlp (needs Internet)
+"$PY" "$APP/setup_tools.py" || { echo "Setup failed. Check your Internet connection and try again."; exit 1; }
+
+# The portable Python has no system certificate store: use the certifi bundle installed with yt-dlp
+[ -f "$YTG_DATA_ROOT/vendor/certifi/cacert.pem" ] && export SSL_CERT_FILE="$YTG_DATA_ROOT/vendor/certifi/cacert.pem"
+
+# No window to close: the program quits by itself after 10 idle minutes. Exit code 75 = restart (yt-dlp update)
+while :; do
+  "$PY" "$APP/server.py" --idle-exit 10 "$@"
+  [ $? -eq 75 ] || break
+done

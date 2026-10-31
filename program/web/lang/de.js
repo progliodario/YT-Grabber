@@ -199,7 +199,6 @@ window.I18N.de = {
 
   'subs.title': 'Abonnements',
   'subs.lead': 'Playlists und Kanäle, die automatisch geprüft werden: Neue Videos werden im selben Ordner heruntergeladen. Das Programm muss laufen (unter Windows bleibt es im Infobereich).',
-  'subs.empty': 'Noch keine Abonnements. Aktiviere „Playlists und Kanäle aktuell halten“, wenn du eine Playlist oder einen Kanal hinzufügst.',
   'subs.every': 'Prüfen',
   'every.1': 'jede Stunde',
   'every.3': 'alle 3 Stunden',

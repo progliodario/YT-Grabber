@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">Laufende Downloads</string>
+    <string name="notif_starting">Wird gestartet…</string>
+    <string name="notif_stop">Schließen</string>
+    <string name="status_preparing">App wird vorbereitet (nur beim ersten Start)…</string>
+    <string name="status_starting">Download-Engine wird gestartet…</string>
+    <string name="status_ready">Bereit</string>
+    <string name="retry">Wiederholen</string>
+    <string name="storage_title">Im Download-Ordner speichern</string>
+    <string name="storage_msg">Um Dateien im Download-Ordner des Telefons zu speichern (sichtbar in Galerie, Musik und Dateien), ist die Berechtigung „Zugriff auf alle Dateien“ nötig.\n\nWenn du sie nicht erteilst, werden die Dateien in einem privaten App-Ordner gespeichert, der schwerer zu erreichen ist.</string>
+    <string name="storage_ok">Einstellungen öffnen</string>
+    <string name="storage_no">Jetzt nicht</string>
+    <string name="battery_title">Downloads bei ausgeschaltetem Bildschirm</string>
+    <string name="battery_msg">Damit weiter heruntergeladen wird, wenn der Bildschirm aus ist, nimm YT Grabber von der Akkuoptimierung aus.</string>
+    <string name="battery_ok">Erlauben</string>
+    <string name="battery_no">Nein, danke</string>
+    <string name="dlg_cancel">Abbrechen</string>
+    <string name="notif_idle">Bereit. Keine Downloads aktiv.</string>
+    <string name="notif_progress">%1$d werden geladen · %2$d werden konvertiert · %3$d warten</string>
+    <string name="err_install">Installation fehlgeschlagen: %1$s</string>
+    <string name="err_start">Start fehlgeschlagen: %1$s</string>
+    <string name="err_engine_stopped">Die Download-Engine wurde sofort beendet (Code %1$d).</string>
+    <string name="err_service">Der Dienst konnte nicht gestartet werden: %1$s</string>
+    <string name="err_no_response">Die Download-Engine antwortet nicht.</string>
+    <string name="saved_to">Gespeichert: %1$s</string>
+    <string name="save_failed">Speichern fehlgeschlagen: %1$s</string>
+</resources>

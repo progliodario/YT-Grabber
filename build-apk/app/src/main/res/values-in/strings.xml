@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">Unduhan berjalan</string>
+    <string name="notif_starting">Memulai…</string>
+    <string name="notif_stop">Tutup</string>
+    <string name="status_preparing">Menyiapkan aplikasi (hanya saat pertama kali)…</string>
+    <string name="status_starting">Memulai mesin unduh…</string>
+    <string name="status_ready">Siap</string>
+    <string name="retry">Coba lagi</string>
+    <string name="storage_title">Simpan ke folder Download</string>
+    <string name="storage_msg">Untuk menyimpan file ke folder Download di ponsel (terlihat di Galeri, Musik, dan File) diperlukan izin «Akses ke semua file».\n\nJika tidak diberikan, file disimpan di folder pribadi aplikasi yang lebih sulit dijangkau.</string>
+    <string name="storage_ok">Buka pengaturan</string>
+    <string name="storage_no">Nanti saja</string>
+    <string name="battery_title">Unduhan saat layar mati</string>
+    <string name="battery_msg">Agar unduhan terus berjalan saat layar mati, kecualikan YT Grabber dari optimalisasi baterai.</string>
+    <string name="battery_ok">Izinkan</string>
+    <string name="battery_no">Tidak, terima kasih</string>
+    <string name="dlg_cancel">Batal</string>
+    <string name="notif_idle">Siap. Tidak ada unduhan berjalan.</string>
+    <string name="notif_progress">%1$d mengunduh · %2$d mengonversi · %3$d mengantre</string>
+    <string name="err_install">Pemasangan gagal: %1$s</string>
+    <string name="err_start">Gagal memulai: %1$s</string>
+    <string name="err_engine_stopped">Mesin unduh langsung berhenti (kode %1$d).</string>
+    <string name="err_service">Tidak dapat memulai layanan: %1$s</string>
+    <string name="err_no_response">Mesin unduh tidak merespons.</string>
+    <string name="saved_to">Tersimpan: %1$s</string>
+    <string name="save_failed">Gagal menyimpan: %1$s</string>
+</resources>

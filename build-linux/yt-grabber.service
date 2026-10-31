@@ -1,0 +1,13 @@
+[Unit]
+Description=YT Grabber (keeps the subscribed playlists and channels up to date)
+Documentation=https://github.com/progliodario/YT-Grabber
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/yt-grabber --no-browser
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

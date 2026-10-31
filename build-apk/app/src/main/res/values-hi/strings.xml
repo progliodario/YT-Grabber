@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">जारी डाउनलोड</string>
+    <string name="notif_starting">शुरू हो रहा है…</string>
+    <string name="notif_stop">बंद करें</string>
+    <string name="status_preparing">ऐप तैयार हो रहा है (केवल पहली बार)…</string>
+    <string name="status_starting">डाउनलोड इंजन शुरू हो रहा है…</string>
+    <string name="status_ready">तैयार</string>
+    <string name="retry">दोबारा कोशिश करें</string>
+    <string name="storage_title">डाउनलोड फ़ोल्डर में सहेजें</string>
+    <string name="storage_msg">फ़ाइलें फ़ोन के डाउनलोड फ़ोल्डर में सहेजने के लिए (जो गैलरी, संगीत और फ़ाइलों में दिखता है) «सभी फ़ाइलों तक पहुँच» की अनुमति ज़रूरी है।\n\nअगर आप इसे नहीं देंगे, तो फ़ाइलें ऐप के निजी फ़ोल्डर में सहेजी जाएँगी, जहाँ पहुँचना कठिन है।</string>
+    <string name="storage_ok">सेटिंग्स खोलें</string>
+    <string name="storage_no">अभी नहीं</string>
+    <string name="battery_title">स्क्रीन बंद होने पर डाउनलोड</string>
+    <string name="battery_msg">स्क्रीन बंद होने पर भी डाउनलोड जारी रखने के लिए YT Grabber को बैटरी ऑप्टिमाइज़ेशन से बाहर रखें।</string>
+    <string name="battery_ok">अनुमति दें</string>
+    <string name="battery_no">नहीं, धन्यवाद</string>
+    <string name="dlg_cancel">रद्द करें</string>
+    <string name="notif_idle">तैयार। कोई डाउनलोड जारी नहीं।</string>
+    <string name="notif_progress">%1$d डाउनलोड हो रहे · %2$d रूपांतरित हो रहे · %3$d कतार में</string>
+    <string name="err_install">इंस्टॉल विफल रहा: %1$s</string>
+    <string name="err_start">शुरू करना विफल रहा: %1$s</string>
+    <string name="err_engine_stopped">डाउनलोड इंजन तुरंत रुक गया (कोड %1$d)।</string>
+    <string name="err_service">सेवा शुरू नहीं हो सकी: %1$s</string>
+    <string name="err_no_response">डाउनलोड इंजन जवाब नहीं दे रहा।</string>
+    <string name="saved_to">सहेजा गया: %1$s</string>
+    <string name="save_failed">सहेजना विफल रहा: %1$s</string>
+</resources>

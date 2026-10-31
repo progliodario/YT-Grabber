@@ -199,7 +199,6 @@ window.I18N.pl = {
 
   'subs.title': 'Subskrypcje',
   'subs.lead': 'Playlisty i kanały sprawdzane automatycznie: nowe filmy są pobierane do tego samego folderu. Program musi działać (w Windows pozostaje w obszarze powiadomień).',
-  'subs.empty': 'Brak subskrypcji. Zaznacz „Aktualizuj playlisty i kanały”, dodając playlistę lub kanał.',
   'subs.every': 'Sprawdzaj',
   'every.1': 'co godzinę',
   'every.3': 'co 3 godziny',

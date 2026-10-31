@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">Текущие загрузки</string>
+    <string name="notif_starting">Запуск…</string>
+    <string name="notif_stop">Закрыть</string>
+    <string name="status_preparing">Подготовка приложения (только при первом запуске)…</string>
+    <string name="status_starting">Запуск движка загрузки…</string>
+    <string name="status_ready">Готово</string>
+    <string name="retry">Повторить</string>
+    <string name="storage_title">Сохранение в папку «Загрузки»</string>
+    <string name="storage_msg">Чтобы сохранять файлы в папку «Загрузки» на телефоне (она видна в Галерее, Музыке и Файлах), нужно разрешение «Доступ ко всем файлам».\n\nЕсли вы его не дадите, файлы будут сохраняться в закрытую папку приложения, до которой сложнее добраться.</string>
+    <string name="storage_ok">Открыть настройки</string>
+    <string name="storage_no">Не сейчас</string>
+    <string name="battery_title">Загрузки при выключенном экране</string>
+    <string name="battery_msg">Чтобы загрузки продолжались при выключенном экране, исключите YT Grabber из оптимизации батареи.</string>
+    <string name="battery_ok">Разрешить</string>
+    <string name="battery_no">Нет, спасибо</string>
+    <string name="dlg_cancel">Отмена</string>
+    <string name="notif_idle">Готово. Загрузок нет.</string>
+    <string name="notif_progress">загружается: %1$d · конвертируется: %2$d · в очереди: %3$d</string>
+    <string name="err_install">Не удалось установить: %1$s</string>
+    <string name="err_start">Не удалось запустить: %1$s</string>
+    <string name="err_engine_stopped">Движок загрузки сразу остановился (код %1$d).</string>
+    <string name="err_service">Не удалось запустить службу: %1$s</string>
+    <string name="err_no_response">Движок загрузки не отвечает.</string>
+    <string name="saved_to">Сохранено: %1$s</string>
+    <string name="save_failed">Не удалось сохранить: %1$s</string>
+</resources>

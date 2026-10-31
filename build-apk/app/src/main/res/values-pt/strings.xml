@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">Downloads em andamento</string>
+    <string name="notif_starting">Iniciando…</string>
+    <string name="notif_stop">Fechar</string>
+    <string name="status_preparing">Preparando o app (somente no primeiro início)…</string>
+    <string name="status_starting">Iniciando o mecanismo de download…</string>
+    <string name="status_ready">Pronto</string>
+    <string name="retry">Tentar de novo</string>
+    <string name="storage_title">Salvar na pasta Download</string>
+    <string name="storage_msg">Para salvar os arquivos na pasta Download do telefone (visível na Galeria, Música e Arquivos) é necessária a permissão «Acesso a todos os arquivos».\n\nSe você não conceder, os arquivos serão salvos em uma pasta privada do app, mais difícil de acessar.</string>
+    <string name="storage_ok">Abrir configurações</string>
+    <string name="storage_no">Agora não</string>
+    <string name="battery_title">Downloads com a tela desligada</string>
+    <string name="battery_msg">Para continuar baixando com a tela desligada, exclua o YT Grabber da otimização de bateria.</string>
+    <string name="battery_ok">Permitir</string>
+    <string name="battery_no">Não, obrigado</string>
+    <string name="dlg_cancel">Cancelar</string>
+    <string name="notif_idle">Pronto. Nenhum download em andamento.</string>
+    <string name="notif_progress">%1$d baixando · %2$d convertendo · %3$d na fila</string>
+    <string name="err_install">Falha na instalação: %1$s</string>
+    <string name="err_start">Falha ao iniciar: %1$s</string>
+    <string name="err_engine_stopped">O mecanismo de download parou logo (código %1$d).</string>
+    <string name="err_service">Não foi possível iniciar o serviço: %1$s</string>
+    <string name="err_no_response">O mecanismo de download não está respondendo.</string>
+    <string name="saved_to">Salvo: %1$s</string>
+    <string name="save_failed">Falha ao salvar: %1$s</string>
+</resources>

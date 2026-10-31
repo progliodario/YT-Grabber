@@ -269,7 +269,7 @@ class MainActivity : AppCompatActivity() {
             val i = Intent(this, ServerService::class.java).putExtra(ServerService.EXTRA_DIR, YtgRuntime.downloadDir(this))
             ContextCompat.startForegroundService(this, i)
         } catch (e: Exception) {
-            showFailure("Could not start the service: ${e.message}")
+            showFailure(getString(R.string.err_service, e.message ?: ""))
             return
         }
         Thread({
@@ -282,7 +282,7 @@ class MainActivity : AppCompatActivity() {
                 if (st.isNotEmpty()) ui.post { statusText.text = st }
                 Thread.sleep(500)
             }
-            ui.post { showFailure("The download engine is not responding.") }
+            ui.post { showFailure(getString(R.string.err_no_response)) }
         }, "ytg-wait").start()
     }
 
@@ -382,9 +382,9 @@ class MainActivity : AppCompatActivity() {
                     val dir = File(YtgRuntime.downloadDir(this)).also { it.mkdirs() }
                     val out = File(dir, name)
                     URL(url).openStream().use { input -> out.outputStream().use { input.copyTo(it) } }
-                    ui.post { Toast.makeText(this, "Saved: ${out.path}", Toast.LENGTH_LONG).show() }
+                    ui.post { Toast.makeText(this, getString(R.string.saved_to, out.path), Toast.LENGTH_LONG).show() }
                 } catch (e: Exception) {
-                    ui.post { Toast.makeText(this, "Saving failed: ${e.message}", Toast.LENGTH_LONG).show() }
+                    ui.post { Toast.makeText(this, getString(R.string.save_failed, e.message ?: ""), Toast.LENGTH_LONG).show() }
                 }
             }, "ytg-save").start()
         }

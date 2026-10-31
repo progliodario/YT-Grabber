@@ -199,7 +199,6 @@ window.I18N.es = {
 
   'subs.title': 'Suscripciones',
   'subs.lead': 'Listas y canales que se revisan automáticamente: los vídeos nuevos se descargan en la misma carpeta. El programa debe estar en ejecución (en Windows permanece en el área de notificación).',
-  'subs.empty': 'Aún no hay suscripciones. Marca «Mantener al día listas y canales» al añadir una lista o un canal.',
   'subs.every': 'Revisar',
   'every.1': 'cada hora',
   'every.3': 'cada 3 horas',

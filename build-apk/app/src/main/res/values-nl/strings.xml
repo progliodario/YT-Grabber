@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">Downloads bezig</string>
+    <string name="notif_starting">Starten…</string>
+    <string name="notif_stop">Sluiten</string>
+    <string name="status_preparing">App wordt voorbereid (alleen bij de eerste start)…</string>
+    <string name="status_starting">Downloadmotor wordt gestart…</string>
+    <string name="status_ready">Klaar</string>
+    <string name="retry">Opnieuw proberen</string>
+    <string name="storage_title">Opslaan in de map Downloads</string>
+    <string name="storage_msg">Om bestanden op te slaan in de map Downloads van de telefoon (zichtbaar in Galerij, Muziek en Bestanden) is de machtiging \"Toegang tot alle bestanden\" nodig.\n\nAls je die niet geeft, worden de bestanden opgeslagen in een privémap van de app, die moeilijker te bereiken is.</string>
+    <string name="storage_ok">Instellingen openen</string>
+    <string name="storage_no">Niet nu</string>
+    <string name="battery_title">Downloads met het scherm uit</string>
+    <string name="battery_msg">Om te blijven downloaden terwijl het scherm uit is, sluit je YT Grabber uit van accuoptimalisatie.</string>
+    <string name="battery_ok">Toestaan</string>
+    <string name="battery_no">Nee, bedankt</string>
+    <string name="dlg_cancel">Annuleren</string>
+    <string name="notif_idle">Klaar. Geen downloads bezig.</string>
+    <string name="notif_progress">%1$d downloaden · %2$d converteren · %3$d in wachtrij</string>
+    <string name="err_install">Installatie mislukt: %1$s</string>
+    <string name="err_start">Starten mislukt: %1$s</string>
+    <string name="err_engine_stopped">De downloadmotor stopte meteen (code %1$d).</string>
+    <string name="err_service">De service kon niet worden gestart: %1$s</string>
+    <string name="err_no_response">De downloadmotor reageert niet.</string>
+    <string name="saved_to">Opgeslagen: %1$s</string>
+    <string name="save_failed">Opslaan mislukt: %1$s</string>
+</resources>

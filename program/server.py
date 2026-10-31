@@ -68,6 +68,9 @@ def default_download_dir():
         for cand in (os.path.expanduser('~/storage/downloads'), '/storage/emulated/0/Download', '/sdcard/Download'):
             if os.path.isdir(cand) and os.access(cand, os.W_OK):
                 return os.path.join(cand, 'YT-Grabber')
+    xdg = os.environ.get('XDG_DOWNLOAD_DIR')   # Linux (set inside Flatpak, where ~ is not the real home folder)
+    if xdg and os.path.isdir(xdg):
+        return os.path.join(xdg, 'YT-Grabber')
     return os.path.join(os.path.expanduser('~'), 'Downloads', 'YT-Grabber')
 
 
@@ -81,7 +84,9 @@ DEFAULT_SETTINGS = {
     'single_only': False,       # "video inside a playlist" link -> only that video
     'force': False,             # download again even if already present
     'cookies_browser': '',      # chrome | firefox | edge | ...
+    'lang': '',                 # interface language chosen by the user ('' = detect it automatically)
 }
+LANG_CODES = ('', 'en', 'it', 'es', 'fr', 'de', 'pt', 'nl', 'pl', 'ru', 'tr', 'ar', 'hi', 'id', 'zh', 'ja', 'ko')
 BROWSERS = ('', 'firefox', 'chrome', 'edge', 'brave', 'opera', 'vivaldi', 'chromium', 'whale', 'safari')
 
 SETTINGS = dict(DEFAULT_SETTINGS)
@@ -98,6 +103,7 @@ def clean_opts(o, base=None):
     for k in ('embed', 'single_only', 'force'):
         r[k] = bool(o[k]) if k in o else bool(base[k])
     r['cookies_browser'] = o.get('cookies_browser') if o.get('cookies_browser') in BROWSERS else base['cookies_browser']
+    r['lang'] = o.get('lang') if o.get('lang') in LANG_CODES else base.get('lang', '')
     return r
 
 

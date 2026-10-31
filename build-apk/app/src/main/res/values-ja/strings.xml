@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">ダウンロード中</string>
+    <string name="notif_starting">起動しています…</string>
+    <string name="notif_stop">閉じる</string>
+    <string name="status_preparing">アプリを準備しています（初回起動のみ）…</string>
+    <string name="status_starting">ダウンロードエンジンを起動しています…</string>
+    <string name="status_ready">準備完了</string>
+    <string name="retry">再試行</string>
+    <string name="storage_title">ダウンロードフォルダーに保存</string>
+    <string name="storage_msg">ファイルをスマートフォンのダウンロードフォルダー（ギャラリー、ミュージック、ファイルから見えます）に保存するには、「すべてのファイルへのアクセス」の権限が必要です。\n\n許可しない場合、ファイルはアプリの非公開フォルダーに保存され、見つけにくくなります。</string>
+    <string name="storage_ok">設定を開く</string>
+    <string name="storage_no">今はしない</string>
+    <string name="battery_title">画面オフ時のダウンロード</string>
+    <string name="battery_msg">画面が消えている間もダウンロードを続けるには、YT Grabber をバッテリー最適化の対象から外してください。</string>
+    <string name="battery_ok">許可</string>
+    <string name="battery_no">いいえ</string>
+    <string name="dlg_cancel">キャンセル</string>
+    <string name="notif_idle">準備完了。ダウンロードはありません。</string>
+    <string name="notif_progress">ダウンロード中 %1$d · 変換中 %2$d · 待機中 %3$d</string>
+    <string name="err_install">インストールに失敗しました：%1$s</string>
+    <string name="err_start">起動に失敗しました：%1$s</string>
+    <string name="err_engine_stopped">ダウンロードエンジンがすぐに停止しました（コード %1$d）。</string>
+    <string name="err_service">サービスを起動できませんでした：%1$s</string>
+    <string name="err_no_response">ダウンロードエンジンが応答しません。</string>
+    <string name="saved_to">保存しました：%1$s</string>
+    <string name="save_failed">保存に失敗しました：%1$s</string>
+</resources>

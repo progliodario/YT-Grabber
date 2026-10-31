@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">Süren indirmeler</string>
+    <string name="notif_starting">Başlatılıyor…</string>
+    <string name="notif_stop">Kapat</string>
+    <string name="status_preparing">Uygulama hazırlanıyor (yalnızca ilk başlatmada)…</string>
+    <string name="status_starting">İndirme motoru başlatılıyor…</string>
+    <string name="status_ready">Hazır</string>
+    <string name="retry">Yeniden dene</string>
+    <string name="storage_title">İndirilenler klasörüne kaydet</string>
+    <string name="storage_msg">Dosyaları telefonun İndirilenler klasörüne kaydetmek için (Galeri, Müzik ve Dosyalar\'dan görünür) \"Tüm dosyalara erişim\" izni gerekir.\n\nVermezseniz dosyalar uygulamanın erişimi daha zor olan özel klasörüne kaydedilir.</string>
+    <string name="storage_ok">Ayarları aç</string>
+    <string name="storage_no">Şimdi değil</string>
+    <string name="battery_title">Ekran kapalıyken indirme</string>
+    <string name="battery_msg">Ekran kapalıyken indirmeye devam etmek için YT Grabber\'ı pil optimizasyonundan hariç tutun.</string>
+    <string name="battery_ok">İzin ver</string>
+    <string name="battery_no">Hayır, teşekkürler</string>
+    <string name="dlg_cancel">İptal</string>
+    <string name="notif_idle">Hazır. Süren indirme yok.</string>
+    <string name="notif_progress">%1$d indiriliyor · %2$d dönüştürülüyor · %3$d sırada</string>
+    <string name="err_install">Kurulum başarısız: %1$s</string>
+    <string name="err_start">Başlatma başarısız: %1$s</string>
+    <string name="err_engine_stopped">İndirme motoru hemen durdu (kod %1$d).</string>
+    <string name="err_service">Hizmet başlatılamadı: %1$s</string>
+    <string name="err_no_response">İndirme motoru yanıt vermiyor.</string>
+    <string name="saved_to">Kaydedildi: %1$s</string>
+    <string name="save_failed">Kaydetme başarısız: %1$s</string>
+</resources>

@@ -199,7 +199,6 @@ window.I18N.id = {
 
   'subs.title': 'Langganan',
   'subs.lead': 'Playlist dan kanal yang diperiksa otomatis: video baru diunduh ke folder yang sama. Program harus berjalan (di Windows tetap berada di area notifikasi).',
-  'subs.empty': 'Belum ada langganan. Centang «Selalu perbarui playlist dan kanal» saat menambahkan playlist atau kanal.',
   'subs.every': 'Periksa',
   'every.1': 'setiap jam',
   'every.3': 'setiap 3 jam',

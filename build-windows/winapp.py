@@ -19,6 +19,9 @@ import time
 import urllib.request
 from ctypes import wintypes as wt
 
+import winlang
+import ytcommon
+
 APP_ID = 'yt-grabber'
 MUTEX_NAME = 'YT-Grabber-Running'      # the installer looks for this name to know that the app is running
 WINDOW_TITLE_PART = 'YT Grabber'
@@ -96,6 +99,11 @@ kernel32.GetModuleHandleW.argtypes = [wt.LPCWSTR]
 kernel32.GetModuleHandleW.restype = wt.HINSTANCE
 
 _mutex = None
+
+
+def _t(key, **values):
+    """A text of the Windows shell in the language chosen in the interface."""
+    return winlang.text(ytcommon.DATA, key, **values)
 
 
 def message_box(text, flags=MB_ICONERROR):
@@ -262,10 +270,10 @@ class Tray:
 
     def _menu(self):
         menu = user32.CreatePopupMenu()
-        user32.AppendMenuW(menu, MF_STRING, ID_OPEN, 'Open YT Grabber')
-        user32.AppendMenuW(menu, MF_STRING, ID_FOLDER, 'Open downloads folder')
+        user32.AppendMenuW(menu, MF_STRING, ID_OPEN, _t('tray.open'))
+        user32.AppendMenuW(menu, MF_STRING, ID_FOLDER, _t('tray.folder'))
         user32.AppendMenuW(menu, MF_SEPARATOR, 0, None)
-        user32.AppendMenuW(menu, MF_STRING, ID_QUIT, 'Quit')
+        user32.AppendMenuW(menu, MF_STRING, ID_QUIT, _t('tray.quit'))
         pt = wt.POINT()
         user32.GetCursorPos(ctypes.byref(pt))
         user32.SetForegroundWindow(self.hwnd)   # without this the menu does not close when clicking elsewhere
@@ -311,8 +319,7 @@ class Tray:
         except Exception:
             active = waiting = 0
         if active or waiting:
-            if message_box('Downloads are still in progress.\n\nQuit anyway? Unfinished downloads can be resumed '
-                           'the next time you open YT Grabber.', MB_YESNO | MB_ICONQUESTION) != IDYES:
+            if message_box(_t('quit.confirm'), MB_YESNO | MB_ICONQUESTION) != IDYES:
                 return
         self._notify(NIM_DELETE)
         try:
@@ -327,13 +334,12 @@ class Tray:
         while True:
             time.sleep(3)
             if not self.server_thread.is_alive():
-                message_box('YT Grabber stopped unexpectedly. Details are in the log file in\n'
-                            '%LOCALAPPDATA%\\YT-Grabber\\data\\logs\\app.log')
+                message_box(_t('stopped'))
                 user32.PostMessageW(self.hwnd, WM_CLOSE, 0, 0)
                 return
             try:
                 active, waiting = self._activity()
-                tip = 'YT Grabber' if not (active or waiting) else 'YT Grabber - %d downloading, %d waiting' % (active, waiting)
+                tip = 'YT Grabber' if not (active or waiting) else _t('tip.busy', a=active, w=waiting)
             except Exception:
                 continue
             if tip != last:

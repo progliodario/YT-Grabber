@@ -50,7 +50,11 @@ def build_exe():
         run([py, os.path.join(SRC, 'setup_tools.py')])
     pyi = os.path.join(OUT, 'pyinstaller')
     if not os.path.isdir(os.path.join(pyi, 'PyInstaller')):
-        run([py, '-m', 'pip', 'install', '--disable-pip-version-check', '--target', pyi, 'pyinstaller'])
+        cmd = [py, '-m', 'pip', 'install', '--disable-pip-version-check', '--target', pyi, 'pyinstaller']
+        if os.environ.get('YTG_PYINSTALLER_FROM_SOURCE'):
+            # compile PyInstaller's small launcher here instead of using the prebuilt one that many antivirus programs flag
+            cmd += ['--no-binary', 'pyinstaller']
+        run(cmd)
     icon = os.path.join(HERE, 'icon.ico')
     if not os.path.exists(icon):
         run([py, os.path.join(HERE, 'make_icon.py')])
@@ -63,7 +67,7 @@ def build_exe():
          '--add-data', SRC + os.sep + 'web' + os.pathsep + 'web',
          '--add-data', icon + os.pathsep + '.',
          '--hidden-import', 'server', '--hidden-import', 'ytworker', '--hidden-import', 'ytcommon',
-         '--hidden-import', 'setup_tools', '--hidden-import', 'winapp',
+         '--hidden-import', 'setup_tools', '--hidden-import', 'winapp', '--hidden-import', 'winlang',
          '--collect-all', 'yt_dlp', '--collect-all', 'yt_dlp_ejs', '--collect-all', 'certifi',
          '--hidden-import', 'mutagen', '--hidden-import', 'websockets', '--hidden-import', 'requests',
          '--hidden-import', 'brotli', '--hidden-import', 'Cryptodome',

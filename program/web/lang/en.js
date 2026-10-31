@@ -210,7 +210,6 @@ window.I18N.en = {
   // subscriptions
   'subs.title': 'Subscriptions',
   'subs.lead': 'Playlists and channels that are checked automatically: new videos are downloaded into the same folder. The program must be running (on Windows it stays in the notification area).',
-  'subs.empty': 'No subscriptions yet. Tick "Keep playlists and channels up to date" when you add a playlist or a channel.',
   'subs.every': 'Check',
   'every.1': 'every hour',
   'every.3': 'every 3 hours',

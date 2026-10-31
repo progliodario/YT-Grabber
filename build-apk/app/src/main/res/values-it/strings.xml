@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">Download in corso</string>
+    <string name="notif_starting">Avvio in corso…</string>
+    <string name="notif_stop">Chiudi</string>
+    <string name="status_preparing">Preparazione dell\'app (solo al primo avvio)…</string>
+    <string name="status_starting">Avvio del motore di download…</string>
+    <string name="status_ready">Pronto</string>
+    <string name="retry">Riprova</string>
+    <string name="storage_title">Salvare nella cartella Download</string>
+    <string name="storage_msg">Per salvare i file nella cartella Download del telefono (visibile da Galleria, Musica e File) serve il permesso «Accesso a tutti i file».\n\nSe non lo concedi, i file verranno salvati in una cartella privata dell\'app, meno comoda da raggiungere.</string>
+    <string name="storage_ok">Apri impostazioni</string>
+    <string name="storage_no">Non ora</string>
+    <string name="battery_title">Download a schermo spento</string>
+    <string name="battery_msg">Per continuare a scaricare quando lo schermo è spento, escludi YT Grabber dal risparmio energetico.</string>
+    <string name="battery_ok">Consenti</string>
+    <string name="battery_no">No, grazie</string>
+    <string name="dlg_cancel">Annulla</string>
+    <string name="notif_idle">Pronto. Nessun download in corso.</string>
+    <string name="notif_progress">%1$d in download · %2$d in conversione · %3$d in coda</string>
+    <string name="err_install">Installazione non riuscita: %1$s</string>
+    <string name="err_start">Avvio non riuscito: %1$s</string>
+    <string name="err_engine_stopped">Il motore di download si è fermato subito (codice %1$d).</string>
+    <string name="err_service">Impossibile avviare il servizio: %1$s</string>
+    <string name="err_no_response">Il motore di download non risponde.</string>
+    <string name="saved_to">Salvato: %1$s</string>
+    <string name="save_failed">Salvataggio non riuscito: %1$s</string>
+</resources>

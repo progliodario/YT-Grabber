@@ -64,7 +64,13 @@
       LANG = code;
       document.documentElement.lang = code;
       document.documentElement.dir = code === 'ar' ? 'rtl' : 'ltr';
-      if (remember) { try { localStorage.setItem('ytg-lang', code); } catch (e) { /* ignore */ } }
+      if (remember) {
+        try { localStorage.setItem('ytg-lang', code); } catch (e) { /* ignore */ }
+        var payload = {}, k;   // also kept by the server, so the Windows tray menu speaks the same language
+        for (k in S.settings) { if (Object.prototype.hasOwnProperty.call(S.settings, k)) { payload[k] = S.settings[k]; } }
+        payload.lang = code;
+        api('POST', '/api/settings', payload).then(function (r) { S.settings = r.settings; }, function () { /* non-blocking */ });
+      }
       $('#langSel').value = code;
       applyStatic();
       applyTheme(getTheme());
@@ -358,7 +364,13 @@
 
   function applyState(st) {
     S.lastState = st; S.subs = st.subs || []; S.subIntervals = st.sub_intervals || [];
-    S.settings = st.settings; S.errmeta = st.errmeta || {}; S.local = !!st.local; S.tools = st.tools || {}; S.android = !!st.android;
+    S.settings = st.settings; S.errmeta = st.errmeta || {};
+    if (!S.langInit) {
+      S.langInit = true;
+      var savedLang = null;
+      try { savedLang = localStorage.getItem('ytg-lang'); } catch (e) { savedLang = null; }
+      if (!savedLang && st.settings.lang && hasLang(st.settings.lang) && st.settings.lang !== LANG) { setLanguage(st.settings.lang, false); }
+    } S.local = !!st.local; S.tools = st.tools || {}; S.android = !!st.android;
     $('#grpAndroidHint').hidden = S.android;
     S.concurrency = st.concurrency; S.browsers = st.browsers || []; S.hasCookies = !!st.has_cookies; S.ytdlp = st.ytdlp;
     S.serverOffset = st.now - Date.now() / 1000;

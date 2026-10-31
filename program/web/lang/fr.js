@@ -199,7 +199,6 @@ window.I18N.fr = {
 
   'subs.title': 'Abonnements',
   'subs.lead': 'Playlists et chaînes vérifiées automatiquement : les nouvelles vidéos sont téléchargées dans le même dossier. Le programme doit être en cours d\'exécution (sous Windows il reste dans la zone de notification).',
-  'subs.empty': 'Aucun abonnement. Cochez « Garder playlists et chaînes à jour » quand vous ajoutez une playlist ou une chaîne.',
   'subs.every': 'Vérifier',
   'every.1': 'toutes les heures',
   'every.3': 'toutes les 3 heures',

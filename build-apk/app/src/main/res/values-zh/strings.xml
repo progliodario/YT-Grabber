@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">正在进行的下载</string>
+    <string name="notif_starting">正在启动…</string>
+    <string name="notif_stop">关闭</string>
+    <string name="status_preparing">正在准备应用（仅首次启动）…</string>
+    <string name="status_starting">正在启动下载引擎…</string>
+    <string name="status_ready">就绪</string>
+    <string name="retry">重试</string>
+    <string name="storage_title">保存到“下载”文件夹</string>
+    <string name="storage_msg">要把文件保存到手机的“下载”文件夹（可在相册、音乐和文件中看到），需要“所有文件访问权限”。\n\n如果不授权，文件将保存到应用的私有文件夹，那里不太容易找到。</string>
+    <string name="storage_ok">打开设置</string>
+    <string name="storage_no">暂不</string>
+    <string name="battery_title">熄屏时下载</string>
+    <string name="battery_msg">要在熄屏时继续下载，请将 YT Grabber 排除在电池优化之外。</string>
+    <string name="battery_ok">允许</string>
+    <string name="battery_no">不，谢谢</string>
+    <string name="dlg_cancel">取消</string>
+    <string name="notif_idle">就绪。没有正在进行的下载。</string>
+    <string name="notif_progress">%1$d 个下载中 · %2$d 个转换中 · %3$d 个排队中</string>
+    <string name="err_install">安装失败：%1$s</string>
+    <string name="err_start">启动失败：%1$s</string>
+    <string name="err_engine_stopped">下载引擎立即停止（代码 %1$d）。</string>
+    <string name="err_service">无法启动服务：%1$s</string>
+    <string name="err_no_response">下载引擎没有响应。</string>
+    <string name="saved_to">已保存：%1$s</string>
+    <string name="save_failed">保存失败：%1$s</string>
+</resources>

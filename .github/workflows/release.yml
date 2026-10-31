@@ -1,0 +1,197 @@
+name: Release
+
+# Builds every package on GitHub's machines, installs and starts each one to prove it works, and attaches
+# the files to the release of the tag. Run it by pushing a tag (v1.1.0) or by hand from the Actions tab.
+# The Android APKs are signed with a key that stays on the maintainer's computer: they are uploaded by hand
+# and the "Finalize" workflow then adds the checksums, the signature and the apt/dnf repository.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag of the release to attach the files to (for example v1.1.0). Empty = build only, nothing is published.
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build the installer
+        shell: bash
+        env:
+          YTG_PYINSTALLER_FROM_SOURCE: '1'   # builds PyInstaller's launcher here: far fewer false alarms from antivirus programs
+        run: python build-windows/build_windows.py
+      - name: Install it, start it, uninstall it
+        shell: pwsh
+        run: |
+          $setup = (Get-ChildItem Windows\YT-Grabber-Setup-*.exe)[0].FullName
+          $p = Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "The installer exited with code $($p.ExitCode)" }
+          $app = Join-Path $env:LOCALAPPDATA 'Programs\YT Grabber\YT-Grabber.exe'
+          if (-not (Test-Path $app)) { throw 'The app was not installed' }
+          if (-not (Test-Path (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\YT Grabber.lnk'))) { throw 'No Start menu entry' }
+          Start-Process $app -ArgumentList '--background','--port','8795'
+          $ok = $false
+          for ($i = 0; $i -lt 300; $i++) {   # the very first start downloads ffmpeg
+            try { $r = Invoke-RestMethod http://127.0.0.1:8795/api/ping -TimeoutSec 3; if ($r.app -eq 'yt-grabber') { $ok = $true; break } } catch { }
+            Start-Sleep 2
+          }
+          if (-not $ok) { Get-Content (Join-Path $env:LOCALAPPDATA 'YT-Grabber\data\logs\app.log') -ErrorAction SilentlyContinue; throw 'The app did not start' }
+          $state = Invoke-RestMethod -Headers @{ 'X-YTG' = '1' } http://127.0.0.1:8795/api/state
+          Write-Host "version $($state.version), yt-dlp $($state.ytdlp), ffmpeg $($state.tools.ffmpeg)"
+          Invoke-RestMethod -Method Post -Headers @{ 'X-YTG' = '1' } -ContentType 'application/json' -Body '{}' http://127.0.0.1:8795/api/quit | Out-Null
+          Start-Sleep 5
+          $u = Join-Path $env:LOCALAPPDATA 'Programs\YT Grabber\unins000.exe'
+          Start-Process $u -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
+          Start-Sleep 3
+          if (Test-Path $app) { throw 'The uninstaller left the program behind' }
+          Write-Host 'install, start and uninstall OK'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: Windows/*.exe
+          if-no-files-found: error
+
+  linux:
+    name: Linux packages (deb, rpm, AppImage, Flatpak)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build the .deb and the .rpm
+        run: python build-linux/build_packages.py
+      - name: Build the AppImages
+        run: python build-linux/appimage/build_appimage.py
+      - name: Test the .deb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ./Linux/yt-grabber_*_all.deb
+          dpkg -L yt-grabber | head -n 8
+          (yt-grabber --no-browser --port 8795 > "$RUNNER_TEMP/deb.log" 2>&1 &)
+          sh .github/scripts/wait_ping.sh 8795 240 || { cat "$RUNNER_TEMP/deb.log"; exit 1; }
+          pkill -f 'program/server.py' || true
+      - name: Test the AppImage
+        run: |
+          chmod +x Linux/*.AppImage
+          (./Linux/YT-Grabber-x86_64.AppImage --appimage-extract-and-run --no-browser --port 8796 > "$RUNNER_TEMP/appimage.log" 2>&1 &)
+          sh .github/scripts/wait_ping.sh 8796 240 || { cat "$RUNNER_TEMP/appimage.log"; exit 1; }
+          pkill -f 'program/server.py' || true
+      - name: Test the .rpm on Fedora
+        run: |
+          docker run --rm -v "$PWD/Linux:/pkg:ro" -v "$PWD/.github/scripts:/scripts:ro" fedora:latest sh -c '
+            dnf install -y /pkg/*.rpm curl ffmpeg-free > /dev/null &&
+            (yt-grabber --no-browser --port 8797 > /tmp/rpm.log 2>&1 &) &&
+            sh /scripts/wait_ping.sh 8797 300 || { cat /tmp/rpm.log; exit 1; }'
+      - name: Build and test the Flatpak
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          sudo apt-get install -y flatpak flatpak-builder dbus-user-session
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak-builder --user --install-deps-from=flathub --force-clean --repo=fp-repo fp-build build-linux/flatpak/io.github.progliodario.YTGrabber.yml
+          flatpak build-bundle fp-repo Linux/YT-Grabber-x86_64.flatpak io.github.progliodario.YTGrabber
+          flatpak --user install -y --noninteractive Linux/YT-Grabber-x86_64.flatpak
+          dbus-run-session -- sh -c 'flatpak --user run io.github.progliodario.YTGrabber --no-browser --port 8798 > "$RUNNER_TEMP/flatpak.log" 2>&1 & sh .github/scripts/wait_ping.sh 8798 300 || { cat "$RUNNER_TEMP/flatpak.log"; exit 1; }'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: |
+            Linux/*.deb
+            Linux/*.rpm
+            Linux/*.AppImage
+            Linux/*.flatpak
+          if-no-files-found: error
+
+  macos-build:
+    name: Mac app
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python build-macos/build_app.py
+      - name: Sign the app ad hoc (no Apple developer account) and zip it again
+        run: |
+          cd macOS
+          mkdir app && unzip -q YT-Grabber-macOS.zip -d app
+          codesign --force --deep --sign - app/YT-Grabber.app
+          codesign --verify --deep --strict app/YT-Grabber.app && echo "signature OK"
+          rm YT-Grabber-macOS.zip
+          ditto -c -k --keepParent app/YT-Grabber.app YT-Grabber-macOS.zip
+          rm -rf app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: macOS/YT-Grabber-macOS.zip
+          if-no-files-found: error
+
+  macos-test:
+    name: Mac app on ${{ matrix.os }}
+    needs: macos-build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-15-intel]
+    steps:
+      - uses: actions/checkout@v4   # only for the helper script
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos
+      - name: Unzip, start and call it
+        run: |
+          unzip -q YT-Grabber-macOS.zip
+          uname -m
+          (YT-Grabber.app/Contents/Resources/run.sh --no-browser --port 8795 > "$RUNNER_TEMP/mac.log" 2>&1 &)
+          sh .github/scripts/wait_ping.sh 8795 300 || { cat "$RUNNER_TEMP/mac.log"; exit 1; }
+          pkill -f 'program/server.py' || true
+
+  publish:
+    name: Attach the files to the release
+    needs: [windows, linux, macos-build, macos-test]
+    if: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.tag != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create the release if it does not exist, then attach the files
+        run: |
+          ls -l dist
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" --title "YT Grabber ${TAG#v}" --notes-file .github/release-notes.md --verify-tag
+          fi
+          gh release upload "$TAG" dist/* --clobber
+
+  finalize:
+    name: Checksums, signature and apt/dnf repository
+    needs: publish
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/finalize.yml
+    with:
+      tag: ${{ inputs.tag || github.ref_name }}
+    secrets: inherit

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.progliodario.YTGrabber</id>
+  <name>YT Grabber</name>
+  <summary>Download YouTube and YouTube Music videos and playlists</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <url type="homepage">https://github.com/progliodario/YT-Grabber</url>
+  <url type="bugtracker">https://github.com/progliodario/YT-Grabber/issues</url>
+  <developer_name>progliodario</developer_name>
+  <description>
+    <p>YT Grabber downloads videos, playlists (even with thousands of items), albums and channels from YouTube and YouTube Music from a local web page.</p>
+    <ul>
+      <li>Exactly 10 simultaneous downloads, even with several playlists in the queue</li>
+      <li>Files numbered in playlist order</li>
+      <li>Every failed video is listed with its number and the exact reason, with a one-click retry</li>
+      <li>Playlists and channels can be kept up to date automatically</li>
+      <li>Interface in 16 languages</li>
+    </ul>
+    <p>Only download content you have the right to save.</p>
+  </description>
+  <launchable type="desktop-id">io.github.progliodario.YTGrabber.desktop</launchable>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Network</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="1.1.0" date="2026-11-01"/>
+  </releases>
+</component>

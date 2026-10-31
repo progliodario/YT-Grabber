@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel">Descargas en curso</string>
+    <string name="notif_starting">Iniciando…</string>
+    <string name="notif_stop">Cerrar</string>
+    <string name="status_preparing">Preparando la app (solo en el primer inicio)…</string>
+    <string name="status_starting">Iniciando el motor de descargas…</string>
+    <string name="status_ready">Listo</string>
+    <string name="retry">Reintentar</string>
+    <string name="storage_title">Guardar en la carpeta Descargas</string>
+    <string name="storage_msg">Para guardar los archivos en la carpeta Descargas del teléfono (visible desde Galería, Música y Archivos) hace falta el permiso «Acceso a todos los archivos».\n\nSi no lo concedes, los archivos se guardarán en una carpeta privada de la app, más difícil de encontrar.</string>
+    <string name="storage_ok">Abrir ajustes</string>
+    <string name="storage_no">Ahora no</string>
+    <string name="battery_title">Descargas con la pantalla apagada</string>
+    <string name="battery_msg">Para seguir descargando con la pantalla apagada, excluye YT Grabber de la optimización de batería.</string>
+    <string name="battery_ok">Permitir</string>
+    <string name="battery_no">No, gracias</string>
+    <string name="dlg_cancel">Cancelar</string>
+    <string name="notif_idle">Listo. No hay descargas en curso.</string>
+    <string name="notif_progress">%1$d descargando · %2$d convirtiendo · %3$d en cola</string>
+    <string name="err_install">Falló la instalación: %1$s</string>
+    <string name="err_start">Falló el inicio: %1$s</string>
+    <string name="err_engine_stopped">El motor de descargas se detuvo enseguida (código %1$d).</string>
+    <string name="err_service">No se pudo iniciar el servicio: %1$s</string>
+    <string name="err_no_response">El motor de descargas no responde.</string>
+    <string name="saved_to">Guardado: %1$s</string>
+    <string name="save_failed">Falló el guardado: %1$s</string>
+</resources>

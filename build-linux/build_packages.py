@@ -79,7 +79,7 @@ def build_stage(stage):
     icons = os.path.join(ROOT, 'program', 'web', 'icons')
     shutil.copy(os.path.join(icons, 'icon-512.png'), os.path.join(stage, 'icon-512.png'))
     shutil.copy(os.path.join(icons, 'icon-192.png'), os.path.join(stage, 'icon-192.png'))
-    for name in ('yt-grabber', 'yt-grabber.desktop'):
+    for name in ('yt-grabber', 'yt-grabber.desktop', 'yt-grabber.service'):
         copy_text(os.path.join(HERE, name), os.path.join(stage, name))
     for name in ('README.md', 'LICENSE'):
         copy_text(os.path.join(ROOT, name), os.path.join(stage, name))

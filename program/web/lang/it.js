@@ -199,7 +199,6 @@ window.I18N.it = {
 
   'subs.title': 'Iscrizioni',
   'subs.lead': 'Playlist e canali controllati automaticamente: i video nuovi vengono scaricati nella stessa cartella. Il programma deve essere in esecuzione (su Windows resta nell\'area di notifica).',
-  'subs.empty': 'Nessuna iscrizione. Spunta "Tieni aggiornate playlist e canali" quando aggiungi una playlist o un canale.',
   'subs.every': 'Controlla',
   'every.1': 'ogni ora',
   'every.3': 'ogni 3 ore',
