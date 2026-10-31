@@ -14,7 +14,11 @@ from a local web page that works in any browser (Chrome, Edge, Firefox, Safari, 
 |---|---|---|
 | **Windows PC**, nothing installed | double-click **`YT-Grabber.exe`** | [build-exe/README.md](build-exe/README.md) |
 | Windows with **Python** installed | double-click **`Start.bat`** | below |
-| **Linux / macOS** | run **`./Start.sh`** | below |
+| **Linux**: Debian, Ubuntu, Mint... | `sudo apt install ./yt-grabber_1.0.0_all.deb` | [build-linux/README.md](build-linux/README.md) |
+| **Linux**: Fedora, RHEL, openSUSE... | `sudo dnf install ./yt-grabber-1.0.0-1.noarch.rpm` | [build-linux/README.md](build-linux/README.md) |
+| **Mac** (Intel and Apple Silicon) | unzip `YT-Grabber-macOS.zip` and open **`YT-Grabber.app`** | [build-macos/README.md](build-macos/README.md) |
+| Any Linux / macOS, from the sources | run **`./Start.sh`** | below |
+| **iPhone / iPad** | open the page in Safari (there cannot be an iOS app) | [iPhone and iPad](#iphone-and-ipad) |
 | **Android phone**, no computer needed | install an app from the **`APK\`** folder | [build-apk/README.md](build-apk/README.md) |
 | Android phone, via **Termux** (alternative to the APK) | follow the guide in `termux\` | [termux/README.md](termux/README.md) |
 
@@ -40,16 +44,20 @@ YT-Grabber\
 ├─ program\             the program itself: server.py, ytworker.py, ytcommon.py, setup_tools.py
 │                         and web\ (the user interface)
 ├─ APK\                 the Android apps, ready to install on the phone
+├─ Linux\               the .deb and .rpm packages
+├─ macOS\               the Mac app (YT-Grabber-macOS.zip)
 │
 ├─ build-exe\           to rebuild YT-Grabber.exe (build-exe.bat) + guide
 ├─ build-apk\           to rebuild the APKs (build-apk.bat), with the signing key + guide
+├─ build-linux\         to rebuild the .deb and .rpm (build-linux.bat) + guide
+├─ build-macos\         to rebuild the Mac app (build-macos.bat) + guide
 ├─ termux\              alternative to the APK: install on the phone with Termux + guide
 │
 └─ generated\           created by the program (ffmpeg, yt-dlp, settings, logs, build files): safe to delete
 ```
 
-`YT-Grabber.exe`, `APK\` and `generated\` are not source files (they are not in git): they are rebuilt with the
-scripts in `build-exe\` and `build-apk\`. The exe keeps its own data in `%LOCALAPPDATA%\YT-Grabber\`.
+`YT-Grabber.exe`, `APK\`, `Linux\`, `macOS\` and `generated\` are not source files (they are not in git): they are
+rebuilt with the scripts in the `build-*` folders. The exe keeps its own data in `%LOCALAPPDATA%\YT-Grabber\`.
 
 ## How it works
 
@@ -72,6 +80,22 @@ scripts in `build-exe\` and `build-apk\`. The exe keeps its own data in `%LOCALA
 - **Theme**: light, dark or automatic (button at the top right); adapts to phones and tablets.
 - The same link cannot be added twice while it is already in progress. *Clear completed* empties the list without
   touching the files.
+
+## iPhone and iPad
+
+There is **no iOS app**, and one cannot be built for this program: iOS does not allow an app to run a Python server
+or yt-dlp, an app needs Apple's signing (a paid developer account), and Apple does not accept YouTube downloaders in
+the App Store. What works is to use the web page from the phone, with the program running on a computer (or any
+always-on Linux box, such as a Raspberry Pi) on the same Wi-Fi:
+
+1. On the computer start the program so it accepts other devices: `Start.bat --host 0.0.0.0` (Windows),
+   `./Start.sh --host 0.0.0.0` (Linux/macOS), `YT-Grabber.exe --host 0.0.0.0` or `yt-grabber --host 0.0.0.0`.
+   It prints the address to use, for example `http://192.168.1.6:8765/`.
+2. On the iPhone / iPad open that address in **Safari**. To get an icon like an app: Share → **Add to Home Screen**.
+3. Paste the links and press **Download**: the files are saved on the computer. To get a file on the phone, open the
+   list and use the save button next to a finished item (Safari downloads it from the computer).
+
+Only do this on a network you trust: anyone on the same Wi-Fi can open the page.
 
 ## Numbered files, in order
 
@@ -117,6 +141,8 @@ The ready-to-use files are built with a script each:
 |---|---|---|
 | `YT-Grabber.exe` | `build-exe\build-exe.bat` | Python (PyInstaller is fetched automatically) |
 | `APK\*.apk` | `build-apk\build-apk.bat` | JDK 21, Android SDK, Gradle 8.7 (see [build-apk/README.md](build-apk/README.md)) |
+| `Linux\*.deb`, `Linux\*.rpm` | `build-linux\build-linux.bat` | Python (nfpm is downloaded and checked automatically) |
+| `macOS\YT-Grabber-macOS.zip` | `build-macos\build-macos.bat` | Python and Internet (no Mac needed to build it) |
 
 ## License and third-party components
 

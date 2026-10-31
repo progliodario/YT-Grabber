@@ -1816,6 +1816,19 @@ class Server(ThreadingHTTPServer):
         super().handle_error(request, client_address)
 
 
+def lan_address():
+    """The address of this computer on the local network (no packet is actually sent), or '' if unknown."""
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('10.255.255.255', 1))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip if not ip.startswith('127.') else ''
+    except OSError:
+        return ''
+
+
 def already_running(port):
     try:
         with urllib.request.urlopen('http://127.0.0.1:%d/api/ping' % port, timeout=1.5) as r:
@@ -1885,6 +1898,9 @@ def main():
         print(' WARNING: ffmpeg not found - conversions not available')
     if srv.allow_remote:
         print(' WARNING: server reachable from other devices on the network')
+        ip = lan_address()
+        if ip:
+            print(' From a phone or tablet on the same Wi-Fi, open:  http://%s:%d/' % (ip, port))
     print(' Press Ctrl+C to quit (downloads in progress can be resumed)')
     print('=' * 60)
     if not a.no_browser:

@@ -12,3 +12,9 @@
 *.zip binary
 *.apk binary
 *.exe binary
+
+# Launchers and package files must keep Unix line endings
+build-linux/yt-grabber text eol=lf
+build-linux/*.desktop text eol=lf
+build-linux/*.yaml text eol=lf
+build-macos/launcher text eol=lf

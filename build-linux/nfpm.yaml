@@ -1,0 +1,63 @@
+# Package description for nfpm (https://nfpm.goreleaser.com): one file produces both the .deb and the .rpm.
+# build_packages.py fills in ${VERSION} and runs nfpm from the staging folder, where the paths below exist.
+name: yt-grabber
+arch: all
+platform: linux
+version: ${VERSION}
+section: video
+priority: optional
+maintainer: progliodario <proglio.dario.dal.2008@gmail.com>
+description: |
+  Download YouTube and YouTube Music videos and playlists.
+  YT Grabber downloads videos, playlists (even with thousands of items), albums and
+  channels from a local web page, with exactly 10 simultaneous downloads, files
+  numbered in playlist order and clear per-item error reporting.
+homepage: https://github.com/progliodario/YT-Grabber
+license: MIT
+
+depends:
+  - python3
+  - python3-pip
+recommends:
+  - ffmpeg
+  - python3-tk
+
+contents:
+  - dst: /opt/yt-grabber
+    type: dir
+  - src: program
+    dst: /opt/yt-grabber/program
+    type: tree
+    file_info:
+      mode: 0644
+  - src: yt-grabber
+    dst: /usr/bin/yt-grabber
+    file_info:
+      mode: 0755
+  - src: yt-grabber.desktop
+    dst: /usr/share/applications/yt-grabber.desktop
+    file_info:
+      mode: 0644
+  - src: icon-512.png
+    dst: /usr/share/icons/hicolor/512x512/apps/yt-grabber.png
+    file_info:
+      mode: 0644
+  - src: icon-192.png
+    dst: /usr/share/icons/hicolor/192x192/apps/yt-grabber.png
+    file_info:
+      mode: 0644
+  - src: README.md
+    dst: /usr/share/doc/yt-grabber/README.md
+    file_info:
+      mode: 0644
+  - src: LICENSE
+    dst: /usr/share/doc/yt-grabber/LICENSE
+    file_info:
+      mode: 0644
+
+overrides:
+  rpm:
+    # Fedora / openSUSE names; ffmpeg is not in the default Fedora repositories, so it is not listed here:
+    # the program downloads a static ffmpeg on first start if the system has none.
+    recommends:
+      - python3-tkinter

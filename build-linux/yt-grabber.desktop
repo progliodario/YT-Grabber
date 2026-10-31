@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=YT Grabber
+GenericName=YouTube downloader
+Comment=Download YouTube and YouTube Music videos, playlists and albums
+Exec=yt-grabber
+Icon=yt-grabber
+Terminal=true
+Categories=AudioVideo;Network;
+Keywords=youtube;download;playlist;music;video;

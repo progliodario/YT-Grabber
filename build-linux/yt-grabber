@@ -1,0 +1,20 @@
+#!/bin/sh
+# YT Grabber launcher (installed as /usr/bin/yt-grabber by the .deb / .rpm packages).
+# The program lives in /opt/yt-grabber (read-only); everything it creates (yt-dlp, ffmpeg if needed, settings,
+# download list, logs) goes to your own folder ~/.local/share/yt-grabber.
+APP=/opt/yt-grabber
+export YTG_DATA_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/yt-grabber"
+export PYTHONDONTWRITEBYTECODE=1
+
+mkdir -p "$YTG_DATA_ROOT" || exit 1
+PY=python3
+command -v "$PY" >/dev/null 2>&1 || { echo "python3 was not found: install it and try again."; exit 1; }
+
+# First start only: installs yt-dlp (and ffmpeg if the system does not have it). Needs Internet.
+"$PY" "$APP/program/setup_tools.py" || { echo "Setup failed. Check your Internet connection and try again."; exit 1; }
+
+# Exit code 75 = the server asks to be restarted (yt-dlp update)
+while :; do
+  "$PY" "$APP/program/server.py" "$@"
+  [ $? -eq 75 ] || break
+done

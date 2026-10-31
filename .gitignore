@@ -18,3 +18,7 @@ build-apk/app/build/
 build-apk/build/
 build-apk/local.properties
 build-apk/app/src/main/assets/ytg-libs.zip
+
+# Linux and macOS packages (rebuilt with build-linux\build-linux.bat and build-macos\build-macos.bat)
+/Linux/
+/macOS/

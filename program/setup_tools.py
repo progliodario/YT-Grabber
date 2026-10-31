@@ -22,6 +22,7 @@ from ytcommon import IS_ANDROID, BIN, DENO, VENDOR  # noqa: E402
 EXE = '.exe' if os.name == 'nt' else ''
 BASE = 'https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/'
 DENO_URL = 'https://github.com/denoland/deno/releases/latest/download/deno-%s-pc-windows-msvc.zip'
+MAC_FFMPEG_URL = 'https://www.osxexperts.net/%s%s.zip'   # (ffmpeg|ffprobe) + (7arm|7intel)
 # On Android (Termux) there is no deno and no packages to compile: these are enough, all pure Python.
 ANDROID_PKGS = ['yt-dlp', 'yt-dlp-ejs', 'mutagen', 'requests', 'urllib3', 'websockets', 'certifi']
 
@@ -61,6 +62,42 @@ def install_termux_pkg(name):
     return r.returncode == 0
 
 
+def install_ffmpeg_macos(arm):
+    """macOS: static ffmpeg and ffprobe builds from OSXExperts (osxexperts.net), one zip each."""
+    suffix = '7arm' if arm else '7intel'
+    say('Downloading ffmpeg and ffprobe (about 45 MB, only once)...')
+    os.makedirs(BIN, exist_ok=True)
+    tmp = tempfile.mkdtemp(prefix='ytgrab_ffmpeg_')
+    try:
+        for tool in ('ffmpeg', 'ffprobe'):
+            arc = os.path.join(tmp, tool + '.zip')
+            urllib.request.urlretrieve(MAC_FFMPEG_URL % (tool, suffix), arc)
+            with zipfile.ZipFile(arc) as z:
+                member = next((m for m in z.namelist() if os.path.basename(m) == tool and '__MACOSX' not in m), None)
+                if not member:
+                    say('ERROR: %s not found in the downloaded archive.' % tool)
+                    return False
+                dst = os.path.join(BIN, tool)
+                with z.open(member) as src, open(dst, 'wb') as out:
+                    shutil.copyfileobj(src, out)
+                os.chmod(dst, 0o755)
+        say('ffmpeg installed.')
+        return True
+    except Exception as e:  # noqa: BLE001
+        say('ERROR downloading ffmpeg: %s. You can also install it with:  brew install ffmpeg' % e)
+        return False
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def use_bundled_certificates():
+    """Python builds that do not use the system certificate store (e.g. the one inside the macOS app) can verify
+    HTTPS with the certifi bundle that was just installed together with yt-dlp."""
+    ca = os.path.join(VENDOR, 'certifi', 'cacert.pem')
+    if os.path.exists(ca) and not os.environ.get('SSL_CERT_FILE'):
+        os.environ['SSL_CERT_FILE'] = ca
+
+
 def install_ffmpeg():
     if IS_ANDROID:
         return install_termux_pkg('ffmpeg')
@@ -71,8 +108,10 @@ def install_ffmpeg():
         name = 'ffmpeg-master-latest-winarm64-gpl.zip' if arm else 'ffmpeg-master-latest-win64-gpl.zip'
     elif system == 'Linux':
         name = 'ffmpeg-master-latest-linuxarm64-gpl.tar.xz' if arm else 'ffmpeg-master-latest-linux64-gpl.tar.xz'
+    elif system == 'Darwin':
+        return install_ffmpeg_macos(arm)
     else:
-        say('ffmpeg not found. On macOS install it with:  brew install ffmpeg')
+        say('ffmpeg not found. Install it with your package manager.')
         return False
     say('Downloading ffmpeg (about 190 MB, only once)...')
     os.makedirs(BIN, exist_ok=True)
@@ -155,6 +194,7 @@ def main():
     ok = True
     if update or not deps_ok():
         ok = install_python_deps() and ok
+    use_bundled_certificates()
     if not ffmpeg_ok():
         ok = install_ffmpeg() and ok
     if IS_ANDROID and not shutil.which('node'):

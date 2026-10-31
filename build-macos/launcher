@@ -1,0 +1,13 @@
+#!/bin/sh
+# Executable of YT-Grabber.app: opens Terminal and runs the program there (the window shows the progress and
+# closing it stops the program).
+RES="$(cd "$(dirname "$0")/../Resources" && pwd)"
+chmod +x "$RES/run.sh" 2>/dev/null
+osascript - "$RES/run.sh" <<'EOF'
+on run argv
+  tell application "Terminal"
+    activate
+    do script (quoted form of item 1 of argv)
+  end tell
+end run
+EOF
