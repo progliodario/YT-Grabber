@@ -25,16 +25,17 @@
       <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f43f5e"/><stop offset="1" stop-color="#fb7a5c"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg)"/><path d="M16 7.5v12m0 0-5-5m5 5 5-5M9.5 24.5h13" stroke="#fff" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span class="brand-name">YT Grabber</span>
     </div>
-    <div class="meter" title="Simultaneous downloads">
-      <span class="meter-label"><b id="meterN">0</b><span class="of">/<span id="meterMax">10</span></span> downloads</span>
+    <div class="meter" title="Simultaneous downloads" data-i18n-attr="title:meter.title">
+      <span class="meter-label"><b id="meterN">0</b><span class="of">/<span id="meterMax">10</span></span> <span data-i18n="meter.downloads">downloads</span></span>
       <span class="slots" id="meterDots" aria-hidden="true"></span>
     </div>
     <div class="top-r">
       <span class="pill" id="speedPill" hidden></span>
+      <select class="lang-select" id="langSel" aria-label="Language" data-i18n-attr="aria-label:lang.label"></select>
       <button class="icon-btn" id="btnTheme" type="button" title="Theme: automatic" aria-label="Change theme"></button>
       <button class="btn ghost" id="btnSettings" type="button">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-        <span class="hide-sm">Settings</span>
+        <span class="hide-sm" data-i18n="settings">Settings</span>
       </button>
     </div>
   </div>
@@ -42,47 +43,47 @@
 
 <main class="wrap">
   <div class="banner warn" id="throttle" role="status" hidden></div>
-  <div class="banner err" id="offline" role="alert" hidden>Server not reachable. Check that YT Grabber is still running on the computer.</div>
+  <div class="banner err" id="offline" role="alert" hidden data-i18n="offline">Server not reachable. Check that YT Grabber is still running on the computer.</div>
   <div class="banner warn" id="toolsWarn" role="alert" hidden></div>
 
   <section class="card compose" aria-labelledby="newTitle">
     <div class="compose-head">
-      <h1 id="newTitle">Download from YouTube and YouTube Music</h1>
-      <p>Videos, playlists, albums and whole channels, even with thousands of items. Always 10 downloads in parallel, with the files numbered in order.</p>
+      <h1 id="newTitle" data-i18n="compose.title">Download from YouTube and YouTube Music</h1>
+      <p data-i18n="compose.lead">Videos, playlists, albums and whole channels, even with thousands of items. Always 10 downloads in parallel, with the files numbered in order.</p>
     </div>
     <form id="form" autocomplete="off">
       <div class="urlbox">
-        <textarea id="urls" rows="3" spellcheck="false" placeholder="Paste one or more links here, one per line" aria-label="Links to download"></textarea>
+        <textarea id="urls" rows="3" spellcheck="false" placeholder="Paste one or more links here, one per line" aria-label="Links to download" data-i18n-attr="placeholder:urls.placeholder,aria-label:urls.label"></textarea>
         <div class="url-tools">
-          <button class="btn sm" id="btnPaste" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg>Paste</button>
-          <button class="btn sm ghost" id="btnClear" type="button" hidden>Clear</button>
+          <button class="btn sm" id="btnPaste" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg><span data-i18n="paste">Paste</span></button>
+          <button class="btn sm ghost" id="btnClear" type="button" hidden data-i18n="clear">Clear</button>
         </div>
       </div>
       <div class="detect" id="detect" hidden aria-live="polite"></div>
 
       <div class="optgrid">
         <div class="og">
-          <span class="lbl">What to download</span>
-          <div class="seg" role="radiogroup" aria-label="Type">
+          <span class="lbl" data-i18n="opt.what">What to download</span>
+          <div class="seg" role="radiogroup" aria-label="Type" data-i18n-attr="aria-label:opt.type">
             <input type="radio" name="mode" id="modeAudio" value="audio" checked>
-            <label for="modeAudio"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Audio</label>
+            <label for="modeAudio"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><span data-i18n="audio">Audio</span></label>
             <input type="radio" name="mode" id="modeVideo" value="video">
-            <label for="modeVideo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="m16 10 6-3v10l-6-3z"/></svg>Video</label>
+            <label for="modeVideo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="m16 10 6-3v10l-6-3z"/></svg><span data-i18n="video">Video</span></label>
           </div>
         </div>
 
         <div class="og" id="gAudio">
-          <span class="lbl">Format</span>
-          <div class="pills" role="radiogroup" aria-label="Audio format">
+          <span class="lbl" data-i18n="opt.format">Format</span>
+          <div class="pills" role="radiogroup" aria-label="Audio format" data-i18n-attr="aria-label:opt.audioformat">
             <input type="radio" name="audioFormat" id="afMp3" value="mp3"><label for="afMp3">MP3</label>
-            <input type="radio" name="audioFormat" id="afM4a" value="m4a"><label for="afM4a">M4A<em class="tag">fast</em></label>
-            <input type="radio" name="audioFormat" id="afOpus" value="opus"><label for="afOpus">Opus<em class="tag">fast</em></label>
+            <input type="radio" name="audioFormat" id="afM4a" value="m4a"><label for="afM4a">M4A<em class="tag" data-i18n="tag.fast">fast</em></label>
+            <input type="radio" name="audioFormat" id="afOpus" value="opus"><label for="afOpus">Opus<em class="tag" data-i18n="tag.fast">fast</em></label>
           </div>
         </div>
 
         <div class="og" id="gBitrate">
-          <span class="lbl">MP3 quality</span>
-          <div class="pills" role="radiogroup" aria-label="MP3 quality">
+          <span class="lbl" data-i18n="opt.mp3q">MP3 quality</span>
+          <div class="pills" role="radiogroup" aria-label="MP3 quality" data-i18n-attr="aria-label:opt.mp3q">
             <input type="radio" name="mp3Bitrate" id="br128" value="128"><label for="br128">128</label>
             <input type="radio" name="mp3Bitrate" id="br192" value="192"><label for="br192">192</label>
             <input type="radio" name="mp3Bitrate" id="br256" value="256"><label for="br256">256</label>
@@ -91,9 +92,9 @@
         </div>
 
         <div class="og" id="gHeight" hidden>
-          <span class="lbl">Video quality</span>
-          <div class="pills" role="radiogroup" aria-label="Video quality">
-            <input type="radio" name="videoHeight" id="vhBest" value="best"><label for="vhBest">Best</label>
+          <span class="lbl" data-i18n="opt.videoq">Video quality</span>
+          <div class="pills" role="radiogroup" aria-label="Video quality" data-i18n-attr="aria-label:opt.videoq">
+            <input type="radio" name="videoHeight" id="vhBest" value="best"><label for="vhBest" data-i18n="quality.best">Best</label>
             <input type="radio" name="videoHeight" id="vh2160" value="2160"><label for="vh2160">4K</label>
             <input type="radio" name="videoHeight" id="vh1440" value="1440"><label for="vh1440">1440p</label>
             <input type="radio" name="videoHeight" id="vh1080" value="1080"><label for="vh1080">1080p</label>
@@ -105,19 +106,21 @@
       </div>
 
       <div class="toggles">
-        <label class="sw"><input type="checkbox" id="embed"><span class="knob"></span><span>Cover art and metadata</span></label>
-        <label class="sw"><input type="checkbox" id="singleOnly"><span class="knob"></span><span>Video+playlist links: only the video</span></label>
-        <label class="sw"><input type="checkbox" id="force"><span class="knob"></span><span>Download again even if already present</span></label>
+        <label class="sw"><input type="checkbox" id="embed"><span class="knob"></span><span data-i18n="toggle.embed">Cover art and metadata</span></label>
+        <label class="sw"><input type="checkbox" id="singleOnly"><span class="knob"></span><span data-i18n="toggle.single">Video+playlist links: only the video</span></label>
+        <label class="sw"><input type="checkbox" id="force"><span class="knob"></span><span data-i18n="toggle.force">Download again even if already present</span></label>
+        <label class="sw"><input type="checkbox" id="subscribe"><span class="knob"></span><span data-i18n="toggle.subscribe">Keep playlists and channels up to date</span></label>
+        <select id="subHours" class="mini-select" hidden></select>
       </div>
 
       <div class="go">
         <div class="dest">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
           <span class="dest-path" id="destDir">...</span>
-          <button class="link" id="btnChangeDir" type="button">Change</button>
+          <button class="link" id="btnChangeDir" type="button" data-i18n="change">Change</button>
         </div>
         <button class="btn primary" id="btnGo" type="submit">
-          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14"/></svg>Download
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14"/></svg><span data-i18n="download">Download</span>
         </button>
       </div>
       <p class="hint" id="fmtHint"></p>
@@ -127,57 +130,63 @@
 
   <section aria-labelledby="jobsTitle">
     <div class="sec-h">
-      <h2 id="jobsTitle">Downloads</h2>
+      <h2 id="jobsTitle" data-i18n="downloads">Downloads</h2>
       <span class="muted" id="jobsCount"></span>
-      <button class="btn sm ghost" id="btnClearDone" type="button" hidden>Clear completed</button>
+      <button class="btn sm ghost" id="btnClearDone" type="button" hidden data-i18n="clearDone">Clear completed</button>
     </div>
     <div id="jobs"></div>
     <div class="empty" id="empty">
       <svg viewBox="0 0 120 90" aria-hidden="true"><rect x="12" y="14" width="96" height="62" rx="12" fill="none" stroke="currentColor" stroke-width="3" opacity=".35"/><path d="M60 30v22m0 0-9-9m9 9 9-9" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M38 64h44" stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity=".5"/></svg>
-      <b>No downloads yet</b>
-      <span>Paste a link above and press <em>Download</em>. Even the biggest playlists start right away, while the list is still being read.</span>
+      <b data-i18n="empty.title">No downloads yet</b>
+      <span data-i18n-html="empty.text">Paste a link above and press <em>Download</em>. Even the biggest playlists start right away, while the list is still being read.</span>
     </div>
   </section>
-  <footer class="foot">YT Grabber · files are saved on the computer that runs the program · only download content you have the right to save</footer>
+  <section class="subs" id="subsSec" aria-labelledby="subsTitle" hidden>
+    <div class="sec-h"><h2 id="subsTitle" data-i18n="subs.title">Subscriptions</h2></div>
+    <p class="hint" data-i18n="subs.lead">Playlists and channels that are checked automatically.</p>
+    <div id="subs"></div>
+  </section>
+  <footer class="foot" data-i18n="footer">YT Grabber · files are saved on the computer that runs the program · only download content you have the right to save</footer>
 </main>
 
 <div class="overlay" id="settingsOv" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="modal-h"><h2 id="setTitle">Settings</h2><button class="icon-btn" id="setClose" type="button" aria-label="Close"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="modal-h"><h2 id="setTitle" data-i18n="settings">Settings</h2><button class="icon-btn" id="setClose" type="button" aria-label="Close" data-i18n-attr="aria-label:close"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
     <div class="modal-b">
       <div class="grp">
-        <label class="lbl" for="setDir">Destination folder</label>
-        <div class="row-in"><input type="text" id="setDir" spellcheck="false"><button class="btn" id="setBrowse" type="button">Browse…</button></div>
-        <p class="hint">Each playlist gets its own subfolder, with the files numbered in order (<code>001 - Title.mp3</code>).</p>
+        <label class="lbl" for="setDir" data-i18n="set.dir">Destination folder</label>
+        <div class="row-in"><input type="text" id="setDir" spellcheck="false"><button class="btn" id="setBrowse" type="button" data-i18n="browse">Browse…</button></div>
+        <p class="hint" data-i18n-html="set.dirHint">Each playlist gets its own subfolder, with the files numbered in order (<code>001 - Title.mp3</code>).</p>
       </div>
       <div class="grp">
-        <label class="lbl" for="setCookiesBrowser">Cookies (age-restricted videos, your private videos, anti-bot)</label>
+        <label class="lbl" for="setCookiesBrowser" data-i18n="set.cookies">Cookies (age-restricted videos, your private videos, anti-bot)</label>
         <select id="setCookiesBrowser"><option value="">None</option></select>
-        <p class="hint">Use the cookies of a browser where you are already signed in to YouTube. Firefox always works; Chrome/Edge sometimes block reading while they are open: in that case upload a cookies.txt file.</p>
+        <p class="hint" data-i18n="set.cookiesHint">Use the cookies of a browser where you are already signed in to YouTube. Firefox always works; Chrome/Edge sometimes block reading while they are open: in that case upload a cookies.txt file.</p>
         <div class="row-in">
           <input type="file" id="setCookiesFile" accept=".txt,text/plain">
-          <button class="btn" id="setCookiesClear" type="button">Remove cookies.txt</button>
+          <button class="btn" id="setCookiesClear" type="button" data-i18n="set.cookiesRemove">Remove cookies.txt</button>
         </div>
         <p class="hint" id="cookiesState"></p>
       </div>
       <div class="grp">
-        <span class="lbl">Download engine</span>
+        <span class="lbl" data-i18n="set.engine">Download engine</span>
         <p class="hint" id="verInfo"></p>
-        <button class="btn" id="btnUpdate" type="button">Update yt-dlp and restart</button>
-        <p class="hint">YouTube changes often: if many errors suddenly appear, update. Downloads in progress are interrupted and you can resume them.</p>
+        <button class="btn" id="btnUpdate" type="button" data-i18n="set.update">Update yt-dlp and restart</button>
+        <p class="hint" data-i18n="set.updateHint">YouTube changes often: if many errors suddenly appear, update. Downloads in progress are interrupted and you can resume them.</p>
       </div>
       <div class="grp" id="grpAndroidHint">
-        <span class="lbl">On an Android phone</span>
-        <p class="hint">There is an Android app (APK files, folder <code>APK</code>): it runs directly on the phone, without the computer. Alternatively, with Termux: instructions in the <code>termux</code> folder.</p>
+        <span class="lbl" data-i18n="set.android">On an Android phone</span>
+        <p class="hint" data-i18n-html="set.androidHint">There is an Android app (APK files, folder <code>APK</code>): it runs directly on the phone, without the computer. Alternatively, with Termux: instructions in the <code>termux</code> folder.</p>
       </div>
       <p class="msg" id="setMsg" role="alert" hidden></p>
     </div>
-    <div class="modal-f"><button class="btn" id="setCancel" type="button">Cancel</button><button class="btn primary sm-primary" id="setSave" type="button">Save</button></div>
+    <div class="modal-f"><button class="btn" id="setCancel" type="button" data-i18n="cancel">Cancel</button><button class="btn primary sm-primary" id="setSave" type="button" data-i18n="save">Save</button></div>
   </div>
 </div>
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <noscript><p style="padding:2rem;text-align:center">YT Grabber needs JavaScript to work.</p></noscript>
+<script src="lang/en.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

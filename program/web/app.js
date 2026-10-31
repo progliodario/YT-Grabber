@@ -2,13 +2,107 @@
 (function () {
   'use strict';
 
+  // ------------------------------------------------------------------ language
+  // Texts live in lang/<code>.js (lang/en.js is loaded with the page, the others on demand).
+  var LANGS = [['en', 'English'], ['it', 'Italiano'], ['es', 'Español'], ['fr', 'Français'], ['de', 'Deutsch'],
+    ['pt', 'Português'], ['nl', 'Nederlands'], ['pl', 'Polski'], ['ru', 'Русский'], ['tr', 'Türkçe'],
+    ['ar', 'العربية'], ['hi', 'हिन्दी'], ['id', 'Bahasa Indonesia'], ['zh', '中文（简体）'], ['ja', '日本語'], ['ko', '한국어']];
+  var LANG = 'en';
+  function hasLang(code) { var i; for (i = 0; i < LANGS.length; i++) { if (LANGS[i][0] === code) { return true; } } return false; }
+  function pluralForm(n) {
+    try { return new Intl.PluralRules(LANG).select(n); } catch (e) { return n === 1 ? 'one' : 'other'; }
+  }
+  // tr('key', { name: value }): the text of the current language (English when a key is missing)
+  function tr(key, vars) {
+    var v = I18N[LANG] && I18N[LANG][key];
+    if (v === undefined) { v = I18N.en[key]; }
+    if (v === undefined) { return key; }
+    if (typeof v === 'object') {
+      var f = pluralForm(vars && vars.n != null ? vars.n : 1);
+      v = v[f] !== undefined ? v[f] : v.other;
+    }
+    return vars ? String(v).replace(/\{(\w+)\}/g, function (m, k) { return vars[k] === undefined ? m : vars[k]; }) : String(v);
+  }
+  function detectLang() {
+    var saved = null, list = [], i, l;
+    try { saved = localStorage.getItem('ytg-lang'); } catch (e) { saved = null; }
+    if (saved && hasLang(saved)) { return saved; }
+    list = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language || 'en'];
+    for (i = 0; i < list.length; i++) {
+      l = String(list[i]).toLowerCase().split('-')[0];
+      if (l === 'in') { l = 'id'; }
+      if (hasLang(l)) { return l; }
+    }
+    return 'en';
+  }
+  function loadLang(code, done) {
+    if (I18N[code]) { done(); return; }
+    var s = document.createElement('script');
+    s.src = 'lang/' + code + '.js';
+    s.onload = done; s.onerror = done;
+    document.head.appendChild(s);
+  }
+  function applyStatic() {
+    var els, i, j, parts, p;
+    els = document.querySelectorAll('[data-i18n]');
+    for (i = 0; i < els.length; i++) { els[i].textContent = tr(els[i].getAttribute('data-i18n')); }
+    els = document.querySelectorAll('[data-i18n-html]');
+    for (i = 0; i < els.length; i++) { els[i].innerHTML = tr(els[i].getAttribute('data-i18n-html')); }
+    els = document.querySelectorAll('[data-i18n-attr]');
+    for (i = 0; i < els.length; i++) {
+      parts = els[i].getAttribute('data-i18n-attr').split(',');
+      for (j = 0; j < parts.length; j++) { p = parts[j].split(':'); els[i].setAttribute(p[0], tr(p[1])); }
+    }
+    var sh = $('#subHours'), cur = sh.value || '24', html = '';
+    for (i = 0; i < SUB_HOURS.length; i++) { html += '<option value="' + SUB_HOURS[i] + '">' + esc(tr('every.' + SUB_HOURS[i])) + '</option>'; }
+    sh.innerHTML = html; sh.value = cur;
+  }
+  function setLanguage(code, remember) {
+    if (!hasLang(code)) { code = 'en'; }
+    loadLang(code, function () {
+      if (!I18N[code]) { code = 'en'; }
+      LANG = code;
+      document.documentElement.lang = code;
+      document.documentElement.dir = code === 'ar' ? 'rtl' : 'ltr';
+      if (remember) { try { localStorage.setItem('ytg-lang', code); } catch (e) { /* ignore */ } }
+      $('#langSel').value = code;
+      applyStatic();
+      applyTheme(getTheme());
+      form.reflect(); updateDetect();
+      if (S.lastState) {
+        applyState(S.lastState);
+        if (S.detail) {
+          S.detail.panelHtml = ''; S.detail.tabsHtml = '';
+          var inp = S.detail.box.parentNode.querySelector('.search');
+          if (inp) { inp.placeholder = tr('detail.search'); inp.setAttribute('aria-label', tr('detail.searchLabel')); }
+          renderDetail();
+        }
+      }
+    });
+  }
+  var STAGE_KEYS = { 'Starting': 'stage.starting', 'Analyzing': 'stage.analyzing', 'Download': 'stage.download', 'Converting': 'stage.converting',
+    'Converting audio': 'stage.convaudio', 'Merging video+audio': 'stage.merging', 'Cover art': 'stage.cover', 'Metadata': 'stage.metadata',
+    'Saving': 'stage.saving', 'Converting video': 'stage.convvideo', 'Fixing file': 'stage.fixing', 'Completed': 'stage.completed',
+    'Already present': 'stage.present', 'Error': 'stage.error', 'Cancelled': 'stage.cancelled' };
+  function stageText(s) {
+    s = s || '';
+    if (STAGE_KEYS[s]) { return tr(STAGE_KEYS[s]); }
+    var m = /^Download \((\d+)\/(\d+)\)$/.exec(s);
+    if (m) { return tr('stage.downloadN', { a: m[1], b: m[2] }); }
+    m = /^Retry (\d+)\/(\d+)$/.exec(s);
+    if (m) { return tr('stage.retry', { a: m[1], b: m[2] }); }
+    return s;
+  }
+  var SUB_HOURS = [1, 3, 6, 12, 24, 72, 168];
+
   var ROW = 64;   // row height: 92 on narrow screens (see CSS), updated in calcRow()
   function calcRow() { ROW = window.innerWidth <= 760 ? 92 : 64; }
-  var TABS = [['all', 'All'], ['a', 'Downloading'], ['p', 'Converting'], ['q', 'Queued'], ['d', 'Completed'], ['e', 'Errors'], ['c', 'Cancelled']];
+  var TABS = ['all', 'a', 'p', 'q', 'd', 'e', 'c'];
 
   var S = {
     settings: {}, jobs: [], cards: {}, openId: null, detail: null, errmeta: {}, local: false, tools: {},
-    concurrency: 10, browsers: [], hasCookies: false, ytdlp: '', formInit: false, online: true, serverOffset: 0
+    concurrency: 10, browsers: [], hasCookies: false, ytdlp: '', formInit: false, online: true, serverOffset: 0,
+    lastState: null, subs: [], subIntervals: []
   };
 
   // ------------------------------------------------------------------ utilities
@@ -39,7 +133,7 @@
   function fmtDate(ts) {
     var d = new Date(ts * 1000), now = new Date();
     var hm = padNum(d.getHours(), 2) + ':' + padNum(d.getMinutes(), 2);
-    if (d.toDateString() === now.toDateString()) { return 'today ' + hm; }
+    if (d.toDateString() === now.toDateString()) { return tr('date.today', { t: hm }); }
     return d.getDate() + '/' + (d.getMonth() + 1) + ' ' + hm;
   }
   function setH(el, html) { if (el._h !== html) { el._h = html; el.innerHTML = html; } }
@@ -54,10 +148,10 @@
         var d = null;
         try { d = JSON.parse(x.responseText); } catch (e) { d = null; }
         if (x.status >= 200 && x.status < 300) { resolve(d); }
-        else { reject(new Error((d && d.error) || ('Error ' + x.status))); }
+        else { reject(new Error((d && d.error) || tr('err.http', { code: x.status }))); }
       };
-      x.onerror = function () { reject(new Error('Server not reachable')); };
-      x.ontimeout = function () { reject(new Error('The server is not responding')); };
+      x.onerror = function () { reject(new Error(tr('err.unreachable'))); };
+      x.ontimeout = function () { reject(new Error(tr('err.noResponse'))); };
       x.send(body !== undefined ? JSON.stringify(body) : null);
     });
   }
@@ -76,10 +170,10 @@
       var ok = false;
       try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
       document.body.removeChild(ta);
-      toast(ok ? 'List copied to the clipboard' : 'Copy failed', !ok);
+      toast(ok ? tr('toast.copied') : tr('toast.copyFail'), !ok);
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { toast('List copied to the clipboard'); }, fallback);
+      navigator.clipboard.writeText(text).then(function () { toast(tr('toast.copied')); }, fallback);
     } else { fallback(); }
   }
   function findAct(el, stop) {
@@ -89,8 +183,14 @@
     }
     return null;
   }
-  function errLabel(k) { return (S.errmeta[k] && S.errmeta[k][0]) || 'Error'; }
-  function errHint(k) { return (S.errmeta[k] && S.errmeta[k][1]) || ''; }
+  function errLabel(k) {
+    var v = tr('ek.' + k);
+    return v !== 'ek.' + k ? v : ((S.errmeta[k] && S.errmeta[k][0]) || tr('err.default'));
+  }
+  function errHint(k) {
+    var v = tr('eh.' + k);
+    return v !== 'eh.' + k ? v : ((S.errmeta[k] && S.errmeta[k][1]) || '');
+  }
 
   var IC = {
     pause: '<svg class="ic" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>',
@@ -114,13 +214,13 @@
   }
 
   // ------------------------------------------------------------------ theme
-  var THEMES = ['auto', 'light', 'dark'], THEME_LABEL = { auto: 'automatic', light: 'light', dark: 'dark' };
+  var THEMES = ['auto', 'light', 'dark'];
   function getTheme() { var t = 'auto'; try { t = localStorage.getItem('ytg-theme') || 'auto'; } catch (e) { t = 'auto'; } return THEMES.indexOf(t) < 0 ? 'auto' : t; }
   function applyTheme(t) {
     if (t === 'auto') { document.documentElement.removeAttribute('data-theme'); } else { document.documentElement.setAttribute('data-theme', t); }
     var b = $('#btnTheme');
-    b.innerHTML = IC[t]; b.title = 'Theme: ' + THEME_LABEL[t] + ' (click to change)';
-    b.setAttribute('aria-label', 'Theme: ' + THEME_LABEL[t]);
+    b.innerHTML = IC[t]; b.title = tr('theme.title', { t: tr('theme.' + t) });
+    b.setAttribute('aria-label', tr('theme.label', { t: tr('theme.' + t) }));
   }
   function cycleTheme() {
     var t = THEMES[(THEMES.indexOf(getTheme()) + 1) % THEMES.length];
@@ -154,10 +254,10 @@
       seen[t] = 1; c = classifyLocal(t, so); n[c]++;
     }
     var h = '';
-    if (n.playlist) { h += '<span class="dchip ok">' + n.playlist + (n.playlist === 1 ? ' playlist / album / channel' : ' playlists / albums / channels') + '</span>'; }
-    if (n.video) { h += '<span class="dchip ok">' + n.video + (n.video === 1 ? ' video' : ' videos') + '</span>'; }
-    if (n.other) { h += '<span class="dchip">' + n.other + (n.other === 1 ? ' other link' : ' other links') + '</span>'; }
-    if (n.bad) { h += '<span class="dchip bad">' + n.bad + (n.bad === 1 ? ' not recognized' : ' not recognized') + '</span>'; }
+    if (n.playlist) { h += '<span class="dchip ok">' + esc(tr('det.playlist', { n: n.playlist })) + '</span>'; }
+    if (n.video) { h += '<span class="dchip ok">' + esc(tr('det.video', { n: n.video })) + '</span>'; }
+    if (n.other) { h += '<span class="dchip">' + esc(tr('det.other', { n: n.other })) + '</span>'; }
+    if (n.bad) { h += '<span class="dchip bad">' + esc(tr('det.bad', { n: n.bad })) + '</span>'; }
     box.hidden = !h; box.innerHTML = h;
     $('#btnClear').hidden = !ta.value;
   }
@@ -183,10 +283,10 @@
       this.el('gHeight').hidden = !video;
       var af = this.radio('audioFormat');
       this.el('fmtHint').textContent = video
-        ? 'The video is merged with ffmpeg into MP4 (H.264 + AAC when available). For huge playlists pick 720p or 1080p: less space and less time.'
+        ? tr('hint.video')
         : (af === 'mp3'
-          ? 'MP3 is re-encoded (slower). For playlists with thousands of songs M4A or Opus are 2-3 times faster, with no quality loss.'
-          : 'No re-encoding: the fastest way to download very large playlists.');
+          ? tr('hint.mp3')
+          : tr('hint.fast'));
     },
     fill: function (s) {
       this.setRadio('mode', s.mode); this.setRadio('audioFormat', s.audio_format);
@@ -213,7 +313,7 @@
     submit: function (ev) {
       ev.preventDefault();
       var self = form, urls = self.el('urls').value.trim();
-      if (!urls) { self.msg('Paste at least one YouTube or YouTube Music link.'); self.el('urls').focus(); return; }
+      if (!urls) { self.msg(tr('form.pasteOne')); self.el('urls').focus(); return; }
       self.msg('');
       var opts = self.collect();
       var btnGo = self.el('btnGo'); btnGo.disabled = true;
@@ -221,14 +321,14 @@
       for (k in S.settings) { if (Object.prototype.hasOwnProperty.call(S.settings, k)) { payload[k] = S.settings[k]; } }
       for (k in opts) { if (Object.prototype.hasOwnProperty.call(opts, k)) { payload[k] = opts[k]; } }
       api('POST', '/api/settings', payload).then(function (r) { S.settings = r.settings; }, function () { /* non-blocking */ })
-        .then(function () { return api('POST', '/api/jobs', { urls: urls, opts: opts }); })
+        .then(function () { return api('POST', '/api/jobs', { urls: urls, opts: opts, subscribe: self.el('subscribe').checked ? parseInt(self.el('subHours').value, 10) : undefined }); })
         .then(function (r) {
           self.el('urls').value = ''; updateDetect();
           var n = r.created.length;
-          toast(n === 1 ? 'Download added' : n + ' downloads added');
+          toast(tr('toast.added', { n: n }));
           var notes = [];
-          if (r.rejected && r.rejected.length) { notes.push('Links ignored because they were not recognized: ' + r.rejected.slice(0, 3).join(', ')); }
-          if (r.duplicates && r.duplicates.length) { notes.push('Already in progress (not added again): ' + r.duplicates.length); }
+          if (r.rejected && r.rejected.length) { notes.push(tr('form.ignored', { links: r.rejected.slice(0, 3).join(', ') })); }
+          if (r.duplicates && r.duplicates.length) { notes.push(tr('form.dups', { n: r.duplicates.length })); }
           if (notes.length) { self.msg(notes.join(' · ')); }
           pollState();
           if (n === 1) { setTimeout(function () { openJob(r.created[0]); }, 500); }
@@ -257,6 +357,7 @@
   }
 
   function applyState(st) {
+    S.lastState = st; S.subs = st.subs || []; S.subIntervals = st.sub_intervals || [];
     S.settings = st.settings; S.errmeta = st.errmeta || {}; S.local = !!st.local; S.tools = st.tools || {}; S.android = !!st.android;
     $('#grpAndroidHint').hidden = S.android;
     S.concurrency = st.concurrency; S.browsers = st.browsers || []; S.hasCookies = !!st.has_cookies; S.ytdlp = st.ytdlp;
@@ -264,13 +365,13 @@
     if (!S.formInit) { S.formInit = true; form.fill(st.settings); updateDetect(); }
     else { $('#destDir').textContent = st.settings.download_dir; $('#destDir').title = st.settings.download_dir; }
     var warn = [];
-    if (!S.tools.ffmpeg) { warn.push('ffmpeg not found: conversions will not work. Run Start.bat again to reinstall it.'); }
+    if (!S.tools.ffmpeg) { warn.push(tr('warn.ffmpeg')); }
     $('#toolsWarn').hidden = !warn.length; $('#toolsWarn').textContent = warn.join(' ');
 
     var thr = st.throttle || {}, tb = $('#throttle');
     if (thr.until && thr.until > st.now) {
       tb.hidden = false;
-      tb.textContent = 'YouTube is limiting requests (' + (thr.reason || 'limit') + '). Automatic safety pause: ' + Math.ceil(thr.until - st.now) + ' s left, then downloads resume by themselves.';
+      tb.textContent = tr('throttle', { reason: thr.reason || tr('throttle.limit'), s: Math.ceil(thr.until - st.now) });
     } else { tb.hidden = true; }
 
     S.jobs = st.jobs;
@@ -285,9 +386,10 @@
     }
     renderMeter(a, p, speed);
     renderJobs();
+    renderSubs();
     var pct = tot ? Math.floor(done / tot * 100) : 0;
     document.title = running && tot ? '(' + pct + '%) YT Grabber' : 'YT Grabber';
-    $('#jobsCount').textContent = S.jobs.length ? S.jobs.length + (S.jobs.length === 1 ? ' item' : ' items') : '';
+    $('#jobsCount').textContent = S.jobs.length ? tr('items.count', { n: S.jobs.length }) : '';
     $('#btnClearDone').hidden = finishedJobs === 0;
     $('#empty').hidden = S.jobs.length > 0;
   }
@@ -303,33 +405,33 @@
     var sp = $('#speedPill');
     if (speed > 0 || p > 0) {
       sp.hidden = false;
-      sp.textContent = (speed > 0 ? fmtBytes(speed) + '/s' : '') + (speed > 0 && p > 0 ? ' · ' : '') + (p > 0 ? p + ' converting' : '');
+      sp.textContent = (speed > 0 ? fmtBytes(speed) + '/s' : '') + (speed > 0 && p > 0 ? ' · ' : '') + (p > 0 ? tr('speed.converting', { n: p }) : '');
     } else { sp.hidden = true; }
   }
 
   // ------------------------------------------------------------------ job cards
   function badge(j) {
-    if (j.status === 'error') { return '<span class="badge bad">Error</span>'; }
-    if (j.status === 'cancelled') { return '<span class="badge">Cancelled</span>'; }
+    if (j.status === 'error') { return '<span class="badge bad">' + esc(tr('badge.error')) + '</span>'; }
+    if (j.status === 'cancelled') { return '<span class="badge">' + esc(tr('badge.cancelled')) + '</span>'; }
     if (j.status === 'done') {
-      return j.counts.e ? '<span class="badge bad">Completed with errors</span>' : '<span class="badge done">Completed</span>';
+      return j.counts.e ? '<span class="badge bad">' + esc(tr('badge.completedErr')) + '</span>' : '<span class="badge done">' + esc(tr('badge.completed')) + '</span>';
     }
-    if (j.paused) { return '<span class="badge pause">' + (j.interrupted ? 'Interrupted: press Resume' : 'Paused') + '</span>'; }
-    if (j.status === 'enumerating') { return '<span class="badge run">Reading list + downloading</span>'; }
-    return '<span class="badge run">In progress</span>';
+    if (j.paused) { return '<span class="badge pause">' + esc(j.interrupted ? tr('badge.interrupted') : tr('badge.paused')) + '</span>'; }
+    if (j.status === 'enumerating') { return '<span class="badge run">' + esc(tr('badge.reading')) + '</span>'; }
+    return '<span class="badge run">' + esc(tr('badge.running')) + '</span>';
   }
 
   function errNums(j) {
     var ids = j.err_idx || [], w = j.pad || Math.max(2, String(j.total).length), out = [];
     for (var i = 0; i < ids.length && i < 60; i++) { out.push('#' + padNum(ids[i], w)); }
     var rest = j.counts.e - Math.min(ids.length, 60);
-    return '<b>' + out.join(' ') + '</b>' + (rest > 0 ? ' and ' + rest + ' more' : '');
+    return '<b>' + out.join(' ') + '</b>' + (rest > 0 ? esc(tr('nums.more', { n: rest })) : '');
   }
 
   function ringHtml(j) {
     var T = j.total || 0, pct = T ? Math.floor(j.processed / T * 100) : 0, r = 25, c = 2 * Math.PI * r;
     var cls = j.status === 'done' ? (j.counts.e ? 'bad' : 'ok') : (j.status === 'running' || j.status === 'enumerating') && !j.paused ? 'run' : '';
-    return '<svg class="ring" viewBox="0 0 62 62" role="img" aria-label="' + pct + '% complete"><circle class="rt" cx="31" cy="31" r="' + r + '"/>' +
+    return '<svg class="ring" viewBox="0 0 62 62" role="img" aria-label="' + esc(tr('ring.label', { pct: pct })) + '"><circle class="rt" cx="31" cy="31" r="' + r + '"/>' +
       '<circle class="rv ' + cls + '" cx="31" cy="31" r="' + r + '" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + (c * (1 - pct / 100)).toFixed(1) + '" transform="rotate(-90 31 31)"/>' +
       '<text x="31" y="36">' + pct + '%</text></svg>';
   }
@@ -338,17 +440,17 @@
 
   function statsHtml(j) {
     var c = j.counts;
-    return tile('ok', c.d, 'Completed') + (c.s ? tile('ok', c.s, 'Already present') : '') + tile('info', c.a, 'Downloading') + tile('warn', c.p, 'Converting') +
-      tile('', c.q, 'Queued') + (c.c ? tile('', c.c, 'Cancelled') : '') +
-      (c.e ? '<button type="button" class="stat err" data-act="goerr" data-id="' + j.id + '" title="Show which ones"><b>' + c.e + '</b><span>Errors: show which</span></button>' : tile('err', 0, 'Errors'));
+    return tile('ok', c.d, esc(tr('stat.completed'))) + (c.s ? tile('ok', c.s, esc(tr('stat.present'))) : '') + tile('info', c.a, esc(tr('stat.downloading'))) + tile('warn', c.p, esc(tr('stat.converting'))) +
+      tile('', c.q, esc(tr('stat.queued'))) + (c.c ? tile('', c.c, esc(tr('stat.cancelled'))) : '') +
+      (c.e ? '<button type="button" class="stat err" data-act="goerr" data-id="' + j.id + '" title="' + esc(tr('stat.errorsTitle')) + '"><b>' + c.e + '</b><span>' + esc(tr('stat.errorsShow')) + '</span></button>' : tile('err', 0, esc(tr('stat.errors'))));
   }
 
   function liveHtml(j) {
     if (!((j.status === 'running' || j.status === 'enumerating') && !j.paused)) { return ''; }
     var h = '';
-    if (j.speed > 0) { h += '<span>Speed <b>' + fmtBytes(j.speed) + '/s</b></span>'; }
-    if (j.eta) { h += '<span>About <b>' + fmtEta(j.eta) + '</b> left</span>'; }
-    if (j.status === 'enumerating' && j.declared) { h += '<span>Read <b>' + j.total + '</b> of ' + j.declared + ' items</span>'; }
+    if (j.speed > 0) { h += '<span>' + esc(tr('live.speed')) + ' <b>' + fmtBytes(j.speed) + '/s</b></span>'; }
+    if (j.eta) { h += '<span>' + tr('live.eta', { t: '<b>' + fmtEta(j.eta) + '</b>' }) + '</span>'; }
+    if (j.status === 'enumerating' && j.declared) { h += '<span>' + tr('live.read', { n: '<b>' + j.total + '</b>', d: j.declared }) + '</span>'; }
     return h;
   }
 
@@ -359,10 +461,10 @@
     if (j.status === 'done') {
       var okN = c.d + c.s;
       h += '<div class="alert ' + (c.e ? '' : 'ok') + '">' + (c.e
-        ? 'Finished: ' + okN + ' downloaded, <strong>' + c.e + ' with errors</strong>. Numbers: ' + errNums(j) + '. Open the list to see the reason for each one.'
-        : 'Finished: all ' + okN + ' items were downloaded.') + '</div>';
+        ? tr('alert.finishedErr', { ok: okN, e: c.e, nums: errNums(j) })
+        : tr('alert.finishedOk', { n: okN })) + '</div>';
     } else if (c.e && (j.err_idx || []).length) {
-      h += '<div class="alert">Errors so far at numbers: ' + errNums(j) + '</div>';
+      h += '<div class="alert">' + tr('alert.errorsSoFar', { nums: errNums(j) }) + '</div>';
     }
     return h;
   }
@@ -370,16 +472,16 @@
   function actionsHtml(j) {
     var c = j.counts, id = j.id, h = '';
     var live = j.status === 'running' || j.status === 'enumerating';
-    if (live && j.paused) { h += btn('resume', id, 'Resume', IC.play, 'solid'); }
-    if (live && !j.paused) { h += btn('pause', id, 'Pause', IC.pause); }
-    if (j.status === 'cancelled' || j.status === 'error') { h += btn('resume', id, 'Resume', IC.play, 'solid'); }
-    if (c.e && !live) { h += btn('retry_failed', id, 'Retry the errors (' + c.e + ')', IC.retry, 'solid'); }
-    h += btn('toggle', id, S.openId === id ? 'Close list' : 'Open list', IC.list);
-    if (live) { h += btn('cancel', id, 'Cancel', IC.stop, 'danger'); }
-    if (S.local && !S.android && j.dir) { h += btn('open_folder', id, 'Folder', IC.folder); }
-    if (c.d + c.s > 0 && j.kind !== 'single') { h += '<a class="btn sm" href="/api/jobs/' + id + '/playlist.m3u8" download>' + IC.m3u + 'Playlist M3U</a>'; }
-    if (c.d + c.s > 0 && !live) { h += btn('redownload', id, 'Download all again', IC.retry); }
-    h += btn('remove', id, 'Remove', IC.trash, 'ghost');
+    if (live && j.paused) { h += btn('resume', id, esc(tr('act.resume')), IC.play, 'solid'); }
+    if (live && !j.paused) { h += btn('pause', id, esc(tr('act.pause')), IC.pause); }
+    if (j.status === 'cancelled' || j.status === 'error') { h += btn('resume', id, esc(tr('act.resume')), IC.play, 'solid'); }
+    if (c.e && !live) { h += btn('retry_failed', id, esc(tr('act.retryErrors', { n: c.e })), IC.retry, 'solid'); }
+    h += btn('toggle', id, esc(S.openId === id ? tr('act.closeList') : tr('act.openList')), IC.list);
+    if (live) { h += btn('cancel', id, esc(tr('act.cancel')), IC.stop, 'danger'); }
+    if (S.local && !S.android && j.dir) { h += btn('open_folder', id, esc(tr('act.folder')), IC.folder); }
+    if (c.d + c.s > 0 && j.kind !== 'single') { h += '<a class="btn sm" href="/api/jobs/' + id + '/playlist.m3u8" download>' + IC.m3u + esc(tr('act.m3u')) + '</a>'; }
+    if (c.d + c.s > 0 && !live) { h += btn('redownload', id, esc(tr('act.redownload')), IC.retry); }
+    h += btn('remove', id, esc(tr('act.remove')), IC.trash, 'ghost');
     return h;
   }
 
@@ -408,7 +510,7 @@
     var c = j.counts, T = j.total || 0;
     var w = function (n) { return T ? (n / T * 100).toFixed(2) : 0; };
     if (card.title._t !== j.title) { card.title._t = j.title; card.title.textContent = j.title; }
-    var sub = [j.kind === 'single' ? 'Single videos' : 'Playlist', T + (T === 1 ? ' item' : ' items')];
+    var sub = [j.kind === 'single' ? tr('job.single') : tr('job.playlist'), tr('items.count', { n: T })];
     setH(card.meta, badge(j) + '<span>' + esc(sub.join(' · ')) + '</span>' + (j.dir ? '<span class="path" title="' + esc(j.dir) + '">' + esc(j.dir) + '</span>' : '') + '<span>' + fmtDate(j.created) + '</span>');
     setH(card.ring, ringHtml(j));
     setH(card.bar, '<i class="g" style="width:' + w(c.d + c.s) + '%"></i><i class="a" style="width:' + w(c.p) + '%"></i><i class="b" style="width:' + w(c.a) + '%"></i><i class="r" style="width:' + w(c.e) + '%"></i>');
@@ -461,7 +563,7 @@
       el.hidden = false;
       el.innerHTML =
         '<div class="errpanel" hidden></div>' +
-        '<div class="tabs"><span class="tabbtns"></span><input class="search" type="search" placeholder="Search title or number" aria-label="Search the list"></div>' +
+        '<div class="tabs"><span class="tabbtns"></span><input class="search" type="search" placeholder="' + esc(tr('detail.search')) + '" aria-label="' + esc(tr('detail.searchLabel')) + '"></div>' +
         '<div class="vbox"><div class="vspacer"></div><div class="vempty" hidden></div></div>';
       S.detail = {
         id: id, items: [], seq: 0, tab: 'all', q: '', kind: '', view: [], summary: null, rowEls: {}, busy: false,
@@ -538,7 +640,7 @@
     }
     var ph = '';
     if (c.e) {
-      ph = '<h3>' + c.e + (c.e === 1 ? ' item not downloaded' : ' items not downloaded') + '</h3><div class="errgroups">';
+      ph = '<h3>' + esc(tr('err.notdl', { n: c.e })) + '</h3><div class="errgroups">';
       for (var k in byKind) {
         if (Object.prototype.hasOwnProperty.call(byKind, k)) {
           ph += '<button type="button" class="errgroup" data-act="errkind" data-kind="' + esc(k) + '" title="' + esc(errHint(k)) + '">' + esc(errLabel(k)) + ': ' + byKind[k] + '</button>';
@@ -548,21 +650,21 @@
       var nums = [];
       for (i = 0; i < errs.length && i < 400; i++) { nums.push('#' + padNum(errs[i].i, pad)); }
       ph += esc(nums.join(' ')) + (errs.length > 400 ? ' ...' : '') + '</div>' +
-        '<div class="jact">' + btn('retry_failed', d.id, 'Retry all errors', IC.retry, 'solid') +
-        btn('copyerrs', d.id, 'Copy list', IC.list) +
-        '<a class="btn sm" href="/api/jobs/' + d.id + '/errors.txt" download>' + IC.save + 'Download list (.txt)</a></div>';
+        '<div class="jact">' + btn('retry_failed', d.id, esc(tr('detail.retryAll')), IC.retry, 'solid') +
+        btn('copyerrs', d.id, esc(tr('detail.copy')), IC.list) +
+        '<a class="btn sm" href="/api/jobs/' + d.id + '/errors.txt" download>' + IC.save + esc(tr('detail.downloadList')) + '</a></div>';
     }
     if (ph !== d.panelHtml) { d.panelHtml = ph; d.panel.innerHTML = ph; }
     d.panel.hidden = !c.e;
 
-    var th = '', t, n;
+    var th = '', tk, n;
     for (i = 0; i < TABS.length; i++) {
-      t = TABS[i];
-      n = t[0] === 'all' ? s.total : t[0] === 'd' ? c.d + c.s : c[t[0]];
-      if (t[0] === 'c' && !n) { continue; }
-      th += '<button type="button" class="tab t-' + t[0] + (d.tab === t[0] ? ' on' : '') + '" data-act="tab" data-tab="' + t[0] + '">' + t[1] + '<b>' + n + '</b></button>';
+      tk = TABS[i];
+      n = tk === 'all' ? s.total : tk === 'd' ? c.d + c.s : c[tk];
+      if (tk === 'c' && !n) { continue; }
+      th += '<button type="button" class="tab t-' + tk + (d.tab === tk ? ' on' : '') + '" data-act="tab" data-tab="' + tk + '">' + esc(tr('tab.' + tk)) + '<b>' + n + '</b></button>';
     }
-    if (d.kind) { th += '<button type="button" class="tab on" data-act="clearkind">Filter: ' + esc(errLabel(d.kind)) + ' ✕</button>'; }
+    if (d.kind) { th += '<button type="button" class="tab on" data-act="clearkind">' + esc(tr('detail.filter', { k: errLabel(d.kind) })) + ' ✕</button>'; }
     if (th !== d.tabsHtml) { d.tabsHtml = th; d.tabsEl.innerHTML = th; }
     rebuildView(d);
     renderVList();
@@ -582,41 +684,41 @@
 
   function updateRow(r, it, pad, jid, top) {
     var k = r.k, link = it.v ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(it.v) : '';
-    var title = it.t || (it.v ? 'Video ' + it.v : 'Reading title...');
+    var title = it.t || (it.v ? tr('row.video', { id: it.v }) : tr('row.reading'));
     var sub = '', side = '', act = '', tip = '';
     switch (it.s) {
       case 'a':
-        sub = esc(it.st) + (it.eta != null && it.eta > 0 ? ' · ' + fmtEta(it.eta) + ' left' : '');
+        sub = esc(stageText(it.st)) + (it.eta != null && it.eta > 0 ? ' · ' + esc(tr('row.left', { t: fmtEta(it.eta) })) : '');
         side = '<div class="st info">' + Math.floor(it.p) + '%</div><div class="pbar"><i style="width:' + it.p + '%"></i></div>' +
           [it.sp ? fmtBytes(it.sp) + '/s' : '', it.sz ? fmtBytes(it.sz) : ''].filter(Boolean).join(' · ');
         break;
       case 'p':
-        sub = esc(it.st || 'Converting');
-        side = '<div class="st warn">Converting</div><div class="pbar cv"><i></i></div>';
+        sub = esc(it.st ? stageText(it.st) : tr('row.converting'));
+        side = '<div class="st warn">' + esc(tr('row.converting')) + '</div><div class="pbar cv"><i></i></div>';
         break;
       case 'q':
         if (it.rt > 0) {
-          sub = esc(it.st) + ' in ' + it.rt + ' s' + (it.ek ? ' · ' + esc(errLabel(it.ek)) : '');
-          side = '<span class="st warn">Retrying</span>'; tip = it.em || '';
-        } else { sub = it.a > 0 ? esc(it.st || 'Waiting for a new attempt') : 'Waiting'; side = 'Queued'; }
+          sub = esc(tr('row.retryIn', { st: stageText(it.st), s: it.rt })) + (it.ek ? ' · ' + esc(errLabel(it.ek)) : '');
+          side = '<span class="st warn">' + esc(tr('row.retrying')) + '</span>'; tip = it.em || '';
+        } else { sub = it.a > 0 ? esc(it.st ? stageText(it.st) : tr('row.waitNew')) : esc(tr('row.waiting')); side = esc(tr('row.queued')); }
         break;
       case 'd':
-        sub = esc(it.f || ''); side = '<div class="st ok">Completed</div>' + (it.sz ? fmtBytes(it.sz) : '');
+        sub = esc(it.f || ''); side = '<div class="st ok">' + esc(tr('row.completed')) + '</div>' + (it.sz ? fmtBytes(it.sz) : '');
         // on the phone the file is already in the Download folder: a "Save" button would make a useless copy
-        act = S.android ? '' : '<a class="btn sm" href="/api/jobs/' + jid + '/file/' + it.i + '" download title="Download this file from the server">' + IC.save + '</a>';
+        act = S.android ? '' : '<a class="btn sm" href="/api/jobs/' + jid + '/file/' + it.i + '" download title="' + esc(tr('row.saveTitle')) + '">' + IC.save + '</a>';
         break;
       case 's':
-        sub = esc(it.f || ''); side = '<div class="st ok">Already present</div>';
+        sub = esc(it.f || ''); side = '<div class="st ok">' + esc(tr('row.present')) + '</div>';
         break;
       case 'e':
         sub = '<b>' + esc(errLabel(it.ek)) + '</b> · ' + esc(trunc(it.em, 160));
-        side = '<div class="st bad">Error</div>' + (it.a > 1 ? it.a + ' attempts' : '');
+        side = '<div class="st bad">' + esc(tr('row.error')) + '</div>' + (it.a > 1 ? esc(tr('row.attempts', { n: it.a })) : '');
         tip = errLabel(it.ek) + '\n' + errHint(it.ek) + '\n\n' + (it.em || '');
-        act = '<button class="btn sm" data-act="retry_item" data-id="' + jid + '" data-idx="' + it.i + '" title="Retry">' + IC.retry + '</button>' +
-          (link ? '<a class="btn sm" href="' + link + '" target="_blank" rel="noopener noreferrer" title="Open on YouTube">' + IC.open + '</a>' : '');
+        act = '<button class="btn sm" data-act="retry_item" data-id="' + jid + '" data-idx="' + it.i + '" title="' + esc(tr('row.retryTitle')) + '">' + IC.retry + '</button>' +
+          (link ? '<a class="btn sm" href="' + link + '" target="_blank" rel="noopener noreferrer" title="' + esc(tr('row.openYT')) + '">' + IC.open + '</a>' : '');
         break;
       case 'c':
-        sub = 'Cancelled'; side = 'Cancelled';
+        sub = esc(tr('row.cancelled')); side = esc(tr('row.cancelled'));
         break;
     }
     if (k.top !== top) { k.top = top; r.el.style.top = top + 'px'; }
@@ -644,7 +746,7 @@
     var pad = s.pad || Math.max(2, String(s.total).length);
     d.spacer.style.height = (n * ROW) + 'px';
     d.empty.hidden = n > 0;
-    if (!n) { d.empty.textContent = d.items.length === 0 ? 'Reading the list...' : 'No items in this view.'; }
+    if (!n) { d.empty.textContent = d.items.length === 0 ? tr('list.reading') : tr('list.none'); }
     var st = d.box.scrollTop, h = d.box.clientHeight || 400;
     var first = Math.max(0, Math.floor(st / ROW) - 6), last = Math.min(n, Math.ceil((st + h) / ROW) + 6), need = {}, k, it, key, r;
     for (k = first; k < last; k++) {
@@ -677,7 +779,7 @@
     if (!ids.length) { return; }
     var chain = Promise.resolve();
     ids.forEach(function (id) { chain = chain.then(function () { return api('POST', '/api/jobs/' + id + '/action', { action: 'remove' }); }); });
-    chain.then(function () { toast('Removed from the list: ' + ids.length + ' (the files stay in the folder)'); pollState(); })
+    chain.then(function () { toast(tr('toast.removed', { n: ids.length })); pollState(); })
       .catch(function (e) { toast(e.message, true); });
   }
 
@@ -690,16 +792,19 @@
       case 'goerr': openJob(id, 'e'); break;
       case 'pause': jobAction(id, 'pause'); break;
       case 'resume': jobAction(id, 'resume'); break;
-      case 'cancel': if (window.confirm('Cancel this download? Files already downloaded stay in the folder.')) { jobAction(id, 'cancel'); } break;
-      case 'retry_failed': jobAction(id, 'retry_failed', null, 'Retrying the items with errors'); break;
-      case 'retry_item': jobAction(id, 'retry_failed', [parseInt(el.getAttribute('data-idx'), 10)], 'Retrying the item'); break;
-      case 'redownload': if (window.confirm('Download ALL the items of this list again, even those already present?')) { jobAction(id, 'redownload', null, 'Downloading everything again'); } break;
+      case 'cancel': if (window.confirm(tr('confirm.cancel'))) { jobAction(id, 'cancel'); } break;
+      case 'retry_failed': jobAction(id, 'retry_failed', null, tr('toast.retryingErrors')); break;
+      case 'retry_item': jobAction(id, 'retry_failed', [parseInt(el.getAttribute('data-idx'), 10)], tr('toast.retryingItem')); break;
+      case 'redownload': if (window.confirm(tr('confirm.redownload'))) { jobAction(id, 'redownload', null, tr('toast.redownloading')); } break;
       case 'open_folder': jobAction(id, 'open_folder'); break;
-      case 'remove': if (window.confirm('Remove from the list? The downloaded files are NOT deleted.')) { jobAction(id, 'remove'); } break;
+      case 'remove': if (window.confirm(tr('confirm.remove'))) { jobAction(id, 'remove'); } break;
       case 'tab': if (d) { d.tab = el.getAttribute('data-tab'); d.box.scrollTop = 0; renderDetail(); } break;
       case 'errkind': if (d) { d.kind = el.getAttribute('data-kind'); d.tab = 'e'; d.box.scrollTop = 0; renderDetail(); } break;
       case 'clearkind': if (d) { d.kind = ''; renderDetail(); } break;
       case 'copyerrs': if (d && d.summary) { copyText(errorsText(d)); } break;
+      case 'sub_check': subAction(id, { action: 'check' }, tr('toast.subChecking')); break;
+      case 'sub_toggle': subAction(id, { action: 'toggle' }); break;
+      case 'sub_remove': if (window.confirm(tr('subs.confirmRemove'))) { subAction(id, { action: 'remove' }, tr('toast.subRemoved')); } break;
     }
   }
 
@@ -708,22 +813,62 @@
     for (i = 0; i < d.items.length; i++) {
       it = d.items[i];
       if (it && it.s === 'e') {
-        lines.push('#' + padNum(it.i, pad) + ' | ' + (it.t || '(unknown title)') + ' | ' + errLabel(it.ek) + ' | ' + (it.v ? 'https://www.youtube.com/watch?v=' + it.v : ''));
+        lines.push('#' + padNum(it.i, pad) + ' | ' + (it.t || tr('unknownTitle')) + ' | ' + errLabel(it.ek) + ' | ' + (it.v ? 'https://www.youtube.com/watch?v=' + it.v : ''));
       }
     }
     return lines.join('\n');
   }
 
   // ------------------------------------------------------------------ settings
+  
+  // ------------------------------------------------------------------ subscriptions
+  function fmtWhen(ts) {
+    if (!ts) { return tr('subs.never'); }
+    var d = new Date(ts * 1000), now = new Date(), hm = padNum(d.getHours(), 2) + ':' + padNum(d.getMinutes(), 2);
+    if (d.toDateString() === now.toDateString()) { return tr('date.today', { t: hm }); }
+    return d.getDate() + '/' + (d.getMonth() + 1) + ' ' + hm;
+  }
+  function subHtml(s) {
+    var h = '<div class="sub' + (s.enabled ? '' : ' off') + '"><div class="sub-main"><b class="sub-title">' + esc(s.title || s.url) + '</b>';
+    var st = s.status === 'checking' ? tr('subs.checking') : s.status === 'error' ? tr('subs.error') : s.status === 'errors' ? tr('subs.errors') : '';
+    var res = s.last_new == null ? '' : (s.last_new ? tr('subs.new', { n: s.last_new }) : tr('subs.nothingNew'));
+    h += '<div class="sub-meta">' + (s.enabled ? '' : '<span class="badge pause">' + esc(tr('subs.pausedTag')) + '</span>') +
+      (st ? '<span class="badge ' + (s.status === 'checking' ? 'run' : 'bad') + '">' + esc(st) + '</span>' : '') +
+      '<span>' + esc(tr('subs.last', { t: fmtWhen(s.last_check) })) + (res ? ' · ' + esc(res) : '') + '</span>' +
+      (s.enabled ? '<span>' + esc(tr('subs.next', { t: fmtWhen(s.next_check) })) + '</span>' : '') + '</div>';
+    if (s.message) { h += '<div class="sub-msg">' + esc(s.message) + '</div>'; }
+    h += '</div><div class="sub-act"><select class="mini-select" data-subint="' + s.id + '" aria-label="' + esc(tr('subs.every')) + '">';
+    var i, hrs = S.subIntervals.length ? S.subIntervals : SUB_HOURS;
+    for (i = 0; i < hrs.length; i++) { h += '<option value="' + hrs[i] + '"' + (hrs[i] === s.hours ? ' selected' : '') + '>' + esc(tr('every.' + hrs[i])) + '</option>'; }
+    h += '</select>' + btn('sub_check', s.id, tr('subs.checkNow'), IC.retry) +
+      btn('sub_toggle', s.id, s.enabled ? tr('subs.pause') : tr('subs.resume'), s.enabled ? IC.pause : IC.play) +
+      btn('sub_remove', s.id, tr('subs.remove'), IC.trash, 'ghost') + '</div></div>';
+    return h;
+  }
+  function renderSubs() {
+    var sec = $('#subsSec'), h = '', i;
+    sec.hidden = !S.subs.length;
+    for (i = 0; i < S.subs.length; i++) { h += subHtml(S.subs[i]); }
+    // do not rebuild the list while one of its drop-down menus is open (it would close under the pointer)
+    if (document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-subint')) { return; }
+    setH($('#subs'), h);
+  }
+  function subAction(id, body, okMsg) {
+    return api('POST', '/api/subs/' + id + '/action', body).then(function () {
+      if (okMsg) { toast(okMsg); }
+      pollState();
+    }).catch(function (e) { toast(e.message, true); });
+  }
+
   function openSettings() {
     var s = S.settings;
     $('#setDir').value = s.download_dir || '';
-    var sel = $('#setCookiesBrowser'), html = '<option value="">None</option>', i;
+    var sel = $('#setCookiesBrowser'), html = '<option value="">' + esc(tr('set.none')) + '</option>', i;
     var names = { firefox: 'Firefox', chrome: 'Chrome', edge: 'Edge', brave: 'Brave', opera: 'Opera', vivaldi: 'Vivaldi', chromium: 'Chromium', whale: 'Whale', safari: 'Safari' };
     for (i = 0; i < S.browsers.length; i++) { html += '<option value="' + S.browsers[i] + '">' + (names[S.browsers[i]] || S.browsers[i]) + '</option>'; }
     sel.innerHTML = html; sel.value = s.cookies_browser || '';
-    $('#cookiesState').textContent = S.hasCookies ? 'cookies.txt file loaded and in use (if you do not choose a browser).' : 'No cookies.txt file loaded.';
-    $('#verInfo').textContent = 'yt-dlp ' + S.ytdlp + ' · ffmpeg ' + (S.tools.ffmpeg ? 'ok' : 'MISSING') + ' · JavaScript runtime ' + (S.tools.deno ? 'ok' : 'absent') + ' · ' + S.concurrency + ' simultaneous downloads';
+    $('#cookiesState').textContent = S.hasCookies ? tr('set.cookiesLoaded') : tr('set.cookiesNone');
+    $('#verInfo').textContent = tr('set.ver', { v: S.ytdlp, ff: S.tools.ffmpeg ? tr('set.ok') : tr('set.missing'), js: S.tools.deno ? tr('set.ok') : tr('set.absent'), c: S.concurrency });
     $('#setBrowse').hidden = !S.local || S.android; $('#btnUpdate').hidden = !S.local;
     $('#setMsg').hidden = true; $('#setCookiesFile').value = '';
     $('#settingsOv').hidden = false;
@@ -737,16 +882,25 @@
     payload.download_dir = $('#setDir').value.trim();
     payload.cookies_browser = $('#setCookiesBrowser').value;
     api('POST', '/api/settings', payload).then(function (r) {
-      S.settings = r.settings; form.fill(r.settings); closeSettings(); toast('Settings saved');
+      S.settings = r.settings; form.fill(r.settings); closeSettings(); toast(tr('toast.saved'));
     }).catch(function (e) { setMsg(e.message); });
   }
 
   function waitServer(tries) {
-    api('GET', '/api/ping').then(function () { toast('Server restarted'); window.location.reload(); })
-      .catch(function () { if (tries > 0) { setTimeout(function () { waitServer(tries - 1); }, 1500); } else { toast('Restart Start.bat by hand', true); } });
+    api('GET', '/api/ping').then(function () { toast(tr('toast.restarted')); window.location.reload(); })
+      .catch(function () { if (tries > 0) { setTimeout(function () { waitServer(tries - 1); }, 1500); } else { toast(tr('toast.restartBy'), true); } });
   }
 
   function init() {
+    var lsel = $('#langSel'), lh = '', li;
+    for (li = 0; li < LANGS.length; li++) { lh += '<option value="' + LANGS[li][0] + '">' + LANGS[li][1] + '</option>'; }
+    lsel.innerHTML = lh;
+    lsel.addEventListener('change', function () { setLanguage(lsel.value, true); });
+    $('#subscribe').addEventListener('change', function () { $('#subHours').hidden = !this.checked; });
+    $('#subs').addEventListener('change', function (ev) {
+      var id = ev.target && ev.target.getAttribute('data-subint');
+      if (id) { subAction(id, { action: 'interval', hours: parseInt(ev.target.value, 10) }); ev.target.blur(); }
+    });
     applyTheme(getTheme());
     $('#btnTheme').addEventListener('click', cycleTheme);
     document.addEventListener('click', onClick);
@@ -767,14 +921,14 @@
       var ta = $('#urls');
       if (window.AndroidBridge && window.AndroidBridge.paste) {   // Android app: the WebView cannot read the clipboard by itself
         var t0 = String(window.AndroidBridge.paste() || '').trim();
-        if (!t0) { toast('The clipboard is empty', true); return; }
+        if (!t0) { toast(tr('toast.clipEmpty'), true); return; }
         ta.value = (ta.value ? ta.value.replace(/\s+$/, '') + '\n' : '') + t0; updateDetect(); ta.focus();
       } else if (navigator.clipboard && navigator.clipboard.readText) {
         navigator.clipboard.readText().then(function (t) {
-          if (!t) { toast('The clipboard is empty', true); return; }
+          if (!t) { toast(tr('toast.clipEmpty'), true); return; }
           ta.value = (ta.value ? ta.value.replace(/\s+$/, '') + '\n' : '') + t.trim(); updateDetect(); ta.focus();
-        }, function () { toast('The browser does not allow reading the clipboard: use Ctrl+V in the box.', true); ta.focus(); });
-      } else { toast('Use Ctrl+V in the box to paste.', true); ta.focus(); }
+        }, function () { toast(tr('toast.clipBlocked'), true); ta.focus(); });
+      } else { toast(tr('toast.pasteHint'), true); ta.focus(); }
     });
     $('#btnChangeDir').addEventListener('click', function () { openSettings(); setTimeout(function () { $('#setDir').focus(); }, 30); });
     $('#btnClearDone').addEventListener('click', clearFinished);
@@ -794,19 +948,19 @@
       var rd = new FileReader();
       rd.onload = function () {
         api('POST', '/api/cookies', { text: String(rd.result) }).then(function (r) {
-          S.hasCookies = r.has_cookies; $('#cookiesState').textContent = 'cookies.txt file loaded and in use.'; setMsg('cookies.txt loaded', true);
+          S.hasCookies = r.has_cookies; $('#cookiesState').textContent = tr('set.cookiesLoaded'); setMsg(tr('set.cookiesLoadedMsg'), true);
         }).catch(function (e) { setMsg(e.message); });
       };
       rd.readAsText(f);
     });
     $('#setCookiesClear').addEventListener('click', function () {
-      api('POST', '/api/cookies', { text: '' }).then(function () { S.hasCookies = false; $('#cookiesState').textContent = 'No cookies.txt file loaded.'; setMsg('cookies.txt removed', true); })
+      api('POST', '/api/cookies', { text: '' }).then(function () { S.hasCookies = false; $('#cookiesState').textContent = tr('set.cookiesNone'); setMsg(tr('set.cookiesRemovedMsg'), true); })
         .catch(function (e) { setMsg(e.message); });
     });
     $('#btnUpdate').addEventListener('click', function () {
-      if (!window.confirm('Update yt-dlp and restart the server? Downloads in progress are interrupted (you can resume them).')) { return; }
-      var b = this; b.disabled = true; setMsg('Updating, this can take a minute...', true);
-      api('POST', '/api/update', {}).then(function () { setMsg('Updated. Restarting...', true); setTimeout(function () { waitServer(40); }, 2500); })
+      if (!window.confirm(tr('confirm.update'))) { return; }
+      var b = this; b.disabled = true; setMsg(tr('set.updating'), true);
+      api('POST', '/api/update', {}).then(function () { setMsg(tr('set.updated'), true); setTimeout(function () { waitServer(40); }, 2500); })
         .catch(function (e) { setMsg(e.message); b.disabled = false; });
     });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) { pollState(); if (S.detail) { fetchDetail(); } } });
@@ -821,6 +975,7 @@
         if (window.history && window.history.replaceState) { window.history.replaceState(null, '', window.location.pathname); }
       }
     } catch (e) { /* ignore */ }
+    setLanguage(detectLang(), false);
     pollState();
   }
 

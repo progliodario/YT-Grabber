@@ -46,7 +46,7 @@ import yt_dlp  # noqa: E402
 from yt_dlp.utils import sanitize_filename  # noqa: E402
 
 APP_NAME = 'yt-grabber'
-APP_VERSION = '1.0.0'
+APP_VERSION = '1.1.0'
 CONCURRENCY = 10  # simultaneous downloads: fixed by requirement
 
 LOCK = threading.RLock()
@@ -227,6 +227,8 @@ class Job:
         self.dirty = True
         self.enum_thread = None
         self.pp_done = False
+        self.sub_id = ''             # set when this job is a run of a subscription
+        self.sub_auto = False        # True for the checks started by the scheduler (they vanish if nothing is new)
 
     # all the following methods must be called with LOCK held
     def touch(self, it):
@@ -289,7 +291,7 @@ class Job:
             'v': 1, 'id': self.id, 'url': self.url, 'urls': self.urls, 'opts': self.opts, 'title': self.title,
             'kind': self.kind, 'status': self.status, 'paused': self.paused, 'declared': self.declared,
             'pad': self.pad, 'enum_done': self.enum_done, 'pid': self.pid, 'dir': self.dir, 'created': self.created,
-            'finished': self.finished, 'warning': self.warning, 'message': self.message,
+            'finished': self.finished, 'warning': self.warning, 'message': self.message, 'sub': self.sub_id,
             'items': [[i.idx, i.vid, i.title, i.state, i.ekind, i.emsg, i.file, i.duration, i.uploader, i.attempts,
                        i.dupn, i.url] for i in self.items],
         }
@@ -672,6 +674,7 @@ class Manager:
                 job.finished = d.get('finished')
                 job.warning = d.get('warning', '')
                 job.message = d.get('message', '')
+                job.sub_id = d.get('sub', '')
                 for r in d.get('items', []):
                     it = Item(r[0], r[1], r[11] if len(r) > 11 else '', r[2], r[7], r[8], r[10])
                     it.state, it.ekind, it.emsg, it.file, it.attempts = r[3], r[4], r[5], r[6], r[9]
@@ -1017,6 +1020,8 @@ def enumerate_job(job):
                 job.enum_done = True
             job.dirty = True
             COND.notify_all()
+        if job.sub_id and not job.cancel:
+            sub_run_failed(job)
 
 
 def enumerate_singles(job):
@@ -1239,6 +1244,8 @@ def post_finish(job):
         log('post_finish', e)
     finally:
         job.pp_done = False
+    if job.sub_id:
+        sub_run_finished(job)
 
 
 def write_reports(job):
@@ -1359,8 +1366,9 @@ def remove_job(job):
         pass
 
 
-def create_jobs(raw_urls, opts):
+def create_jobs(raw_urls, opts, subscribe=None):
     opts = clean_opts(opts)
+    hours = subscribe if subscribe in SUB_INTERVALS else None
     parsed, rejected = [], []
     seen = set()
     duplicates = []
@@ -1392,10 +1400,124 @@ def create_jobs(raw_urls, opts):
         if c[0] in ('playlist', 'auto'):
             job = Job(MGR.new_id(), c[1], dict(opts))
             job.kind = 'playlist'
+            if hours:
+                job.sub_id = add_sub(c[1], opts, hours)   # this job is the first run of the subscription
             MGR.add_job(job)
             MGR.start_enum(job)
             created.append(job.id)
     return created, rejected, duplicates
+
+
+# --------------------------------------------------------------------------- subscriptions (playlists and channels kept up to date)
+
+SUBS_FILE = os.path.join(DATA, 'subscriptions.json')
+SUB_INTERVALS = (1, 3, 6, 12, 24, 72, 168)   # hours between two checks
+SUBS = {}
+
+
+def save_subs():
+    with LOCK:
+        data = list(SUBS.values())
+    atomic_write(SUBS_FILE, json.dumps(data, ensure_ascii=False, indent=1))
+
+
+def load_subs():
+    try:
+        with open(SUBS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except Exception:
+        data = []
+    for s in data if isinstance(data, list) else []:
+        if isinstance(s, dict) and s.get('id') and s.get('url'):
+            s['opts'] = clean_opts(s.get('opts') or {})
+            s['opts']['force'] = False   # a check must never download everything again
+            if s.get('hours') not in SUB_INTERVALS:
+                s['hours'] = 24
+            SUBS[s['id']] = s
+
+
+def add_sub(url, opts, hours):
+    """Creates (or updates) the subscription for this link. Its first run is the job that is being created now."""
+    now = time.time()
+    with LOCK:
+        sid = next((s['id'] for s in SUBS.values() if s['url'] == url), None)
+        if sid:
+            s = SUBS[sid]
+            s.update(hours=hours, enabled=True, next_check=now + hours * 3600)
+        else:
+            sid = 's%x%02x' % (int(now), random.randint(0, 255))
+            while sid in SUBS:
+                sid += 'x'
+            o = dict(opts)
+            o['force'] = False
+            SUBS[sid] = {'id': sid, 'url': url, 'title': '', 'opts': o, 'hours': hours, 'enabled': True,
+                         'created': now, 'last_check': now, 'next_check': now + hours * 3600, 'last_new': None,
+                         'status': 'checking', 'message': ''}
+    save_subs()
+    return sid
+
+
+def run_sub(sub):
+    """Starts a check of a subscription: a normal job on the same link (same folder; the files already there are
+    skipped without touching the network). Returns False if that link is already being downloaded."""
+    with LOCK:
+        now = time.time()
+        for jid in JOB_ORDER:
+            j = MANAGER_JOBS.get(jid)
+            if j and j.url == sub['url'] and j.status in ('enumerating', 'running'):
+                sub['next_check'] = now + 300
+                return False
+        sub.update(last_check=now, next_check=now + sub['hours'] * 3600, status='checking', message='')
+        job = Job(MGR.new_id(), sub['url'], dict(sub['opts']))
+        job.kind = 'playlist'
+        job.sub_id = sub['id']
+        job.sub_auto = True
+    MGR.add_job(job)
+    MGR.start_enum(job)
+    save_subs()
+    return True
+
+
+def sub_run_finished(job):
+    with LOCK:
+        sub = SUBS.get(job.sub_id)
+        if not sub:
+            return
+        sub['title'] = job.title or sub.get('title', '')
+        new, errs = job.counts['d'], job.counts['e']
+        sub.update(last_new=new, status='errors' if errs else 'ok', message='')
+        quiet = job.sub_auto and new == 0 and errs == 0 and job.status == 'done'
+    save_subs()
+    if quiet:   # nothing new: do not leave a card in the list after every check
+        time.sleep(1.5)
+        remove_job(job)
+
+
+def sub_run_failed(job):
+    with LOCK:
+        sub = SUBS.get(job.sub_id)
+        if sub:
+            sub.update(status='error', message=(job.message or '')[:300])
+    save_subs()
+
+
+def subs_loop():
+    while not SHUTDOWN.is_set():
+        SHUTDOWN.wait(20)
+        now = time.time()
+        with LOCK:
+            due = next((s for s in SUBS.values() if s.get('enabled') and now >= s.get('next_check', 0)), None)
+        if due:   # one per round, so that many subscriptions do not all start at the same moment
+            run_sub(due)
+
+
+def subs_state():
+    with LOCK:
+        return [{'id': s['id'], 'url': s['url'], 'title': s.get('title') or '', 'hours': s['hours'],
+                 'enabled': bool(s.get('enabled')), 'last_check': s.get('last_check'),
+                 'next_check': s.get('next_check'), 'last_new': s.get('last_new'), 'status': s.get('status', ''),
+                 'message': s.get('message', '')}
+                for s in sorted(SUBS.values(), key=lambda x: x.get('created', 0))]
 
 
 # --------------------------------------------------------------------------- HTTP
@@ -1477,6 +1599,7 @@ class Handler(BaseHTTPRequestHandler):
         self.do_GET()
 
     def do_GET(self):
+        LAST_ACTIVITY[0] = time.time()
         try:
             if not self.host_ok():
                 return self.err(403, 'Host not allowed')
@@ -1514,6 +1637,7 @@ class Handler(BaseHTTPRequestHandler):
                 pass
 
     def do_POST(self):
+        LAST_ACTIVITY[0] = time.time()
         try:
             if not self.host_ok():
                 return self.err(403, 'Host not allowed')
@@ -1522,7 +1646,9 @@ class Handler(BaseHTTPRequestHandler):
             path = urllib.parse.urlparse(self.path).path
             body = self.read_json()
             if path == '/api/jobs':
-                created, rejected, dups = create_jobs(body.get('urls', ''), body.get('opts') or {})
+                sub_hours = body.get('subscribe')
+                created, rejected, dups = create_jobs(body.get('urls', ''), body.get('opts') or {},
+                                                      sub_hours if isinstance(sub_hours, int) else None)
                 if not created:
                     if dups:
                         return self.err(409, 'This link is already in progress: you can find it in the list below.')
@@ -1544,6 +1670,34 @@ class Handler(BaseHTTPRequestHandler):
                     job_action(job, act, body.get('ids'))
                 else:
                     return self.err(400, 'Unknown action')
+                return self.send_json({'ok': True})
+            m = re.fullmatch(r'/api/subs/([\w]+)/action', path)
+            if m:
+                sub = SUBS.get(m.group(1))
+                if not sub:
+                    return self.err(404, 'Subscription not found')
+                act, now = body.get('action'), time.time()
+                if act == 'remove':
+                    with LOCK:
+                        SUBS.pop(sub['id'], None)
+                elif act == 'toggle':
+                    with LOCK:
+                        sub['enabled'] = not sub.get('enabled')
+                        if sub['enabled']:
+                            sub['next_check'] = min(sub.get('next_check') or now, now + 60)
+                elif act == 'interval':
+                    hours = body.get('hours')
+                    if hours not in SUB_INTERVALS:
+                        return self.err(400, 'Invalid interval')
+                    with LOCK:
+                        sub['hours'] = hours
+                        sub['next_check'] = (sub.get('last_check') or now) + hours * 3600
+                elif act == 'check':
+                    if not run_sub(sub):
+                        return self.err(409, 'This link is already being downloaded.')
+                else:
+                    return self.err(400, 'Unknown action')
+                save_subs()
                 return self.send_json({'ok': True})
             if path == '/api/settings':
                 return self.save_settings_req(body)
@@ -1601,7 +1755,7 @@ class Handler(BaseHTTPRequestHandler):
             'tools': {'ffmpeg': HAVE_FFMPEG, 'deno': os.path.exists(DENO)},
             'has_cookies': os.path.exists(COOKIES_FILE), 'local': self.is_local_client(),
             'errmeta': {k: [v[0], v[3]] for k, v in ERR.items()}, 'android': IS_ANDROID,
-            'browsers': [b for b in BROWSERS if b],
+            'browsers': [b for b in BROWSERS if b], 'subs': subs_state(), 'sub_intervals': list(SUB_INTERVALS),
         }
 
     def job_detail(self, jid, since):
@@ -1816,6 +1970,28 @@ class Server(ThreadingHTTPServer):
         super().handle_error(request, client_address)
 
 
+LAST_ACTIVITY = [time.time()]   # last time somebody used the web page
+
+
+def idle_watch(seconds):
+    """For launchers without a window to close (AppImage, Flatpak): ends the program when it has nothing to do."""
+    while not SHUTDOWN.is_set():
+        time.sleep(30)
+        with LOCK:
+            busy = any(j.status in ('enumerating', 'running') and not j.paused for j in MANAGER_JOBS.values())
+            subs = any(s.get('enabled') for s in SUBS.values())
+        if busy or subs or time.time() - LAST_ACTIVITY[0] < seconds:
+            continue
+        log('idle for %d minutes: quitting' % (seconds // 60))
+        MGR.save_dirty()
+        for pr in list(PROCS):
+            try:
+                pr.kill()
+            except Exception:
+                pass
+        os._exit(0)
+
+
 def lan_address():
     """The address of this computer on the local network (no packet is actually sent), or '' if unknown."""
     import socket
@@ -1843,10 +2019,14 @@ def main():
     ap.add_argument('--port', type=int, default=8765)
     ap.add_argument('--dir', default=None, help='destination folder for downloads')
     ap.add_argument('--no-browser', action='store_true')
+    ap.add_argument('--idle-exit', type=int, default=0, metavar='MINUTES',
+                    help='quit when nothing is downloading and nobody has used the page for this many minutes '
+                         '(ignored while subscriptions are active)')
     a = ap.parse_args()
 
     os.makedirs(DATA, exist_ok=True)
     load_settings()
+    load_subs()
     if a.dir:
         SETTINGS['download_dir'] = os.path.abspath(a.dir)
         save_settings()
@@ -1881,6 +2061,9 @@ def main():
 
     MGR.load_jobs()
     MGR.start()
+    threading.Thread(target=subs_loop, daemon=True, name='subs').start()
+    if a.idle_exit > 0:
+        threading.Thread(target=idle_watch, args=(a.idle_exit * 60,), daemon=True, name='idle').start()
     atexit.register(MGR.save_dirty)
 
     url = 'http://localhost:%d/' % port
