@@ -62,6 +62,7 @@ def get_python(arch):
 def get_tool():
     """appimagetool (it runs on the build machine, which is x86_64), checked against the digest GitHub reports."""
     cache = os.path.join(GEN, 'appimage-cache')
+    os.makedirs(cache, exist_ok=True)
     path = os.path.join(cache, 'appimagetool-x86_64.AppImage')
     if not os.path.exists(path):
         download(TOOL_URL, path)

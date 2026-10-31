@@ -25,3 +25,5 @@ build-linux/flatpak/yt-grabber text eol=lf
 build-linux/flatpak/*.desktop text eol=lf
 build-linux/flatpak/*.yml text eol=lf
 build-linux/flatpak/*.xml text eol=lf
+
+*.asc text eol=lf
