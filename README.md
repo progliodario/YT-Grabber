@@ -12,7 +12,7 @@ from a local web page that works in any browser (Chrome, Edge, Firefox, Safari, 
 
 | You have | Use | Details |
 |---|---|---|
-| **Windows PC**, nothing installed | double-click **`YT-Grabber.exe`** | [build-exe/README.md](build-exe/README.md) |
+| **Windows PC** | run **`YT-Grabber-Setup-1.0.0.exe`**: it installs YT Grabber like any other program | [build-windows/README.md](build-windows/README.md) |
 | Windows with **Python** installed | double-click **`Start.bat`** | below |
 | **Linux**: Debian, Ubuntu, Mint... | `sudo apt install ./yt-grabber_1.0.0_all.deb` | [build-linux/README.md](build-linux/README.md) |
 | **Linux**: Fedora, RHEL, openSUSE... | `sudo dnf install ./yt-grabber-1.0.0-1.noarch.rpm` | [build-linux/README.md](build-linux/README.md) |
@@ -36,18 +36,18 @@ network: open `http://PC-IP-ADDRESS:8765/`; files are still saved on the compute
 ```
 YT-Grabber\
 ├─ README.md            this guide: read it first
-├─ YT-Grabber.exe       Windows: double-click and go (nothing to install)
-├─ Start.bat            Windows, if you already have Python (alternative to the exe)
+├─ Start.bat            Windows, if you already have Python (alternative to the installer)
 ├─ Start.sh             Linux / macOS / Termux
 ├─ LICENSE              MIT license
 │
 ├─ program\             the program itself: server.py, ytworker.py, ytcommon.py, setup_tools.py
 │                         and web\ (the user interface)
+├─ Windows\             the Windows installer
 ├─ APK\                 the Android apps, ready to install on the phone
 ├─ Linux\               the .deb and .rpm packages
 ├─ macOS\               the Mac app (YT-Grabber-macOS.zip)
 │
-├─ build-exe\           to rebuild YT-Grabber.exe (build-exe.bat) + guide
+├─ build-windows\       to rebuild the Windows installer (build-windows.bat) + guide
 ├─ build-apk\           to rebuild the APKs (build-apk.bat), with the signing key + guide
 ├─ build-linux\         to rebuild the .deb and .rpm (build-linux.bat) + guide
 ├─ build-macos\         to rebuild the Mac app (build-macos.bat) + guide
@@ -56,8 +56,8 @@ YT-Grabber\
 └─ generated\           created by the program (ffmpeg, yt-dlp, settings, logs, build files): safe to delete
 ```
 
-`YT-Grabber.exe`, `APK\`, `Linux\`, `macOS\` and `generated\` are not source files (they are not in git): they are
-rebuilt with the scripts in the `build-*` folders. The exe keeps its own data in `%LOCALAPPDATA%\YT-Grabber\`.
+`Windows\`, `APK\`, `Linux\`, `macOS\` and `generated\` are not source files (they are not in git): they are
+rebuilt with the scripts in the `build-*` folders. On Windows the installed app keeps its data in `%LOCALAPPDATA%\YT-Grabber\`.
 
 ## How it works
 
@@ -89,7 +89,8 @@ the App Store. What works is to use the web page from the phone, with the progra
 always-on Linux box, such as a Raspberry Pi) on the same Wi-Fi:
 
 1. On the computer start the program so it accepts other devices: `Start.bat --host 0.0.0.0` (Windows),
-   `./Start.sh --host 0.0.0.0` (Linux/macOS), `YT-Grabber.exe --host 0.0.0.0` or `yt-grabber --host 0.0.0.0`.
+   `./Start.sh --host 0.0.0.0` (Linux/macOS) or `yt-grabber --host 0.0.0.0` (Linux package). With the Windows
+   installer, run `YT-Grabber.exe --host 0.0.0.0` from its folder (`%LOCALAPPDATA%\Programs\YT Grabber`).
    It prints the address to use, for example `http://192.168.1.6:8765/`.
 2. On the iPhone / iPad open that address in **Safari**. To get an icon like an app: Share → **Add to Home Screen**.
 3. Paste the links and press **Download**: the files are saved on the computer. To get a file on the phone, open the
@@ -130,7 +131,7 @@ upload a `cookies.txt` file exported from the browser. They are not needed for n
 ## If something stops working
 
 YouTube changes often. Go to *Settings → Update yt-dlp and restart*: in most cases that fixes everything.
-Logs of the download processes: folder `generated\data\logs\` (with the exe: `%LOCALAPPDATA%\YT-Grabber\data\logs\`).
+Logs of the download processes: folder `generated\data\logs\` (with the Windows app: `%LOCALAPPDATA%\YT-Grabber\data\logs\`).
 
 ## Building from source
 
@@ -139,7 +140,7 @@ The ready-to-use files are built with a script each:
 
 | Result | Script | Needs |
 |---|---|---|
-| `YT-Grabber.exe` | `build-exe\build-exe.bat` | Python (PyInstaller is fetched automatically) |
+| `Windows\YT-Grabber-Setup-*.exe` | `build-windows\build-windows.bat` | Python and Inno Setup 6 (PyInstaller is fetched automatically) |
 | `APK\*.apk` | `build-apk\build-apk.bat` | JDK 21, Android SDK, Gradle 8.7 (see [build-apk/README.md](build-apk/README.md)) |
 | `Linux\*.deb`, `Linux\*.rpm` | `build-linux\build-linux.bat` | Python (nfpm is downloaded and checked automatically) |
 | `macOS\YT-Grabber-macOS.zip` | `build-macos\build-macos.bat` | Python and Internet (no Mac needed to build it) |
@@ -149,7 +150,7 @@ The ready-to-use files are built with a script each:
 YT Grabber is released under the [MIT License](LICENSE). It builds on other projects, each with its own license:
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) (downloading), [FFmpeg](https://ffmpeg.org/) (conversion, downloaded on
 first start from [yt-dlp/FFmpeg-Builds](https://github.com/yt-dlp/FFmpeg-Builds)), [Deno](https://deno.com/)
-(JavaScript runtime), [PyInstaller](https://pyinstaller.org/) (the exe) and
+(JavaScript runtime), [PyInstaller](https://pyinstaller.org/) and [Inno Setup](https://jrsoftware.org/isinfo.php) (the Windows app and its installer), and
 [youtubedl-android](https://github.com/yausername/youtubedl-android) (Python and FFmpeg for the Android app).
 Programs and APKs that bundle them are also subject to their licenses.
 

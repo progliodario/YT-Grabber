@@ -1,10 +1,10 @@
-# folder created by the program: downloaded tools (ffmpeg, yt-dlp), settings, download list, cookies, logs, exe build files
+# folder created by the program: downloaded tools (ffmpeg, yt-dlp), settings, download list, cookies, logs, build files
 generated/
 __pycache__/
 *.pyc
 
-# build results (rebuilt with build-exe\build-exe.bat and build-apk\build-apk.bat)
-/YT-Grabber.exe
+# build results (rebuilt with the scripts in the build-* folders)
+/Windows/
 /APK/
 
 # Android app: signing key (secret: if you lose it you can no longer update the installed app, keep a copy)

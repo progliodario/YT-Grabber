@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Creates build-exe/icon.ico (the icon of YT-Grabber.exe) with the same design as the app icons: rounded square
+"""Creates build-windows/icon.ico (the icon of YT Grabber) with the same design as the app icons: rounded square
 pink-orange gradient with the download arrow. Pure Python, no external libraries."""
 import math
 import os
