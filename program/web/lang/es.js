@@ -281,7 +281,7 @@ window.I18N.es = {
   'notify.ok': '{title}: {n} descargados',
   'notify.err': '{title}: {n} descargados, {e} con error',
   'set.android': 'En un teléfono Android',
-  'set.androidHint': 'Existe una app para Android (archivos APK, carpeta <code>APK</code>): funciona directamente en el teléfono, sin el ordenador. Como alternativa, con Termux: instrucciones en la carpeta <code>termux</code>.',
+  'set.androidHint': 'Existe una app para Android: el archivo APK está en la <a href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener">página de versiones</a> y funciona directamente en el teléfono, sin el ordenador. Como alternativa, con Termux: consulta la <a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/install.md#android" target="_blank" rel="noopener">guía de instalación</a>.',
   'cancel': 'Cancelar',
   'save': 'Guardar',
   'close': 'Cerrar',

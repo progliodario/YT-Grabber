@@ -704,16 +704,20 @@
       el.innerHTML =
         '<div class="errpanel" hidden></div>' +
         '<div class="tabs"><div class="tabbtns" role="group" aria-label="' + esc(tr('detail.filters')) + '"></div><input class="search" type="search" placeholder="' + esc(tr('detail.search')) + '" aria-label="' + esc(tr('detail.searchLabel')) + '"></div>' +
-        '<div class="vbox" role="region" tabindex="0" aria-label="' + esc(tr('list.label')) + '" aria-describedby="lh-' + id + '"><div class="vspacer" role="list"></div><div class="vempty" hidden></div></div>' +
-        '<p class="sr-only" id="lh-' + id + '">' + esc(tr('list.help')) + '</p>';
+        '<p class="sr-only" id="lh-' + id + '">' + esc(tr('list.help')) + '</p>' +
+        '<div class="vbox" role="region" aria-label="' + esc(tr('list.label')) + '"><div class="vspacer" role="list"></div><div class="vempty" hidden></div></div>';
       S.detail = {
         id: id, items: [], seq: 0, tab: 'all', q: '', kind: '', view: [], summary: null, rowEls: {}, busy: false,
-        panel: el.children[0], tabsEl: el.children[1].firstChild, box: el.children[2], spacer: el.children[2].children[0],
-        empty: el.children[2].children[1], tabsHtml: '', panelHtml: ''
+        panel: el.children[0], tabsEl: el.children[1].firstChild, box: el.children[3], spacer: el.children[3].children[0],
+        empty: el.children[3].children[1], tabsHtml: '', panelHtml: ''
       };
       var raf = 0, d = S.detail, sInp = el.children[1].lastChild;
       sInp.addEventListener('input', function () { d.q = sInp.value; d.box.scrollTop = 0; rebuildView(d); renderVList(); });
       d.box.addEventListener('keydown', function (ev) { listKey(d, ev); });
+      d.box.addEventListener('focusin', function (ev) {   // the item that has the focus is the one that Tab comes back to
+        var row = ev.target && ev.target.closest ? ev.target.closest('.row') : null, n = row ? parseInt(row.getAttribute('aria-posinset'), 10) : 0;
+        if (n && d.cur !== n) { d.cur = n; renderVList(); }
+      });
       d.box.addEventListener('scroll', function () {
         if (raf) { return; }
         raf = (window.requestAnimationFrame || window.setTimeout)(function () { raf = 0; renderVList(); });
@@ -915,6 +919,7 @@
     if (k.pos !== pos) { k.pos = pos; r.el.setAttribute('aria-posinset', it.i); r.el.setAttribute('aria-setsize', total); }
     // only the buttons of the current item are in the Tab order (otherwise a long list would hold the keyboard for ever)
     var want = cur === it.i ? 0 : -1;
+    if (k.rtab !== want) { k.rtab = want; r.el.tabIndex = want; }   // the list is a single Tab stop: this row (the others by arrow keys)
     if (k.tab !== want) { k.tab = want; var bs = r.act.querySelectorAll('a, button'), bi; for (bi = 0; bi < bs.length; bi++) { bs[bi].tabIndex = want; } }
     var tt = tip || title;
     if (k.tip !== tt) { k.tip = tt; r.el.title = tt; }
@@ -929,11 +934,16 @@
     d.empty.hidden = n > 0;
     if (!n) { d.empty.textContent = d.items.length === 0 ? tr('list.reading') : tr('list.none'); }
     var st = d.box.scrollTop, h = d.box.clientHeight || 400;
-    var first = Math.max(0, Math.floor(st / ROW) - 6), last = Math.min(n, Math.ceil((st + h) / ROW) + 6), need = {}, k, it, key, r;
+    var first = Math.max(0, Math.floor(st / ROW) - 6), last = Math.min(n, Math.ceil((st + h) / ROW) + 6), need = {}, k, it, key, r, stop = 0, top = Math.min(n - 1, Math.floor(st / ROW));
+    // the row that Tab reaches: the current one if it is on the page, else the first one on the screen (the list always has a way in)
+    if (d.cur && d.view.length) {
+      for (k = first; k < last; k++) { if (d.items[d.view[k]].i === d.cur) { stop = d.cur; break; } }
+    }
+    if (!stop && n) { stop = d.items[d.view[Math.max(0, top)]].i; }
     for (k = first; k < last; k++) {
       it = d.items[d.view[k]]; key = it.i; need[key] = true; r = d.rowEls[key];
       if (!r) { r = d.rowEls[key] = makeRow(); d.spacer.appendChild(r.el); }
-      updateRow(r, it, pad, d.id, k * ROW, s.total, d.cur);
+      updateRow(r, it, pad, d.id, k * ROW, s.total, stop);
     }
     for (key in d.rowEls) {
       if (Object.prototype.hasOwnProperty.call(d.rowEls, key) && !need[key]) {
@@ -1051,10 +1061,10 @@
     sel.innerHTML = html; sel.value = s.cookies_browser || '';
     $('#cookiesState').textContent = S.hasCookies ? tr('set.cookiesLoaded') : tr('set.cookiesNone');
     $('#verInfo').textContent = tr('set.ver', { v: S.ytdlp, ff: S.tools.ffmpeg ? tr('set.ok') : tr('set.missing'), js: S.tools.deno ? tr('set.ok') : tr('set.absent'), c: S.concurrency });
-    $('#setBrowse').hidden = !S.local || S.android; $('#btnUpdate').hidden = !S.local;
+    $('#setBrowse').hidden = !S.local || S.android; $('#engineUpdate').hidden = !S.local;
     $('#setMsg').hidden = true; $('#setCookiesFile').value = '';
     $('#setNotify').checked = s.notify_done !== false; $('#setCheckUpdates').checked = s.check_updates !== false;
-    $('#setAutoYtdlp').checked = s.auto_ytdlp !== false; $('#setAutoYtdlp').closest('.toggles').hidden = !S.local;
+    $('#setAutoYtdlp').checked = s.auto_ytdlp !== false;
     var ts = '', zi, cur = getTextSize();
     for (zi = 0; zi < TEXT_SIZES.length; zi++) { ts += '<option value="' + TEXT_SIZES[zi] + '"' + (TEXT_SIZES[zi] === cur ? ' selected' : '') + '>' + esc(tr('text.' + TEXT_SIZES[zi])) + '</option>'; }
     $('#setTextSize').innerHTML = ts;

@@ -281,7 +281,7 @@ window.I18N.ja = {
   'notify.ok': '{title}: {n} 件ダウンロード済み',
   'notify.err': '{title}: {n} 件ダウンロード済み、{e} 件失敗',
   'set.android': 'Android スマートフォンで',
-  'set.androidHint': 'Android アプリがあります（APK ファイル、フォルダー <code>APK</code>）。コンピューターなしで、スマートフォン上で直接動作します。代わりに Termux も使えます。手順は <code>termux</code> フォルダーにあります。',
+  'set.androidHint': 'Android アプリがあります。APK ファイルは<a href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener">リリースページ</a>にあり、パソコンなしでスマートフォン上で直接動作します。別の方法として Termux も使えます。<a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/install.md#android" target="_blank" rel="noopener">インストールガイド</a>をご覧ください。',
   'cancel': 'キャンセル',
   'save': '保存',
   'close': '閉じる',

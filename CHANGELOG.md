@@ -5,8 +5,14 @@ All notable changes are listed here, newest first. Version numbers follow `MAJOR
 ## Unreleased
 
 - Documentation: the accessibility statement now records the tests with the NVDA screen reader.
-- Screen readers: the button that changes the destination folder is announced with its context ("Destination folder, group",
-  then the folder) instead of just "Change".
+- Screen readers (found by testing with NVDA): the button that changes the destination folder is announced with its context
+  instead of just "Change"; the box for the links no longer reads a long description at every visit; the Tab key lands on a single
+  item of a list instead of making the screen reader read the whole list; and the language of the user is loaded before the page is
+  shown, so the page is not read once in English first.
+- The hint for Android phones in the settings pointed to folders that no longer exist (`APK`, `termux`); it now links to the releases
+  page and to the installation guide, in all 16 languages.
+- On the web page, the *Update yt-dlp* controls (including the new automatic option) and their hints are hidden together when the
+  page is not opened on the computer that runs the program.
 
 ## 1.5.0
 

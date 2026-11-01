@@ -213,9 +213,10 @@ def main():
 
         def row():
             return b.js("(function(){var e=document.activeElement; return e && e.classList.contains('row') ? +e.getAttribute('aria-posinset') : 0;})()")
-        b.js("document.querySelector('.vbox').focus()")
-        b.key('ArrowDown')
-        check(row() == 1, 'Arrow down from the list goes to the first item')
+        check(b.js("!document.querySelector('.vbox').hasAttribute('tabindex')"), 'the scrolling box is not a Tab stop of its own (a screen reader would read all of it)')
+        b.js("document.querySelector('.search').focus()")
+        b.key('Tab')
+        check(row() == 1, 'Tab from the search box enters the list on its first item')
         b.key('ArrowDown')
         b.key('ArrowDown')
         check(row() == 3, 'Arrow down goes to the next item')

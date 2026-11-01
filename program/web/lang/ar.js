@@ -281,7 +281,7 @@ window.I18N.ar = {
   'notify.ok': '{title}: تم تنزيل {n}',
   'notify.err': '{title}: تم تنزيل {n}، وفشل {e}',
   'set.android': 'على هاتف أندرويد',
-  'set.androidHint': 'يوجد تطبيق أندرويد (ملفات APK، المجلد <code>APK</code>): يعمل مباشرة على الهاتف دون حاسوب. أو عبر Termux: التعليمات في المجلد <code>termux</code>.',
+  'set.androidHint': 'يوجد تطبيق أندرويد: ملف APK في <a href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener">صفحة الإصدارات</a>، ويعمل مباشرة على الهاتف دون حاسوب. أو عبر Termux: راجع <a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/install.md#android" target="_blank" rel="noopener">دليل التثبيت</a>.',
   'cancel': 'إلغاء',
   'save': 'حفظ',
   'close': 'إغلاق',

@@ -281,7 +281,7 @@ window.I18N.ru = {
   'notify.ok': '{title}: загружено {n}',
   'notify.err': '{title}: загружено {n}, ошибок: {e}',
   'set.android': 'На телефоне Android',
-  'set.androidHint': 'Есть приложение для Android (файлы APK, папка <code>APK</code>): оно работает прямо на телефоне, без компьютера. Или через Termux: инструкции в папке <code>termux</code>.',
+  'set.androidHint': 'Есть приложение для Android: файл APK находится на <a href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener">странице выпусков</a>, оно работает прямо на телефоне, без компьютера. Или через Termux: смотрите <a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/install.md#android" target="_blank" rel="noopener">руководство по установке</a>.',
   'cancel': 'Отмена',
   'save': 'Сохранить',
   'close': 'Закрыть',

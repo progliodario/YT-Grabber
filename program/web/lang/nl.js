@@ -281,7 +281,7 @@ window.I18N.nl = {
   'notify.ok': '{title}: {n} gedownload',
   'notify.err': '{title}: {n} gedownload, {e} mislukt',
   'set.android': 'Op een Android-telefoon',
-  'set.androidHint': 'Er is een Android-app (APK-bestanden, map <code>APK</code>): hij draait rechtstreeks op de telefoon, zonder computer. Of met Termux: instructies in de map <code>termux</code>.',
+  'set.androidHint': 'Er is een Android-app: het APK-bestand staat op de <a href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener">releasepagina</a> en draait rechtstreeks op de telefoon, zonder computer. Of met Termux: zie de <a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/install.md#android" target="_blank" rel="noopener">installatiegids</a>.',
   'cancel': 'Annuleren',
   'save': 'Opslaan',
   'close': 'Sluiten',

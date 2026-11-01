@@ -293,7 +293,7 @@ window.I18N.en = {
   'notify.ok': '{title}: {n} downloaded',
   'notify.err': '{title}: {n} downloaded, {e} failed',
   'set.android': 'On an Android phone',
-  'set.androidHint': 'There is an Android app (APK files, folder <code>APK</code>): it runs directly on the phone, without the computer. Alternatively, with Termux: instructions in the <code>termux</code> folder.',
+  'set.androidHint': 'There is an Android app: the APK file is on the <a href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener">releases page</a>, and it runs directly on the phone, without the computer. Alternatively, with Termux: see the <a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/install.md#android" target="_blank" rel="noopener">installation guide</a>.',
   'cancel': 'Cancel',
   'save': 'Save',
   'close': 'Close',

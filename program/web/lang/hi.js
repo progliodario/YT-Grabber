@@ -281,7 +281,7 @@ window.I18N.hi = {
   'notify.ok': '{title}: {n} डाउनलोड हुए',
   'notify.err': '{title}: {n} डाउनलोड हुए, {e} विफल',
   'set.android': 'Android फ़ोन पर',
-  'set.androidHint': 'एक Android ऐप है (APK फ़ाइलें, फ़ोल्डर <code>APK</code>): यह कंप्यूटर के बिना सीधे फ़ोन पर चलता है। विकल्प के रूप में Termux: निर्देश <code>termux</code> फ़ोल्डर में हैं।',
+  'set.androidHint': 'Android ऐप उपलब्ध है: APK फ़ाइल <a href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener">रिलीज़ पेज</a> पर है और यह कंप्यूटर के बिना सीधे फ़ोन पर चलता है। विकल्प के तौर पर Termux के साथ: <a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/install.md#android" target="_blank" rel="noopener">इंस्टॉलेशन गाइड</a> देखें।',
   'cancel': 'रद्द करें',
   'save': 'सहेजें',
   'close': 'बंद करें',

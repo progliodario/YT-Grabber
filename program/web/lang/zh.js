@@ -281,7 +281,7 @@ window.I18N.zh = {
   'notify.ok': '{title}：已下载 {n} 个',
   'notify.err': '{title}：已下载 {n} 个，{e} 个失败',
   'set.android': '在 Android 手机上',
-  'set.androidHint': '有 Android 应用（APK 文件，文件夹 <code>APK</code>）：无需电脑，直接在手机上运行。或者使用 Termux：说明在 <code>termux</code> 文件夹中。',
+  'set.androidHint': '有 Android 应用：APK 文件在<a href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener">发布页面</a>上，无需电脑，直接在手机上运行。或者使用 Termux：请参阅<a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/install.md#android" target="_blank" rel="noopener">安装指南</a>。',
   'cancel': '取消',
   'save': '保存',
   'close': '关闭',

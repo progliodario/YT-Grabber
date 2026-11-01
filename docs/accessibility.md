@@ -113,10 +113,15 @@ formal protocol, so it does not replace tests by regular screen reader users.
 A second, scripted test was run in November 2026 with **NVDA 2026.3** and Microsoft Edge on Windows 11, with the interface in Italian: the
 keys were sent to the page and what NVDA said was read from its log. It covered the header and the form (Tab through every control, a
 group of options, a switch), the settings window, a download card and its list (arrow keys, Home, End), and the messages of the live
-region. Everything was announced with the right name, role and state ("1 of 2", "on", "expanded", "list with 12 items"). Two small
-findings: the button that changes the destination folder was announced as just "Change" (it is now announced with its group and the
-folder), and, when the settings window closes, NVDA reads the first link of the page (the skip link) just before the button that
-opened the window, because the whole page becomes available again at that moment; the focus itself goes straight to the button.
+region. Everything was announced with the right name, role and state ("1 of 2", "on", "expanded", "list with 12 items"). The test
+found four things, which were corrected and checked again with NVDA: the button that changes the destination folder was announced as
+just "Change" (it is now announced with its group and the folder); the box for the links read a long description at every visit (now
+only its placeholder); the list of a download was read in full, row after row, when the keyboard reached it (the Tab key now lands on
+a single item, and the arrow keys move from there); and the page was read once in English before its translation was applied (the
+language is now loaded before the page is shown). Two behaviours of NVDA remain and are normal for a modal window: when the settings
+window opens, NVDA reads its title and the texts it contains, and when it closes, NVDA reads the first link of the page (the skip link)
+just before the button that opened the window, because the whole page becomes available again at that moment. The focus itself goes
+straight to the button.
 
 Before those tests, the **accessibility tree** of the page in Chromium was checked automatically (it is the data that every screen
 reader on Windows reads): the names, roles and states of the controls, the headings and the landmarks. No control without a name was

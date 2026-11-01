@@ -63,7 +63,7 @@
     <form id="form" autocomplete="off">
       <label class="lbl" for="urls" data-i18n="urls.label">Links to download</label>
       <div class="urlbox">
-        <textarea id="urls" rows="3" spellcheck="false" autocomplete="off" aria-describedby="composeLead" placeholder="Paste one or more links here, one per line" data-i18n-attr="placeholder:urls.placeholder"></textarea>
+        <textarea id="urls" rows="3" spellcheck="false" autocomplete="off" placeholder="Paste one or more links here, one per line" data-i18n-attr="placeholder:urls.placeholder"></textarea>
         <div class="url-tools">
           <button class="btn sm" id="btnPaste" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg><span data-i18n="paste">Paste</span></button>
           <button class="btn sm ghost" id="btnClear" type="button" hidden data-i18n="clear">Clear</button>
@@ -182,12 +182,14 @@
       <div class="grp">
         <span class="lbl" data-i18n="set.engine">Download engine</span>
         <p class="hint" id="verInfo"></p>
-        <button class="btn" id="btnUpdate" type="button" data-i18n="set.update">Update yt-dlp and restart</button>
-        <p class="hint" data-i18n="set.updateHint">YouTube changes often: if many errors suddenly appear, update. Downloads in progress are interrupted and you can resume them.</p>
-        <div class="toggles">
-          <label class="sw"><input type="checkbox" role="switch" id="setAutoYtdlp"><span class="knob"></span><span data-i18n="set.autoYtdlp">Keep yt-dlp up to date automatically</span></label>
+        <div id="engineUpdate">
+          <button class="btn" id="btnUpdate" type="button" data-i18n="set.update">Update yt-dlp and restart</button>
+          <p class="hint" data-i18n="set.updateHint">YouTube changes often: if many errors suddenly appear, update. Downloads in progress are interrupted and you can resume them.</p>
+          <div class="toggles">
+            <label class="sw"><input type="checkbox" role="switch" id="setAutoYtdlp"><span class="knob"></span><span data-i18n="set.autoYtdlp">Keep yt-dlp up to date automatically</span></label>
+          </div>
+          <p class="hint" data-i18n="set.autoYtdlpHint">Once a day YT Grabber asks GitHub for the latest yt-dlp. When nothing is downloading it installs it and restarts by itself.</p>
         </div>
-        <p class="hint" data-i18n="set.autoYtdlpHint">Once a day YT Grabber asks GitHub for the latest yt-dlp. When nothing is downloading it installs it and restarts by itself.</p>
       </div>
       <div class="grp">
         <span class="lbl" data-i18n="set.notifyTitle">Notifications and updates</span>
@@ -208,7 +210,7 @@
       </div>
       <div class="grp" id="grpAndroidHint">
         <span class="lbl" data-i18n="set.android">On an Android phone</span>
-        <p class="hint" data-i18n-html="set.androidHint">There is an Android app (APK files, folder <code>APK</code>): it runs directly on the phone, without the computer. Alternatively, with Termux: instructions in the <code>termux</code> folder.</p>
+        <p class="hint" data-i18n-html="set.androidHint">There is an Android app: the APK file is on the <a href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener">releases page</a>, and it runs directly on the phone, without the computer. Alternatively, with Termux: see the <a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/install.md#android" target="_blank" rel="noopener">installation guide</a>.</p>
       </div>
       <p class="msg" id="setMsg" role="alert" hidden></p>
     </div>
@@ -220,6 +222,15 @@
 <div class="sr-only" id="announce" role="status" aria-live="polite" aria-atomic="true"></div>
 <noscript><p class="foot">YT Grabber needs JavaScript to work.</p></noscript>
 <script src="lang/en.js"></script>
+<script>
+  // the language of the user is loaded now, before the page is shown, so that a screen reader never reads the English texts first
+  (function () {
+    var l = null, a;
+    try { l = localStorage.getItem('ytg-lang'); } catch (e) { l = null; }
+    if (!l) { a = (navigator.languages && navigator.languages[0]) || navigator.language || 'en'; l = String(a).toLowerCase().split('-')[0]; if (l === 'in') { l = 'id'; } }
+    if (/^(it|es|fr|de|pt|nl|pl|ru|tr|ar|hi|id|zh|ja|ko)$/.test(l)) { document.write('<script src="lang/' + l + '.js"><\/script>'); }
+  }());
+</script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -281,7 +281,7 @@ window.I18N.id = {
   'notify.ok': '{title}: {n} diunduh',
   'notify.err': '{title}: {n} diunduh, {e} gagal',
   'set.android': 'Di ponsel Android',
-  'set.androidHint': 'Ada aplikasi Android (file APK, folder <code>APK</code>): berjalan langsung di ponsel, tanpa komputer. Alternatif lain dengan Termux: petunjuk ada di folder <code>termux</code>.',
+  'set.androidHint': 'Ada aplikasi Android: berkas APK ada di <a href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener">halaman rilis</a> dan berjalan langsung di ponsel, tanpa komputer. Alternatifnya, dengan Termux: lihat <a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/install.md#android" target="_blank" rel="noopener">panduan instalasi</a>.',
   'cancel': 'Batal',
   'save': 'Simpan',
   'close': 'Tutup',

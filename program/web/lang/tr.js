@@ -281,7 +281,7 @@ window.I18N.tr = {
   'notify.ok': '{title}: {n} indirildi',
   'notify.err': '{title}: {n} indirildi, {e} başarısız',
   'set.android': 'Android telefonda',
-  'set.androidHint': 'Bir Android uygulaması var (APK dosyaları, <code>APK</code> klasörü): bilgisayar olmadan doğrudan telefonda çalışır. Alternatif olarak Termux: talimatlar <code>termux</code> klasöründe.',
+  'set.androidHint': 'Bir Android uygulaması var: APK dosyası <a href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener">sürümler sayfasında</a> ve bilgisayar olmadan doğrudan telefonda çalışır. Alternatif olarak Termux ile: <a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/install.md#android" target="_blank" rel="noopener">kurulum kılavuzuna</a> bakın.',
   'cancel': 'İptal',
   'save': 'Kaydet',
   'close': 'Kapat',

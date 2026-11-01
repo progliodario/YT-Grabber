@@ -281,7 +281,7 @@ window.I18N.ko = {
   'notify.ok': '{title}: {n}개 다운로드됨',
   'notify.err': '{title}: {n}개 다운로드됨, {e}개 실패',
   'set.android': 'Android 휴대폰에서',
-  'set.androidHint': 'Android 앱이 있습니다(APK 파일, 폴더 <code>APK</code>). 컴퓨터 없이 휴대폰에서 바로 실행됩니다. 대안으로 Termux도 사용할 수 있으며, 안내는 <code>termux</code> 폴더에 있습니다.',
+  'set.androidHint': 'Android 앱이 있습니다. APK 파일은 <a href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener">릴리스 페이지</a>에 있으며 컴퓨터 없이 휴대폰에서 바로 실행됩니다. 대안으로 Termux도 사용할 수 있습니다. <a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/install.md#android" target="_blank" rel="noopener">설치 안내</a>을(를) 참조하세요.',
   'cancel': '취소',
   'save': '저장',
   'close': '닫기',
