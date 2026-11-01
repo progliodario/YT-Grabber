@@ -1,24 +1,22 @@
-# folder created by the program: downloaded tools (ffmpeg, yt-dlp), settings, download list, cookies, logs, build files
-generated/
+# What the program and the build scripts create (never source files)
+/generated/
+/dist/
 __pycache__/
 *.pyc
 
-# build results (rebuilt with the scripts in the build-* folders)
-/Windows/
-/APK/
+# Android app: the signing key (secret: with a different key Android refuses to update an installed app, so keep a
+# copy somewhere safe), Gradle caches, local paths and the generated Python bundle
+/packaging/android/keystore/
+/packaging/android/**/*.jks
+/packaging/android/**/*.keystore
+/packaging/android/.gradle/
+/packaging/android/build/
+/packaging/android/app/build/
+/packaging/android/local.properties
+/packaging/android/app/src/main/assets/ytg-libs.zip
 
-# Android app: signing key (secret: if you lose it you can no longer update the installed app, keep a copy)
-build-apk/keystore/
-build-apk/**/*.jks
-build-apk/**/*.keystore
-
-# Android app: Gradle caches, local paths and generated packages
-build-apk/.gradle/
-build-apk/app/build/
-build-apk/build/
-build-apk/local.properties
-build-apk/app/src/main/assets/ytg-libs.zip
-
-# Linux and macOS packages (rebuilt with build-linux\build-linux.bat and build-macos\build-macos.bat)
-/Linux/
-/macOS/
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,5 +1,16 @@
 # Changelog
 
+All notable changes, newest first. The version numbers follow `MAJOR.MINOR.PATCH`.
+
+## Unreleased
+
+- **Repository reorganized.** The build folders now live under `packaging/` (`windows`, `android`, `linux`, `macos`, `termux`), the
+  results of local builds go to `dist/`, the public signing key moved to `docs/release-key.asc`, and every `build-*.bat` is now
+  `build.bat` in its folder. Nothing changes for people who install a release.
+- **Documentation rewritten:** a shorter README, and guides in `docs/` (installing, using, development), `CONTRIBUTING.md`,
+  a README for each folder in `packaging/`, issue and pull request templates.
+- `tools/bump_version.py` sets the version in every file that carries it (with a test).
+
 ## 1.3.0
 
 - **Only new videos** option for subscriptions: the videos that are already in the playlist, album or channel are not

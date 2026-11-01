@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """YT Grabber - local server to download YouTube and YouTube Music videos and playlists.
 
-Start:  python program/server.py [--port 8765] [--host 127.0.0.1] [--dir FOLDER] [--no-browser]
+Start:  python program/server.py [--port 8765] [--host 127.0.0.1] [--dir FOLDER] [--no-browser] [--idle-exit MINUTES]
 """
 import argparse
 import atexit

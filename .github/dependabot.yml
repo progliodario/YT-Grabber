@@ -13,7 +13,7 @@ updates:
 
   # the Android app: Gradle plugin, Kotlin and the libraries it uses
   - package-ecosystem: gradle
-    directory: /build-apk
+    directory: /packaging/android
     schedule:
       interval: weekly
     commit-message:

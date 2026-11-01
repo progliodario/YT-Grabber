@@ -31,11 +31,11 @@ jobs:
         shell: bash
         env:
           YTG_PYINSTALLER_FROM_SOURCE: '1'   # builds PyInstaller's launcher here: far fewer false alarms from antivirus programs
-        run: python build-windows/build_windows.py
+        run: python packaging/windows/build_windows.py
       - name: Install it, start it, uninstall it
         shell: pwsh
         run: |
-          $setup = (Get-ChildItem Windows\YT-Grabber-Setup-*.exe)[0].FullName
+          $setup = (Get-ChildItem dist\windows\YT-Grabber-Setup-*.exe)[0].FullName
           $p = Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER' -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "The installer exited with code $($p.ExitCode)" }
           $app = Join-Path $env:LOCALAPPDATA 'Programs\YT Grabber\YT-Grabber.exe'
@@ -60,7 +60,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: Windows/*.exe
+          path: dist/windows/*.exe
           if-no-files-found: error
 
   linux:
@@ -72,26 +72,26 @@ jobs:
         with:
           python-version: '3.12'
       - name: Build the .deb and the .rpm
-        run: python build-linux/build_packages.py
+        run: python packaging/linux/build_packages.py
       - name: Build the AppImages
-        run: python build-linux/appimage/build_appimage.py
+        run: python packaging/linux/appimage/build_appimage.py
       - name: Test the .deb
         run: |
           sudo apt-get update
-          sudo apt-get install -y ./Linux/yt-grabber_*_all.deb
+          sudo apt-get install -y ./dist/linux/yt-grabber_*_all.deb
           dpkg -L yt-grabber | head -n 8
           (yt-grabber --no-browser --port 8795 > "$RUNNER_TEMP/deb.log" 2>&1 &)
           sh .github/scripts/wait_ping.sh 8795 240 || { cat "$RUNNER_TEMP/deb.log"; exit 1; }
           pkill -f 'program/server.py' || true
       - name: Test the AppImage
         run: |
-          chmod +x Linux/*.AppImage
-          (./Linux/YT-Grabber-x86_64.AppImage --appimage-extract-and-run --no-browser --port 8796 > "$RUNNER_TEMP/appimage.log" 2>&1 &)
+          chmod +x dist/linux/*.AppImage
+          (./dist/linux/YT-Grabber-x86_64.AppImage --appimage-extract-and-run --no-browser --port 8796 > "$RUNNER_TEMP/appimage.log" 2>&1 &)
           sh .github/scripts/wait_ping.sh 8796 240 || { cat "$RUNNER_TEMP/appimage.log"; exit 1; }
           pkill -f 'program/server.py' || true
       - name: Test the .rpm on Fedora
         run: |
-          docker run --rm -v "$PWD/Linux:/pkg:ro" -v "$PWD/.github/scripts:/scripts:ro" fedora:latest sh -c '
+          docker run --rm -v "$PWD/dist/linux:/pkg:ro" -v "$PWD/.github/scripts:/scripts:ro" fedora:latest sh -c '
             dnf install -y /pkg/*.rpm curl ffmpeg-free > /dev/null &&
             (yt-grabber --no-browser --port 8797 > /tmp/rpm.log 2>&1 &) &&
             sh /scripts/wait_ping.sh 8797 300 || { cat /tmp/rpm.log; exit 1; }'
@@ -100,18 +100,18 @@ jobs:
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           sudo apt-get install -y flatpak flatpak-builder dbus-user-session
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          flatpak-builder --user --install-deps-from=flathub --force-clean --repo=fp-repo fp-build build-linux/flatpak/io.github.progliodario.YTGrabber.yml
-          flatpak build-bundle fp-repo Linux/YT-Grabber-x86_64.flatpak io.github.progliodario.YTGrabber
-          flatpak --user install -y --noninteractive Linux/YT-Grabber-x86_64.flatpak
+          flatpak-builder --user --install-deps-from=flathub --force-clean --repo=fp-repo fp-build packaging/linux/flatpak/io.github.progliodario.YTGrabber.yml
+          flatpak build-bundle fp-repo dist/linux/YT-Grabber-x86_64.flatpak io.github.progliodario.YTGrabber
+          flatpak --user install -y --noninteractive dist/linux/YT-Grabber-x86_64.flatpak
           dbus-run-session -- sh -c 'flatpak --user run io.github.progliodario.YTGrabber --no-browser --port 8798 > "$RUNNER_TEMP/flatpak.log" 2>&1 & sh .github/scripts/wait_ping.sh 8798 300 || { cat "$RUNNER_TEMP/flatpak.log"; exit 1; }'
       - uses: actions/upload-artifact@v4
         with:
           name: linux
           path: |
-            Linux/*.deb
-            Linux/*.rpm
-            Linux/*.AppImage
-            Linux/*.flatpak
+            dist/linux/*.deb
+            dist/linux/*.rpm
+            dist/linux/*.AppImage
+            dist/linux/*.flatpak
           if-no-files-found: error
 
   macos-build:
@@ -122,10 +122,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python build-macos/build_app.py
+      - run: python packaging/macos/build_app.py
       - name: Sign the app ad hoc (no Apple developer account) and zip it again
         run: |
-          cd macOS
+          cd dist/macos
           mkdir app && unzip -q YT-Grabber-macOS.zip -d app
           codesign --force --deep --sign - app/YT-Grabber.app
           codesign --verify --deep --strict app/YT-Grabber.app && echo "signature OK"
@@ -135,7 +135,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: macos
-          path: macOS/YT-Grabber-macOS.zip
+          path: dist/macos/YT-Grabber-macOS.zip
           if-no-files-found: error
 
   macos-test:
