@@ -84,6 +84,6 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;36.0.0" > /dev/null
       - name: Bundled Python packages
         run: python packaging/android/tools/make_libs.py
-      - name: Build the APKs (signed with the debug key: this only proves that the app compiles)
+      - name: Build the APKs (signed with the debug key, which only proves that the app compiles)
         working-directory: packaging/android
         run: gradle --no-daemon assembleRelease
