@@ -125,10 +125,10 @@
       </div>
 
       <div class="go">
-        <div class="dest">
+        <div class="dest" role="group" aria-label="Destination folder" data-i18n-attr="aria-label:set.dir">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
           <span class="dest-path" id="destDir">...</span>
-          <button class="link" id="btnChangeDir" type="button" data-i18n="change">Change</button>
+          <button class="link" id="btnChangeDir" type="button" aria-describedby="destDir" data-i18n="change">Change</button>
         </div>
         <button class="btn primary" id="btnGo" type="submit">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14"/></svg><span data-i18n="download">Download</span>

@@ -110,7 +110,15 @@ formal protocol, so it does not replace tests by regular screen reader users.
 
 **Not tested:** JAWS, Windows Narrator, VoiceOver, TalkBack and Orca, voice control, and switch devices.
 
-Before that test, the **accessibility tree** of the page in Chromium was checked automatically (it is the data that every screen
+A second, scripted test was run in November 2026 with **NVDA 2026.3** and Microsoft Edge on Windows 11, with the interface in Italian: the
+keys were sent to the page and what NVDA said was read from its log. It covered the header and the form (Tab through every control, a
+group of options, a switch), the settings window, a download card and its list (arrow keys, Home, End), and the messages of the live
+region. Everything was announced with the right name, role and state ("1 of 2", "on", "expanded", "list with 12 items"). Two small
+findings: the button that changes the destination folder was announced as just "Change" (it is now announced with its group and the
+folder), and, when the settings window closes, NVDA reads the first link of the page (the skip link) just before the button that
+opened the window, because the whole page becomes available again at that moment; the focus itself goes straight to the button.
+
+Before those tests, the **accessibility tree** of the page in Chromium was checked automatically (it is the data that every screen
 reader on Windows reads): the names, roles and states of the controls, the headings and the landmarks. No control without a name was
 found. That check revealed one real problem (a tick mark was read as part of the name of the chosen option), which has been fixed.
 

@@ -4,7 +4,9 @@ All notable changes are listed here, newest first. Version numbers follow `MAJOR
 
 ## Unreleased
 
-- Documentation: the accessibility statement now records the test with the NVDA screen reader (no problems found).
+- Documentation: the accessibility statement now records the tests with the NVDA screen reader.
+- Screen readers: the button that changes the destination folder is announced with its context ("Destination folder, group",
+  then the folder) instead of just "Change".
 
 ## 1.5.0
 
