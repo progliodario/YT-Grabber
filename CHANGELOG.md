@@ -2,7 +2,7 @@
 
 All notable changes are listed here, newest first. Version numbers follow `MAJOR.MINOR.PATCH`.
 
-## Unreleased
+## 1.5.1
 
 - Documentation: the accessibility statement now records the tests with the NVDA screen reader.
 - Screen readers (found by testing with NVDA): the button that changes the destination folder is announced with its context

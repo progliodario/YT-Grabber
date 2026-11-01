@@ -48,7 +48,7 @@ import yt_dlp  # noqa: E402
 from yt_dlp.utils import sanitize_filename  # noqa: E402
 
 APP_NAME = 'yt-grabber'
-APP_VERSION = '1.5.0'
+APP_VERSION = '1.5.1'
 CONCURRENCY = 10  # simultaneous downloads: fixed by requirement
 
 LOCK = threading.RLock()
