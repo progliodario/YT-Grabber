@@ -1,4 +1,11 @@
-/* YT Grabber - user interface. Deliberately "classic" JavaScript (no ?. ?? etc.) so it runs in any browser. */
+/* YT Grabber - user interface. Deliberately "classic" JavaScript (no ?. ?? etc.) so it runs in any browser.
+ *
+ * One file, one scope, in this order: language (tr, texts of lang/*.js) - utilities (escaping, toasts, announcements, focus helpers,
+ * icons) - text size - theme - preview of the pasted links - form (the options and the Download button) - global state (polling
+ * /api/state) - new-version banner and notices - job cards - detail with the virtual list (rows, keyboard, choosing the videos) -
+ * actions (the buttons of the cards and rows) - subscriptions - settings window - init.
+ * The page is checked by tests/test_accessibility.py and tests/a11y/audit.py: see docs/accessibility.md before changing the markup.
+ */
 (function () {
   'use strict';
 
@@ -110,7 +117,7 @@
     ROW = Math.round(rem * (window.innerWidth <= 760 ? 5.75 : 4));
     document.documentElement.style.setProperty('--row', ROW + 'px');
   }
-  var TABS = ['all', 'a', 'p', 'q', 'd', 'e', 'c'];
+  var TABS = ['all', 'a', 'p', 'q', 'd', 'e', 'c', 'k'];
 
   var S = {
     settings: {}, jobs: [], cards: {}, openId: null, detail: null, errmeta: {}, local: false, tools: {},
@@ -243,6 +250,8 @@
     video: '<svg class="ic" viewBox="0 0 24 24"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="m16 10 6-3v10l-6-3z"/></svg>',
     stack: '<svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/><path d="m17 15 4 3-4 3z"/></svg>',
     save: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>',
+    skip: '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>',
+    add: '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
     open: '<svg class="ic" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
     auto: '<svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
     light: '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
@@ -379,11 +388,11 @@
       for (k in S.settings) { if (Object.prototype.hasOwnProperty.call(S.settings, k)) { payload[k] = S.settings[k]; } }
       for (k in opts) { if (Object.prototype.hasOwnProperty.call(opts, k)) { payload[k] = opts[k]; } }
       api('POST', '/api/settings', payload).then(function (r) { S.settings = r.settings; }, function () { /* non-blocking */ })
-        .then(function () { return api('POST', '/api/jobs', { urls: urls, opts: opts, subscribe: self.el('subscribe').checked ? parseInt(self.el('subHours').value, 10) : undefined, only_new: self.el('subscribe').checked && self.el('onlyNew').checked }); })
+        .then(function () { return api('POST', '/api/jobs', { urls: urls, opts: opts, subscribe: self.el('subscribe').checked ? parseInt(self.el('subHours').value, 10) : undefined, only_new: self.el('subscribe').checked && self.el('onlyNew').checked, choose: self.el('chooseFirst').checked }); })
         .then(function (r) {
           self.el('urls').value = ''; updateDetect();
           var n = r.created.length;
-          toast(tr('toast.added', { n: n }));
+          toast(self.el('chooseFirst').checked ? tr('toast.choose') : tr('toast.added', { n: n }));
           var notes = [];
           if (r.rejected && r.rejected.length) { notes.push(tr('form.ignored', { links: r.rejected.slice(0, 3).join(', ') })); }
           if (r.duplicates && r.duplicates.length) { notes.push(tr('form.dups', { n: r.duplicates.length })); }
@@ -548,6 +557,7 @@
     if (j.status === 'done') {
       return j.counts.e ? '<span class="badge bad">' + esc(tr('badge.completedErr')) + '</span>' : '<span class="badge done">' + esc(tr('badge.completed')) + '</span>';
     }
+    if (j.choosing) { return '<span class="badge pause">' + esc(tr('badge.choosing')) + '</span>'; }
     if (j.paused) { return '<span class="badge pause">' + esc(j.interrupted ? tr('badge.interrupted') : tr('badge.paused')) + '</span>'; }
     if (j.status === 'enumerating') { return '<span class="badge run">' + esc(tr('badge.reading')) + '</span>'; }
     return '<span class="badge run">' + esc(tr('badge.running')) + '</span>';
@@ -590,11 +600,12 @@
     var c = j.counts, h = '';
     if (j.status === 'error' && j.message) { h += '<div class="alert">' + esc(j.message) + '</div>'; }
     if (j.warning) { h += '<div class="alert warn">' + esc(j.warning) + '</div>'; }
+    if (j.choosing && j.status !== 'cancelled') { h += '<div class="alert warn">' + esc(tr('alert.choosing')) + '</div>'; }
     if (j.status === 'done') {
       var okN = c.d + c.s;
       h += '<div class="alert ' + (c.e ? '' : 'ok') + '">' + (c.e
         ? tr('alert.finishedErr', { ok: okN, e: c.e, nums: errNums(j) })
-        : (okN || !c.k ? tr('alert.finishedOk', { n: okN }) : tr('alert.skipped', { n: c.k }))) + '</div>';
+        : (okN || !c.k ? tr('alert.finishedOk', { n: okN }) : (j.skipped_by_user ? tr('alert.skippedYou', { n: j.skipped_by_user }) : tr('alert.skipped', { n: c.k })))) + '</div>';
     } else if (c.e && (j.err_idx || []).length) {
       h += '<div class="alert">' + tr('alert.errorsSoFar', { nums: errNums(j) }) + '</div>';
     }
@@ -604,7 +615,8 @@
   function actionsHtml(j) {
     var c = j.counts, id = j.id, h = '';
     var live = j.status === 'running' || j.status === 'enumerating';
-    if (live && j.paused) { h += btn('resume', id, esc(tr('act.resume')), IC.play, 'solid'); }
+    if (j.choosing && live) { h += btn('resume', id, esc(tr('act.startChoice', { n: c.q })), IC.play, 'solid'); }
+    else if (live && j.paused) { h += btn('resume', id, esc(tr('act.resume')), IC.play, 'solid'); }
     if (live && !j.paused) { h += btn('pause', id, esc(tr('act.pause')), IC.pause); }
     if (j.status === 'cancelled' || j.status === 'error') { h += btn('resume', id, esc(tr('act.resume')), IC.play, 'solid'); }
     if (c.e && !live) { h += btn('retry_failed', id, esc(tr('act.retryErrors', { n: c.e })), IC.retry, 'solid'); }
@@ -742,8 +754,13 @@
     if (r) { r.el.focus(); }
   }
   function listKey(d, ev) {
-    var k = ev.key, n = d.view.length, row, cur = -1, page, pos;
+    var k = ev.key, n = d.view.length, row, cur = -1, page, pos, box;
     if (!n || ev.altKey || ev.ctrlKey || ev.metaKey) { return; }
+    if (k === ' ' && d.summary && d.summary.choosing && ev.target && ev.target.classList && ev.target.classList.contains('row')) {
+      box = ev.target.querySelector('.selbox');   // Space on a row ticks or unticks it while the videos are being chosen
+      if (box) { ev.preventDefault(); box.click(); }
+      return;
+    }
     if (k !== 'ArrowDown' && k !== 'ArrowUp' && k !== 'Home' && k !== 'End' && k !== 'PageDown' && k !== 'PageUp') { return; }
     row = ev.target && ev.target.closest ? ev.target.closest('.row') : null;
     if (row) { cur = d.view.indexOf(parseInt(row.getAttribute('aria-posinset'), 10) - 1); }
@@ -829,15 +846,20 @@
         btn('copyerrs', d.id, esc(tr('detail.copy')), IC.list) +
         '<a class="btn sm" href="/api/jobs/' + d.id + '/errors.txt" download>' + IC.save + esc(tr('detail.downloadList')) + '</a></div>';
     }
-    if (ph !== d.panelHtml) { d.panelHtml = ph; d.panel.innerHTML = ph; }
-    d.panel.hidden = !c.e;
+    if (s.choosing) {   // the videos are chosen here: all or none with one press, one by one with the boxes of the rows
+      ph = '<div class="selbar"><b>' + esc(tr('choose.count', { n: c.q, t: s.total })) + '</b>' +
+        btn('sel_all', d.id, esc(tr('choose.all')), '', '') + btn('sel_none', d.id, esc(tr('choose.none')), '', '') + '</div>' + ph;
+    }
+    if (ph !== d.panelHtml) { d.panelHtml = ph; setHtmlKeepFocus(d.panel, ph); }
+    d.panel.className = c.e ? 'errpanel' : 'selpanel';
+    d.panel.hidden = !(c.e || s.choosing);
 
     var th = '', tk, n;
     for (i = 0; i < TABS.length; i++) {
       tk = TABS[i];
       n = tk === 'all' ? s.total : tk === 'd' ? c.d + c.s : c[tk];
-      if (tk === 'c' && !n) { continue; }
-      th += '<button type="button" class="tab t-' + tk + (d.tab === tk ? ' on' : '') + '" data-act="tab" data-tab="' + tk + '" aria-pressed="' + (d.tab === tk) + '">' + esc(tr('tab.' + tk)) + '<b>' + n + '</b></button>';
+      if ((tk === 'c' || tk === 'k') && !n) { continue; }
+      th += '<button type="button" class="tab t-' + tk + (d.tab === tk ? ' on' : '') + '" data-act="tab" data-tab="' + tk + '" aria-pressed="' + (d.tab === tk) + '">' + esc(tk === 'k' ? tr('stat.skipped') : tr('tab.' + tk)) + '<b>' + n + '</b></button>';
     }
     if (d.kind) { th += '<button type="button" class="tab on" data-act="clearkind">' + esc(tr('detail.filter', { k: errLabel(d.kind) })) + ' ✕</button>'; }
     if (th !== d.tabsHtml) { d.tabsHtml = th; d.tabsEl.innerHTML = th; }
@@ -859,7 +881,16 @@
     return r;
   }
 
-  function updateRow(r, it, pad, jid, top, total, cur) {
+  // what lets the user leave a video out (or add it back): a box while the videos are being chosen, a button afterwards
+  function selectHtml(it, jid, title, choosing, on) {
+    var d = ' data-act="' + (on ? 'skip_item' : 'unskip_item') + '" data-id="' + jid + '" data-idx="' + it.i + '"';
+    if (choosing) {
+      return '<input type="checkbox" class="selbox" data-act="sel_item" data-id="' + jid + '" data-idx="' + it.i + '"' + (on ? ' checked' : '') + ' aria-label="' + esc(tr('row.selectLabel', { title: title })) + '">';
+    }
+    return '<button type="button" class="btn sm"' + d + ' title="' + esc(tr(on ? 'row.skipTitle' : 'row.unskipTitle')) + '" aria-label="' + esc(tr(on ? 'row.skipTitle' : 'row.unskipTitle')) + '">' + (on ? IC.skip : IC.add) + '</button>';
+  }
+
+  function updateRow(r, it, pad, jid, top, total, cur, choosing) {
     var k = r.k, link = it.v ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(it.v) : '';
     var title = it.t || (it.v ? tr('row.video', { id: it.v }) : tr('row.reading'));
     var sub = '', side = '', act = '', tip = '';
@@ -878,6 +909,7 @@
           sub = esc(tr('row.retryIn', { st: stageText(it.st), s: it.rt })) + (it.ek ? ' · ' + esc(errLabel(it.ek)) : '');
           side = '<span class="st warn">' + esc(tr('row.retrying')) + '</span>'; tip = it.em || '';
         } else { sub = it.a > 0 ? esc(it.st ? stageText(it.st) : tr('row.waitNew')) : esc(tr('row.waiting')); side = esc(tr('row.queued')); }
+        act = selectHtml(it, jid, title, choosing, true);
         break;
       case 'd':
         sub = esc(it.f || ''); side = '<div class="st ok">' + esc(tr('row.completed')) + '</div>' + (it.sz ? fmtBytes(it.sz) : '');
@@ -898,7 +930,8 @@
         sub = esc(tr('row.cancelled')); side = esc(tr('row.cancelled'));
         break;
       case 'k':
-        sub = esc(tr('row.skippedWhy')); side = esc(tr('row.skipped'));
+        sub = esc(it.em === 'user' ? tr('row.skippedByYou') : tr('row.skippedWhy')); side = esc(tr('row.skipped'));
+        act = selectHtml(it, jid, title, choosing, false);
         break;
     }
     if (k.top !== top) { k.top = top; r.el.style.top = top + 'px'; }
@@ -920,7 +953,7 @@
     // only the buttons of the current item are in the Tab order (otherwise a long list would hold the keyboard for ever)
     var want = cur === it.i ? 0 : -1;
     if (k.rtab !== want) { k.rtab = want; r.el.tabIndex = want; }   // the list is a single Tab stop: this row (the others by arrow keys)
-    if (k.tab !== want) { k.tab = want; var bs = r.act.querySelectorAll('a, button'), bi; for (bi = 0; bi < bs.length; bi++) { bs[bi].tabIndex = want; } }
+    if (k.tab !== want) { k.tab = want; var bs = r.act.querySelectorAll('a, button, input'), bi; for (bi = 0; bi < bs.length; bi++) { bs[bi].tabIndex = want; } }
     var tt = tip || title;
     if (k.tip !== tt) { k.tip = tt; r.el.title = tt; }
   }
@@ -943,7 +976,7 @@
     for (k = first; k < last; k++) {
       it = d.items[d.view[k]]; key = it.i; need[key] = true; r = d.rowEls[key];
       if (!r) { r = d.rowEls[key] = makeRow(); d.spacer.appendChild(r.el); }
-      updateRow(r, it, pad, d.id, k * ROW, s.total, stop);
+      updateRow(r, it, pad, d.id, k * ROW, s.total, stop, !!s.choosing);
     }
     for (key in d.rowEls) {
       if (Object.prototype.hasOwnProperty.call(d.rowEls, key) && !need[key]) {
@@ -986,6 +1019,11 @@
       case 'cancel': if (window.confirm(tr('confirm.cancel'))) { jobAction(id, 'cancel'); } break;
       case 'retry_failed': jobAction(id, 'retry_failed', null, tr('toast.retryingErrors')); break;
       case 'retry_item': jobAction(id, 'retry_failed', [parseInt(el.getAttribute('data-idx'), 10)], tr('toast.retryingItem')); break;
+      case 'sel_item': jobAction(id, el.checked ? 'unskip' : 'skip', [parseInt(el.getAttribute('data-idx'), 10)]); break;
+      case 'skip_item': jobAction(id, 'skip', [parseInt(el.getAttribute('data-idx'), 10)]); break;
+      case 'unskip_item': jobAction(id, 'unskip', [parseInt(el.getAttribute('data-idx'), 10)]); break;
+      case 'sel_all': jobAction(id, 'unskip'); break;
+      case 'sel_none': jobAction(id, 'skip'); break;
       case 'redownload': if (window.confirm(tr('confirm.redownload'))) { jobAction(id, 'redownload', null, tr('toast.redownloading')); } break;
       case 'open_folder': jobAction(id, 'open_folder'); break;
       case 'remove': if (window.confirm(tr('confirm.remove'))) { jobAction(id, 'remove'); } break;
@@ -1010,8 +1048,6 @@
     return lines.join('\n');
   }
 
-  // ------------------------------------------------------------------ settings
-  
   // ------------------------------------------------------------------ subscriptions
   function fmtWhen(ts) {
     if (!ts) { return tr('subs.never'); }
@@ -1052,6 +1088,7 @@
     }).catch(function (e) { toast(e.message, true); });
   }
 
+  // ------------------------------------------------------------------ settings window
   function openSettings() {
     var s = S.settings;
     $('#setDir').value = s.download_dir || '';
@@ -1124,6 +1161,8 @@
     for (li = 0; li < LANGS.length; li++) { lh += '<option value="' + LANGS[li][0] + '" lang="' + LANGS[li][0] + '" translate="no">' + LANGS[li][1] + '</option>'; }
     lsel.innerHTML = lh;
     lsel.addEventListener('change', function () { setLanguage(lsel.value, true); });
+    try { $('#chooseFirst').checked = localStorage.getItem('ytg-choose') === '1'; } catch (e) { /* ignore */ }
+    $('#chooseFirst').addEventListener('change', function () { try { localStorage.setItem('ytg-choose', this.checked ? '1' : '0'); } catch (e) { /* ignore */ } });
     $('#subscribe').addEventListener('change', function () { $('#subHours').hidden = !this.checked; $('#onlyNewRow').hidden = !this.checked; });
     $('#subs').addEventListener('change', function (ev) {
       var id = ev.target && ev.target.getAttribute('data-subint');

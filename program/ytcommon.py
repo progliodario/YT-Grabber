@@ -237,3 +237,11 @@ def base_ydl_params():
     elif shutil.which('node'):
         p['js_runtimes'] = {'node': {}}   # Termux: deno does not exist, node is used
     return p
+
+
+def atomic_write(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        f.write(text)
+    os.replace(tmp, path)

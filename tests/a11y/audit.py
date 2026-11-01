@@ -116,10 +116,10 @@ class Browser:
         time.sleep(0.5)
 
     def key(self, name, shift=False):
-        codes = {'Tab': 9, 'Enter': 13, 'Escape': 27, 'PageUp': 33, 'PageDown': 34, 'End': 35, 'Home': 36, 'ArrowUp': 38, 'ArrowDown': 40}
+        codes = {'Tab': 9, 'Enter': 13, 'Escape': 27, 'PageUp': 33, 'PageDown': 34, 'End': 35, 'Home': 36, 'ArrowUp': 38, 'ArrowDown': 40, ' ': 32}
         for t in ('keyDown', 'keyUp'):
-            self.call('Input.dispatchKeyEvent', type=t, key=name, code=name, windowsVirtualKeyCode=codes[name], modifiers=8 if shift else 0,
-                      text='\r' if (name == 'Enter' and t == 'keyDown') else '')
+            self.call('Input.dispatchKeyEvent', type=t, key=name, code='Space' if name == ' ' else name, windowsVirtualKeyCode=codes[name],
+                      modifiers=8 if shift else 0, text='\r' if (name == 'Enter' and t == 'keyDown') else (' ' if (name == ' ' and t == 'keyDown') else ''))
         time.sleep(0.12)
 
     def active(self):
@@ -237,6 +237,22 @@ def main():
         b.key('Tab')
         b.key('Tab')
         check(b.js("!document.activeElement.closest('.row')"), 'and the buttons of the other items are not in the Tab order')
+
+        print('choosing the videos of a playlist')
+        b.js("(function(){var bs=[].slice.call(document.querySelectorAll('.jtitle-btn')).filter(function(e){return /Choose the songs/.test(e.textContent);}); bs[0].click();})()")
+        time.sleep(1.5)
+        check(b.js("document.querySelectorAll('.selbox').length === 5"), 'while the videos are chosen, each one has a box')
+        check(b.js("[].every.call(document.querySelectorAll('.selbox'), function(x){return !!x.getAttribute('aria-label');})"), 'and the boxes have names')
+        check(b.js("!!document.querySelector('.selbar') && document.querySelectorAll('.selbar button').length === 2"), 'select all and select none are there')
+        b.js("document.querySelector('.search').focus()")
+        b.key('Tab')
+        check(row() == 1, 'Tab enters the list of the choice on its first item')
+        b.key(' ')
+        time.sleep(1.5)
+        check(b.js("document.querySelector('.row[aria-posinset=\"1\"]').classList.contains('s-k')"), 'Space on a row leaves the video out')
+        b.key(' ')
+        time.sleep(1.5)
+        check(b.js("document.querySelector('.row[aria-posinset=\"1\"]').classList.contains('s-q')"), 'and Space again puts it back')
 
         print('text size setting')
         b.js("document.getElementById('btnSettings').click()")

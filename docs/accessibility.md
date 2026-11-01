@@ -31,6 +31,7 @@ focus always has a visible outline (3 pixels, with a contrast of at least 3:1 ag
 | Ctrl+Enter (⌘+Enter on a Mac) | start the download from the box that contains the links |
 | Escape | close the settings window; the focus returns to the button that opened it |
 | Arrow Up / Down, Home, End, Page Up / Down | in the list of items: move from row to row (the list is a single stop of the Tab key; the buttons of the current row are reached with Tab) |
+| Space | in the list, while the videos are being chosen: tick or untick the video of the current row (its box also has the focus with Tab) |
 
 No shortcut uses a single letter, so there is no conflict with the shortcuts of a screen reader or of speech recognition software.
 

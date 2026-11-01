@@ -85,11 +85,11 @@ The audit requires `pip install websockets` and Chrome, Chromium or Edge. It als
 ## Changing the code
 
 - Read [docs/development.md](docs/development.md), which describes the architecture, the layout, how to run the program from the
-  sources and the tests.
+  sources and the tests, and [program/README.md](program/README.md), which explains the modules and the rules for adding one.
 - The program is written in Python 3 using only the standard library (plus yt-dlp), with 4-space indentation and short comments in
   **English** that explain *why*. The page uses plain JavaScript (in the style of the existing code, without a framework or a build
   step) and CSS.
-- Run the tests before submitting a change: `python -m unittest discover -s tests`. Add a test for each fix or new feature.
+- Run the tests before submitting a change: `python -m unittest discover -s tests`. Add a test for each fix or new feature, in the file of its subject (see [tests/README.md](tests/README.md)).
   When possible, also run `python -m pyflakes program packaging tests`.
 - When the texts of the page are changed, update them in `en.js` and in the other languages (a machine translation is acceptable as
   a first version; the pull request should say so).

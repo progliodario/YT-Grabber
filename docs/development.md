@@ -16,7 +16,9 @@ with a WebView (Android).
 
 | Part | Role |
 |---|---|
-| `program/server.py` | the HTTP server and all the logic: jobs and items, the scheduler with **exactly 10 download slots**, subscriptions, settings, the update check and installation, notification hooks |
+| `program/server.py` | the entry point and the logic that ties everything together: the scheduler with **exactly 10 download slots**, the download of one item, the reading of playlists, the actions on a job, subscriptions, the HTTP API, shutdown |
+| `program/ytsettings.py`, `ytmodel.py`, `ytlinks.py` | self-contained parts: the settings, `Item` and `Job` (data only), and links and file names |
+| `program/ytupdates.py` | new versions of YT Grabber (the notice and the one-click install) and the automatic update of yt-dlp; it never imports `server` |
 | `program/ytworker.py` | a download worker. The server starts 10 of them as **separate, persistent processes** (no repeated start-up cost and no limit from the GIL) and communicates with them through JSON lines over stdin/stdout |
 | `program/ytcommon.py` | what the server and the workers share: paths, the catalogue of errors and their causes, and the way a format is chosen |
 | `program/setup_tools.py` | installs yt-dlp, the JavaScript runtime and ffmpeg at the first start |
@@ -25,14 +27,18 @@ with a WebView (Android).
 The course of a download:
 
 1. `POST /api/jobs` creates a **job** for each link. The playlist is read in blocks in a thread, and each entry becomes an **item**
-   (state `q` queued, `a` downloading, `p` converting, `d` done, `e` error, `s` already present, `c` cancelled, `k` skipped by an
-   "only new videos" subscription). Items enter the queue as soon as they are read.
+   (state `q` queued, `a` downloading, `p` converting, `d` done, `e` error, `s` already present, `c` cancelled, `k` skipped: by an
+   "only new videos" subscription, or by the user). Items enter the queue as soon as they are read.
 2. Ten supervisor threads take the next queued item (jobs in the order in which they were added; a paused job is skipped) and pass it
    to their worker process, so that never more than 10 items download at a time. When an item moves from downloading to converting,
    its slot is released at once.
 3. Files are numbered by their position in the playlist (`001 - Title.ext`). A **manifest** in each folder records what was downloaded,
    so that a resumed or repeated job recognises the files. Jobs are saved in `data/jobs/*.json` and survive a restart.
-4. The page polls `GET /api/state` (and `GET /api/jobs/<id>?since=N` for the open list, which returns only the changed items).
+4. When the user asks to **choose the videos first** (`choose` in `POST /api/jobs`), the job is created paused with `choosing` set: the list is read
+   but nothing is downloaded. The actions `skip` and `unskip` (with a list of item numbers, or none for all) move queued items to `k`
+   (their message is `SKIP_BY_USER`) and back; `resume` starts the job. The same two actions work on a running job for the items
+   that are still queued. The scheduler ignores queued entries whose state is no longer `q`, so nothing has to be removed from the queue.
+5. The page polls `GET /api/state` (and `GET /api/jobs/<id>?since=N` for the open list, which returns only the changed items).
 
 **Subscriptions** are stored in `data/subscriptions.json`. A thread starts a normal job on the same link at each interval (at most
 one due subscription every 20 seconds). In "only new videos" mode, the subscription keeps the list of the video identifiers it has
@@ -56,7 +62,7 @@ The **interface** is translated by `window.I18N.<code> = {...}` files and `tr('k
 ## Layout
 
 ```
-program/            the program (see above)
+program/            the program: server.py, the yt*.py modules, setup_tools.py, web/ (see program/README.md)
 packaging/
   windows/          exe (PyInstaller) + installer (Inno Setup): build.bat, build_windows.py, exe_main.py, winapp.py, winlang.py,
                     installer.iss, version.txt, icon
@@ -67,7 +73,7 @@ packaging/
   macos/            the .app (assembled, no Mac needed): build.bat, build_app.py, launcher, run.sh
   termux/           installation on a phone with Termux: Share-to-phone.bat, share_to_phone.py, install-termux.sh
 tools/              bump_version.py
-tests/              test_core.py, test_accessibility.py, a11y/ (seed.py: sample data; audit.py: axe-core and keyboard audit in a browser)
+tests/              one test file per subject, support.py (shared set-up), a11y/ (seed.py: sample data; audit.py: axe-core and keyboard audit)
 docs/               guides, release-key.asc (public GPG key), screenshots/
 .github/            workflows/ (ci, release, finalize), scripts/, issue and pull request templates, dependabot.yml
 Start.bat Start.sh  run from the sources
@@ -92,7 +98,7 @@ python -m unittest discover -s tests -v
 ```
 
 The tests require `yt-dlp` to be importable (`pip install "yt-dlp[default]"`, or run `setup_tools.py` once). They do not require the
-network. They cover links, error classification, format selection, settings, subscriptions (including "only new"), the new-version
+network. There is one file per subject (see [`tests/README.md`](../tests/README.md)). They cover links, error classification, format selection, settings, subscriptions (including "only new"), the new-version
 check and the one-click update, the notices for finished downloads, the language files (every language has every key and the same
 placeholders, and no key is unused), the Windows texts, the version numbers and `tools/bump_version.py`. CI also checks the
 JavaScript syntax with Node and starts the server on Windows, macOS and Linux.

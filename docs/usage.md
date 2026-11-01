@@ -2,7 +2,8 @@
 
 Installation is described in the [installation guide](install.md). This guide describes how to use the program.
 
-- [Downloading](#downloading) · [Numbered files](#numbered-files-in-order) · [Errors](#errors-which-ones-and-why) ·
+- [Downloading](#downloading) · [Choosing the videos](#choosing-the-videos) · [Numbered files](#numbered-files-in-order) ·
+  [Errors](#errors-which-ones-and-why) ·
   [Resuming](#resuming-after-a-stop) · [Cookies](#cookies)
 - [Subscriptions](#subscriptions) · [Notifications and new versions](#notifications-and-new-versions) · [Languages](#languages)
 - [Settings](#settings) · [Command-line options](#command-line-options) · [Where things are stored](#where-things-are-stored) ·
@@ -26,6 +27,7 @@ further details are given in the [accessibility statement](accessibility.md).
    - *Cover art and metadata* adds the thumbnail and the tags to the files.
    - *Video+playlist links: only the video*: a link to a video that belongs to a playlist downloads only that video.
    - *Download again even if already present*: ignores the files that are already in the folder.
+   - *Let me choose the videos first*: nothing is downloaded until the unwanted videos have been unticked (see [Choosing the videos](#choosing-the-videos)).
 3. Press **Download**. Several links produce several cards in the list. The same link cannot be added twice while it is in progress.
 
 **Exactly 10 downloads run at the same time** in total, even when several playlists are queued. The list is read in blocks, and the
@@ -45,6 +47,23 @@ downloading, converting, queued, completed, errors). The theme is light, dark or
 list, the arrow keys move from one item to the next.
 
 ![The numbered list of a playlist, in the dark theme](screenshots/list-dark.png)
+
+## Choosing the videos
+
+By default a whole playlist is downloaded. To leave some videos out, there are two ways:
+
+- **Before the download starts.** Select **Let me choose the videos first** under the link box (the choice is remembered) and press
+  **Download**. The program reads the list but downloads nothing: the card says *Choose the videos* and its list opens with a box in
+  every row. Untick the videos that are not wanted (*Select all* and *Select none* act on the whole list; with the keyboard, the arrow
+  keys move between the rows and Space ticks or unticks the one that has the focus), then press **Start**, which shows how many
+  videos are selected.
+- **While the download runs.** Every video that is still waiting has a **Do not download this video** button. A video that was left
+  out shows **Download this video after all**, also when the job has already finished.
+
+The videos that were left out are listed as *Skipped* ("You chose not to download it"), with their own tab in the list. The files keep
+the number of their position in the playlist, so the numbers of the downloaded files have gaps where videos were left out. A
+subscription that checks the same playlist later downloads the videos that are missing from the folder again: leaving a video out
+applies to that download only.
 
 ## Numbered files, in order
 

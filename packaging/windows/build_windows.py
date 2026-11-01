@@ -74,6 +74,7 @@ def build_exe():
          '--add-data', SRC + os.sep + 'web' + os.pathsep + 'web',
          '--add-data', icon + os.pathsep + '.',
          '--hidden-import', 'server', '--hidden-import', 'ytworker', '--hidden-import', 'ytcommon',
+         '--hidden-import', 'ytsettings', '--hidden-import', 'ytmodel', '--hidden-import', 'ytlinks', '--hidden-import', 'ytupdates',
          '--hidden-import', 'setup_tools', '--hidden-import', 'winapp', '--hidden-import', 'winlang',
          '--collect-all', 'yt_dlp', '--collect-all', 'yt_dlp_ejs', '--collect-all', 'certifi',
          '--hidden-import', 'mutagen', '--hidden-import', 'websockets', '--hidden-import', 'requests',

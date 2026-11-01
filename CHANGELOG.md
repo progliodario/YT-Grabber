@@ -2,6 +2,16 @@
 
 All notable changes are listed here, newest first. Version numbers follow `MAJOR.MINOR.PATCH`.
 
+## Unreleased
+
+- **Choose the videos of a playlist:** *Let me choose the videos first* reads the list and waits; untick what is not wanted (all or
+  none with one press, or one by one, also with the keyboard: arrow keys and Space) and press *Start*. While a download runs, any
+  video that is still waiting can be skipped, and a skipped one can be added back. Skipped videos have their own tab.
+- **Code reorganised:** `server.py` no longer holds everything. The settings, `Item` and `Job`, the links and file names, and the
+  updates are in `ytsettings.py`, `ytmodel.py`, `ytlinks.py` and `ytupdates.py`; the tests are split into one file per subject
+  (`tests/README.md`); `program/README.md` describes the modules. Nothing changes for users.
+- The Android build now includes every `*.py` of `program/`, so a new module needs no change there.
+
 ## 1.5.1
 
 - Documentation: the accessibility statement now records the tests with the NVDA screen reader.

@@ -354,8 +354,17 @@ main:focus-visible, #jobsTitle:focus-visible, #setTitle:focus-visible { outline:
 .btn.sm, .tab, .errgroup { min-height: 2rem; }
 .text-end { text-align: end; }
 
+/* choosing the videos of a playlist: the bar above the list and the box of each row */
+.selpanel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; margin-bottom: 16px; }
+.selbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.selbar b { margin-right: auto; }
+.selbox { width: 1.5rem; height: 1.5rem; margin: 0; accent-color: var(--accent-ink); cursor: pointer; }
+.selbox:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.row.s-k .rtitle { color: var(--muted); }
+
 /* fingers: every control at least 44 x 44 CSS pixels */
 @media (pointer: coarse) {
+  .selbox { width: 2.75rem; height: 2.75rem; }
   .btn, .tab, .icon-btn, .errgroup, .banner-x, .link, .lang-select, .mini-select, select, input[type=search] { min-height: 2.75rem; }
   .icon-btn { min-width: 2.75rem; }
   .pills label, .seg label { min-height: 2.75rem; }

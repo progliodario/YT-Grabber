@@ -2,12 +2,18 @@
 """YT Grabber - local server to download YouTube and YouTube Music videos and playlists.
 
 Start:  python program/server.py [--port 8765] [--host 127.0.0.1] [--dir FOLDER] [--no-browser] [--idle-exit MINUTES]
+
+This file holds the logic that ties everything together; the self-contained parts are in their own modules (see program/README.md):
+ytsettings (settings), ytmodel (Item and Job), ytlinks (links and file names), ytupdates (new versions and yt-dlp updates),
+ytcommon (what the workers share) and ytworker (the download processes).
+
+Sections, in order: settings and errors, the manifests used to resume, file system helpers, the download engine (10 worker
+processes, the scheduler), the download of one item, the enumeration of playlists, the end of a job, the actions on a job (pause,
+cancel, retry, skip...), subscriptions, the HTTP server and its API, notices and shutdown, and main().
 """
 import argparse
 import atexit
-import ctypes
 import gzip
-import hashlib
 import heapq
 import json
 import mimetypes
@@ -19,24 +25,25 @@ import shutil
 import signal
 import subprocess
 import sys
-import tempfile
 import threading
 import time
 import traceback
 import urllib.parse
 import urllib.request
 import webbrowser
-from collections import Counter, deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 # ytcommon must be imported first: it sets the paths (also inside YT-Grabber.exe) and the sys.path of yt-dlp
 from ytcommon import (ROOT, RES, DATA_ROOT, DATA, DENO, FROZEN, IS_ANDROID, ANDROID_APP,  # noqa: E402
-                      HAVE_FFMPEG)
+                      HAVE_FFMPEG, atomic_write)
+from ytsettings import (DEFAULT_SETTINGS, BROWSERS, SETTINGS, clean_opts, load_settings, save_settings)  # noqa: E402
+from ytmodel import SKIP_BY_USER, ItemFailure, Item, Job  # noqa: E402
+from ytlinks import (PREFIX_RE, classify_url, hide_path, safe_name, build_filename, expected_for_existing)  # noqa: E402
+import ytupdates as updates  # noqa: E402
 
 WEB = os.path.join(RES, 'web')
 JOBS_DIR = os.path.join(DATA, 'jobs')
 COOKIES_FILE = os.path.join(DATA, 'cookies.txt')
-SETTINGS_FILE = os.path.join(DATA, 'settings.json')
 
 try:
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -45,7 +52,6 @@ except Exception:
     pass
 
 import yt_dlp  # noqa: E402
-from yt_dlp.utils import sanitize_filename  # noqa: E402
 
 APP_NAME = 'yt-grabber'
 APP_VERSION = '1.5.1'
@@ -62,88 +68,6 @@ def log(*a):
 
 # --------------------------------------------------------------------------- settings
 
-def default_download_dir():
-    if os.environ.get('YTG_DEFAULT_DIR'):   # Android app: the app chooses the folder (Download or private folder)
-        return os.environ['YTG_DEFAULT_DIR']
-    if IS_ANDROID:
-        # the phone's "Download" folder (visible to other apps): needs the permission granted with termux-setup-storage
-        for cand in (os.path.expanduser('~/storage/downloads'), '/storage/emulated/0/Download', '/sdcard/Download'):
-            if os.path.isdir(cand) and os.access(cand, os.W_OK):
-                return os.path.join(cand, 'YT-Grabber')
-    xdg = os.environ.get('XDG_DOWNLOAD_DIR')   # Linux (set inside Flatpak, where ~ is not the real home folder)
-    if xdg and os.path.isdir(xdg):
-        return os.path.join(xdg, 'YT-Grabber')
-    return os.path.join(os.path.expanduser('~'), 'Downloads', 'YT-Grabber')
-
-
-DEFAULT_SETTINGS = {
-    'download_dir': default_download_dir(),
-    'mode': 'audio',            # audio | video
-    'audio_format': 'm4a' if IS_ANDROID else 'mp3',   # mp3 | m4a | opus (on the phone M4A: no re-encoding, much less load)
-    'mp3_bitrate': '192',
-    'video_height': '1080',     # best | 2160 | 1440 | 1080 | 720 | 480 | 360
-    'embed': True,              # copertina + metadati
-    'single_only': False,       # "video inside a playlist" link -> only that video
-    'force': False,             # download again even if already present
-    'cookies_browser': '',      # chrome | firefox | edge | ...
-    'lang': '',                 # interface language chosen by the user ('' = detect it automatically)
-    'check_updates': True,      # ask GitHub now and then whether a newer version of YT Grabber exists
-    'notify_done': True,        # tell the user when a download has finished (browser notification, Windows tray)
-    'auto_ytdlp': True,         # install a newer yt-dlp by itself (when nothing is downloading) and restart
-}
-LANG_CODES = ('', 'en', 'it', 'es', 'fr', 'de', 'pt', 'nl', 'pl', 'ru', 'tr', 'ar', 'hi', 'id', 'zh', 'ja', 'ko')
-BROWSERS = ('', 'firefox', 'chrome', 'edge', 'brave', 'opera', 'vivaldi', 'chromium', 'whale', 'safari')
-
-SETTINGS = dict(DEFAULT_SETTINGS)
-
-
-def clean_opts(o, base=None):
-    base = base or SETTINGS
-    o = o or {}
-    r = {}
-    r['mode'] = o.get('mode') if o.get('mode') in ('audio', 'video') else base['mode']
-    r['audio_format'] = o.get('audio_format') if o.get('audio_format') in ('mp3', 'm4a', 'opus') else base['audio_format']
-    r['mp3_bitrate'] = str(o.get('mp3_bitrate')) if str(o.get('mp3_bitrate')) in ('128', '192', '256', '320') else base['mp3_bitrate']
-    r['video_height'] = str(o.get('video_height')) if str(o.get('video_height')) in ('best', '2160', '1440', '1080', '720', '480', '360') else base['video_height']
-    for k in ('embed', 'single_only', 'force'):
-        r[k] = bool(o[k]) if k in o else bool(base[k])
-    r['cookies_browser'] = o.get('cookies_browser') if o.get('cookies_browser') in BROWSERS else base['cookies_browser']
-    r['lang'] = o.get('lang') if o.get('lang') in LANG_CODES else base.get('lang', '')
-    for k in ('check_updates', 'notify_done', 'auto_ytdlp'):
-        r[k] = bool(o[k]) if k in o else bool(base.get(k, True))
-    return r
-
-
-def load_settings():
-    try:
-        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-            d = json.load(f)
-    except Exception:
-        d = {}
-    s = clean_opts(d, DEFAULT_SETTINGS)
-    dd = d.get('download_dir')
-    s['download_dir'] = dd if isinstance(dd, str) and dd.strip() else DEFAULT_SETTINGS['download_dir']
-    if os.environ.get('YTG_DEFAULT_DIR'):
-        # until the user picks a folder of their own, it follows the one proposed by the app (changes if they grant file access)
-        s['dir_auto'] = bool(d.get('dir_auto', True))
-        if s['dir_auto']:
-            s['download_dir'] = DEFAULT_SETTINGS['download_dir']
-    SETTINGS.clear()
-    SETTINGS.update(s)
-
-
-def save_settings():
-    atomic_write(SETTINGS_FILE, json.dumps(SETTINGS, ensure_ascii=False, indent=1))
-
-
-def atomic_write(path, text):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f:
-        f.write(text)
-    os.replace(tmp, path)
-
-
 # --------------------------------------------------------------------------- errors
 from ytcommon import ERR, clean_msg, classify_text, human_title, base_ydl_params  # noqa: E402
 
@@ -155,161 +79,7 @@ def classify_error(e):
     return classify_text(m, eno), m
 
 
-class ItemFailure(Exception):
-    def __init__(self, kind, msg):
-        super().__init__(msg)
-        self.kind = kind
-
-
-# --------------------------------------------------------------------------- modello
-
-class Item:
-    __slots__ = ('idx', 'vid', 'url', 'title', 'duration', 'uploader', 'dupn', 'state', 'progress', 'speed', 'eta',
-                 'size', 'stage', 'attempts', 'ekind', 'emsg', 'file', 'ver', 'not_before', 'files_seen', 'fb',
-                 'lastp', 'reject', 'slot')
-
-    def __init__(self, idx, vid, url, title='', duration=None, uploader='', dupn=1):
-        self.idx = idx
-        self.vid = vid
-        self.url = url
-        self.title = title or ''
-        self.duration = duration
-        self.uploader = uploader or ''
-        self.dupn = dupn
-        self.slot = False    # occupies one of the 10 download slots
-        self.state = 'q'     # q queued | a downloading | p converting | d done | e error | s already present | c cancelled
-        #                      k skipped: it was already there when the subscription ("only new videos") started
-        self.progress = 0.0
-        self.speed = 0
-        self.eta = None
-        self.size = None
-        self.stage = ''
-        self.attempts = 0
-        self.ekind = ''
-        self.emsg = ''
-        self.file = ''
-        self.ver = 0
-        self.not_before = 0.0
-        self.files_seen = []
-        self.fb = False
-        self.lastp = 0.0
-        self.reject = ''
-
-    def key(self):
-        base = self.vid or ('idx%d' % self.idx)
-        return base if self.dupn <= 1 else '%s#%d' % (base, self.dupn)
-
-    def to_json(self, now):
-        return {
-            'i': self.idx, 's': self.state, 'v': self.vid, 't': self.title, 'p': round(self.progress, 1),
-            'sp': int(self.speed or 0), 'eta': self.eta, 'sz': self.size, 'st': self.stage, 'a': self.attempts,
-            'ek': self.ekind, 'em': self.emsg, 'f': self.file, 'd': self.duration, 'u': self.uploader,
-            'rt': int(max(0, self.not_before - now)) if (self.state == 'q' and self.not_before > now) else 0,
-            'ver': self.ver,
-        }
-
-
-class Job:
-    def __init__(self, jid, url, opts, urls=None):
-        self.id = jid
-        self.url = url
-        self.urls = urls or []       # for the "single videos"
-        self.opts = opts
-        self.title = ''
-        self.kind = 'playlist'       # playlist | single
-        self.status = 'enumerating'  # enumerating | running | done | cancelled | error
-        self.paused = False
-        self.interrupted = False
-        self.items = []
-        self.counts = Counter()
-        self.seq = 0
-        self.queue = deque()
-        self.delayed = []
-        self.declared = None
-        self.pad = None              # None = not known yet; 0 = no numbering
-        self.enum_done = False
-        self.pid = ''
-        self.dir = ''
-        self.created = time.time()
-        self.finished = None
-        self.warning = ''
-        self.message = ''
-        self.recent = deque(maxlen=200)
-        self.seen = Counter()
-        self.run_started = time.time()
-        self.cancel = False
-        self.dirty = True
-        self.enum_thread = None
-        self.pp_done = False
-        self.sub_id = ''             # set when this job is a run of a subscription
-        self.sub_auto = False        # True for the checks started by the scheduler (they vanish if nothing is new)
-
-    # all the following methods must be called with LOCK held
-    def touch(self, it):
-        self.seq += 1
-        it.ver = self.seq
-
-    def set_state(self, it, st):
-        if it.state == st:
-            self.touch(it)
-            return
-        self.counts[it.state] -= 1
-        self.counts[st] += 1
-        it.state = st
-        self.touch(it)
-        self.dirty = True
-
-    def add_item(self, it, enqueue=True):
-        self.items.append(it)
-        self.counts[it.state] += 1
-        self.touch(it)
-        self.dirty = True
-        if it.state == 'q' and enqueue:
-            self.queue.append(it)
-
-    def numbered(self):
-        return bool(self.pad)
-
-    def summary(self, now=None):
-        now = now or time.time()
-        c = self.counts
-        total = len(self.items)
-        speed = 0
-        err_idx = []
-        for it in self.items:
-            if it.state == 'a':
-                speed += it.speed or 0
-            elif it.state == 'e' and len(err_idx) < 80:
-                err_idx.append(it.idx)
-        finished_n = c['d'] + c['s'] + c['e'] + c['c'] + c['k']
-        eta = None
-        if self.status in ('running', 'enumerating') and not self.paused:
-            win = [t for t in self.recent if now - t <= 90]
-            remaining = c['q'] + c['a'] + c['p']
-            if len(win) >= 3 and remaining:
-                span = max(5.0, now - win[0])
-                rate = len(win) / span
-                eta = int(remaining / rate) if rate > 0 else None
-        return {
-            'id': self.id, 'url': self.url, 'title': self.title or self.url, 'kind': self.kind, 'status': self.status,
-            'paused': self.paused, 'interrupted': self.interrupted, 'dir': self.dir, 'created': self.created,
-            'finished': self.finished, 'warning': self.warning, 'message': self.message, 'seq': self.seq,
-            'declared': self.declared, 'enum_done': self.enum_done, 'total': total, 'pad': self.pad or 0,
-            'counts': {k: c[k] for k in ('q', 'a', 'p', 'd', 'e', 's', 'c', 'k')}, 'speed': int(speed), 'eta': eta,
-            'processed': finished_n, 'opts': self.opts, 'err_idx': err_idx,
-            'cover': self.items[0].vid if self.items else '',
-        }
-
-    def to_disk(self):
-        return {
-            'v': 1, 'id': self.id, 'url': self.url, 'urls': self.urls, 'opts': self.opts, 'title': self.title,
-            'kind': self.kind, 'status': self.status, 'paused': self.paused, 'declared': self.declared,
-            'pad': self.pad, 'enum_done': self.enum_done, 'pid': self.pid, 'dir': self.dir, 'created': self.created,
-            'finished': self.finished, 'warning': self.warning, 'message': self.message, 'sub': self.sub_id,
-            'items': [[i.idx, i.vid, i.title, i.state, i.ekind, i.emsg, i.file, i.duration, i.uploader, i.attempts,
-                       i.dupn, i.url] for i in self.items],
-        }
-
+# --------------------------------------------------------------------------- model (Item and Job are in model.py)
 
 MANAGER_JOBS = {}
 JOB_ORDER = []
@@ -387,79 +157,7 @@ MANIFESTS = Manifests()
 
 # --------------------------------------------------------------------------- URL
 
-YT_HOSTS = ('youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be', 'youtube-nocookie.com', 'gaming.youtube.com')
-CHANNEL_TABS = ('videos', 'shorts', 'streams', 'playlists', 'releases', 'podcasts', 'featured', 'live', 'courses')
-
-
-def classify_url(raw, single_only=False):
-    """-> (kind, url, vid) with kind in video | playlist | auto, or None if it is not a link."""
-    raw = raw.strip().strip('<>"\'')
-    if not raw:
-        return None
-    if re.fullmatch(r'[\w-]{11}', raw):
-        return 'video', 'https://www.youtube.com/watch?v=' + raw, raw
-    if re.fullmatch(r'(PL|OLAK5uy_|UU|FL|LL|RDCLAK5uy_|VL|PU)[\w-]{8,}', raw):
-        return 'playlist', 'https://www.youtube.com/playlist?list=' + raw, None
-    if not re.match(r'^https?://', raw, re.I):
-        if re.match(r'^(www\.|m\.|music\.)?(youtube\.com|youtu\.be)', raw, re.I):
-            raw = 'https://' + raw
-        else:
-            return None
-    u = urllib.parse.urlparse(raw)
-    host = u.netloc.lower().split(':')[0]
-    host_nowww = host[4:] if host.startswith('www.') else host
-    if host_nowww not in YT_HOSTS:
-        return 'auto', raw, None
-    q = urllib.parse.parse_qs(u.query)
-    path = u.path or '/'
-    v = (q.get('v') or [None])[0]
-    lst = (q.get('list') or [None])[0]
-    if host_nowww == 'youtu.be':
-        v = path.strip('/').split('/')[0] or v
-    m = re.match(r'^/(?:shorts|live|embed|v)/([\w-]{11})', path)
-    if m:
-        v = m.group(1)
-    if v and not re.fullmatch(r'[\w-]{11}', v):
-        v = None
-    base = 'https://music.youtube.com' if host_nowww == 'music.youtube.com' else 'https://www.youtube.com'
-    if path.startswith('/playlist') and lst:
-        return 'playlist', '%s/playlist?list=%s' % (base, lst), None
-    if lst and v:
-        if single_only or lst.startswith(('RD', 'UL')):
-            return 'video', 'https://www.youtube.com/watch?v=' + v, v
-        return 'playlist', '%s/playlist?list=%s' % (base, lst), None
-    if v:
-        return 'video', 'https://www.youtube.com/watch?v=' + v, v
-    if lst:
-        return 'playlist', '%s/playlist?list=%s' % (base, lst), None
-    if re.match(r'^/(@|channel/|c/|user/)', path):
-        parts = [p for p in path.split('/') if p]
-        if not parts[-1].lower() in CHANNEL_TABS:
-            path = path.rstrip('/') + '/videos'
-        return 'playlist', '%s%s' % (base, path), None
-    if path.startswith('/browse/'):
-        return 'playlist', raw, None
-    return 'auto', raw, None
-
-
 # --------------------------------------------------------------------------- file system
-
-def hide_path(p):
-    if os.name == 'nt':
-        try:
-            ctypes.windll.kernel32.SetFileAttributesW(p, 0x02)
-        except Exception:
-            pass
-
-
-def safe_name(s, maxlen=150):
-    s = sanitize_filename(s or '', restricted=False)
-    s = re.sub(r'[\x00-\x1f]', '', s)
-    s = re.sub(r'\s+', ' ', s).strip(' .')
-    if len(s) > maxlen:
-        s = s[:maxlen].rstrip(' .')
-    return s or 'untitled'
-
 
 def setup_dir(job, title, pid):
     base = SETTINGS['download_dir'] if not job.opts.get('_dir') else job.opts['_dir']
@@ -503,24 +201,6 @@ def check_disk(job):
         return
     if free < 2 * 1024 ** 3 and not job.warning:
         job.warning = 'Low free disk space: %.1f GB. Downloads may fail.' % (free / 1024 ** 3)
-
-
-def build_filename(job, it, title, ext):
-    prefix = ('%0*d - ' % (job.pad, it.idx)) if job.numbered() else ''
-    room = 245 - len(job.dir) - len(prefix) - len(ext) - 2
-    name = safe_name(title, max(30, min(150, room)))
-    return '%s%s%s' % (prefix, name, ext)
-
-
-PREFIX_RE = re.compile(r'^\d+ - ')
-
-
-def expected_for_existing(job, it, existing):
-    """Recomputes the numeric prefix of an already present file (the playlist may have changed)."""
-    if not job.numbered():
-        return existing
-    rest = PREFIX_RE.sub('', existing, count=1)
-    return '%0*d - %s' % (job.pad, it.idx, rest)
 
 
 # --------------------------------------------------------------------------- download engine (worker processes)
@@ -689,6 +369,7 @@ class Manager:
                 job.warning = d.get('warning', '')
                 job.message = d.get('message', '')
                 job.sub_id = d.get('sub', '')
+                job.choosing = bool(d.get('choosing'))
                 for r in d.get('items', []):
                     it = Item(r[0], r[1], r[11] if len(r) > 11 else '', r[2], r[7], r[8], r[10])
                     it.state, it.ekind, it.emsg, it.file, it.attempts = r[3], r[4], r[5], r[6], r[9]
@@ -702,7 +383,7 @@ class Manager:
                         job.queue.append(it)
                 if job.status in ('enumerating', 'running'):
                     job.paused = True
-                    job.interrupted = True
+                    job.interrupted = not job.choosing   # a job that was waiting for the user's choice is not "interrupted"
                     job.status = 'running' if job.enum_done else 'enumerating'
                 job.dirty = False
                 MANAGER_JOBS[job.id] = job
@@ -1304,6 +985,7 @@ def job_action(job, action, arg=None):
         elif action == 'resume':
             job.paused = False
             job.interrupted = False
+            job.choosing = False
             if job.status == 'cancelled' or job.cancel:
                 job.cancel = False
                 job.status = 'running' if job.enum_done else 'enumerating'
@@ -1326,9 +1008,33 @@ def job_action(job, action, arg=None):
                 job.enum_done = False
                 job.message = ''
                 MGR.start_enum(job)
+        elif action == 'skip':
+            # the user does not want these videos: only the queued ones can still be left out (the others are already on their way)
+            ids = None if arg is None else set(arg)
+            for it in job.items:
+                if it.state == 'q' and (ids is None or it.idx in ids):
+                    it.emsg = SKIP_BY_USER
+                    it.stage = 'Skipped'
+                    job.set_state(it, 'k')   # the scheduler ignores queued items whose state is no longer q
+        elif action == 'unskip':
+            ids = None if arg is None else set(arg)
+            n = 0
+            for it in job.items:
+                if it.state == 'k' and (ids is None or it.idx in ids):
+                    it.emsg = ''
+                    it.stage = ''
+                    job.set_state(it, 'q')
+                    job.queue.append(it)
+                    n += 1
+            if n and job.status in ('done', 'cancelled'):
+                job.cancel = False
+                job.finished = None
+                job.status = 'running'
+                job.enum_done = True
         elif action == 'cancel':
             job.cancel = True
             job.paused = False
+            job.choosing = False
             job.status = 'cancelled'
             job.finished = time.time()
             job.queue.clear()
@@ -1377,6 +1083,8 @@ def job_action(job, action, arg=None):
             job.finished = None
             if job.status in ('done', 'cancelled'):
                 job.status = 'running'
+        if action in ('skip', 'resume'):
+            maybe_finish(job)   # everything was left out: there is nothing to wait for
         job.dirty = True
         COND.notify_all()
 
@@ -1393,7 +1101,7 @@ def remove_job(job):
         pass
 
 
-def create_jobs(raw_urls, opts, subscribe=None, only_new=False):
+def create_jobs(raw_urls, opts, subscribe=None, only_new=False, choose=False):
     opts = clean_opts(opts)
     hours = subscribe if subscribe in SUB_INTERVALS else None
     parsed, rejected = [], []
@@ -1420,6 +1128,7 @@ def create_jobs(raw_urls, opts, subscribe=None, only_new=False):
     if singles:
         job = Job(MGR.new_id(), singles[0] if len(singles) == 1 else '%d videos' % len(singles), dict(opts), singles)
         job.kind = 'single'
+        job.paused = job.choosing = bool(choose)
         MGR.add_job(job)
         MGR.start_enum(job)
         created.append(job.id)
@@ -1427,6 +1136,7 @@ def create_jobs(raw_urls, opts, subscribe=None, only_new=False):
         if c[0] in ('playlist', 'auto'):
             job = Job(MGR.new_id(), c[1], dict(opts))
             job.kind = 'playlist'
+            job.paused = job.choosing = bool(choose)   # the list is read, but nothing is downloaded until the user presses Start
             if hours:
                 job.sub_id = add_sub(c[1], opts, hours, only_new)   # this job is the first run of the subscription
             MGR.add_job(job)
@@ -1689,7 +1399,7 @@ class Handler(BaseHTTPRequestHandler):
                 sub_hours = body.get('subscribe')
                 created, rejected, dups = create_jobs(body.get('urls', ''), body.get('opts') or {},
                                                       sub_hours if isinstance(sub_hours, int) else None,
-                                                      bool(body.get('only_new')))
+                                                      bool(body.get('only_new')), bool(body.get('choose')))
                 if not created:
                     if dups:
                         return self.err(409, 'This link is already in progress: you can find it in the list below.')
@@ -1707,7 +1417,7 @@ class Handler(BaseHTTPRequestHandler):
                     if not self.is_local_client():
                         return self.err(403, 'Only from the computer running the server')
                     open_folder(job.dir)
-                elif act in ('pause', 'resume', 'cancel', 'retry_failed', 'redownload'):
+                elif act in ('pause', 'resume', 'cancel', 'retry_failed', 'redownload', 'skip', 'unskip'):
                     job_action(job, act, body.get('ids'))
                 else:
                     return self.err(400, 'Unknown action')
@@ -1759,9 +1469,9 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/update':
                 return self.update_ytdlp()
             if path == '/api/appupdate':   # "check now" for a new version of YT Grabber itself
-                if time.time() - UPDATE['checked'] > 30:
-                    check_update()
-                return self.send_json(update_state())
+                if time.time() - updates.UPDATE['checked'] > 30:
+                    updates.check_update()
+                return self.send_json(updates.update_state())
             if path == '/api/quit':   # clean shutdown (used by the Android app when "Close" is pressed)
                 if not self.is_local_client():
                     return self.err(403, 'Only from the device running the server')
@@ -1771,12 +1481,12 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/appupdate/install':   # "Update now" (Windows app): download, check, install, restart
                 if not self.is_local_client():
                     return self.err(403, 'Only from the computer running the server')
-                if not install_supported():
+                if not updates.install_supported():
                     return self.err(400, 'The one-click update is only available in the Windows app installed with its setup.')
-                if not update_state()['can_install']:
+                if not updates.update_state()['can_install']:
                     return self.err(409, 'There is no update ready to install.')
-                if UPDATE_INSTALL['state'] not in ('downloading', 'installing'):
-                    threading.Thread(target=run_update_install, daemon=True, name='update-install').start()
+                if updates.UPDATE_INSTALL['state'] not in ('downloading', 'installing'):
+                    threading.Thread(target=updates.run_update_install, daemon=True, name='update-install').start()
                 return self.send_json({'ok': True})
             return self.err(404, 'Not found')
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
@@ -1801,7 +1511,7 @@ class Handler(BaseHTTPRequestHandler):
             'has_cookies': os.path.exists(COOKIES_FILE), 'local': self.is_local_client(),
             'errmeta': {k: [v[0], v[3]] for k, v in ERR.items()}, 'android': IS_ANDROID,
             'browsers': [b for b in BROWSERS if b], 'subs': subs_state(), 'sub_intervals': list(SUB_INTERVALS),
-            'update': update_state(), 'native_notify': bool(FINISH_HOOKS) or ANDROID_APP,
+            'update': updates.update_state(), 'native_notify': bool(FINISH_HOOKS) or ANDROID_APP,
         }
 
     def job_detail(self, jid, since):
@@ -1913,108 +1623,11 @@ class Handler(BaseHTTPRequestHandler):
         if not self.is_local_client():
             return self.err(403, 'Only from the computer running the server')
         try:
-            install_ytdlp()
+            updates.install_ytdlp()
         except Exception as e:  # noqa: BLE001
             return self.err(500, 'Update failed: ' + clean_msg(e))
         self.send_json({'ok': True, 'restart': True})
-        restart_program()
-
-
-def install_ytdlp():
-    """Installs the latest yt-dlp for this kind of installation. Raises if it fails."""
-    if ANDROID_APP or FROZEN:
-        # Android app and exe: no pip, the latest yt-dlp (single file) is downloaded and takes precedence over the bundled one
-        dst_dir = os.path.join(DATA, 'ytdlp-update')
-        os.makedirs(dst_dir, exist_ok=True)
-        tmp = os.path.join(dst_dir, 'yt-dlp.new')
-        req = urllib.request.Request('https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp',
-                                     headers={'User-Agent': 'YT-Grabber'})
-        with urllib.request.urlopen(req, timeout=90) as r, open(tmp, 'wb') as f:
-            shutil.copyfileobj(r, f)
-        import zipfile
-        with zipfile.ZipFile(tmp) as z:
-            if not any(n.startswith('yt_dlp/') for n in z.namelist()):
-                raise ValueError('downloaded file is not valid')
-        os.replace(tmp, os.path.join(dst_dir, 'yt-dlp'))
-    else:
-        # setup_tools.py knows which packages are needed on this platform (on Android/Termux nothing is compiled)
-        r = subprocess.run([sys.executable, os.path.join(ROOT, 'setup_tools.py'), '--update'], capture_output=True, text=True, timeout=300)
-        if r.returncode != 0:
-            raise RuntimeError((r.stderr or r.stdout)[-400:])
-
-
-def restart_program():
-    """Saves the list and restarts the server after a short pause (the answer to the page gets out first)."""
-    MGR.save_dirty()
-
-    def later():
-        time.sleep(1.0)
-        MGR.save_dirty()
-        if FROZEN:
-            restart_self()
-        os._exit(75)  # the launcher (Start.bat / Android app) restarts the server
-    threading.Thread(target=later, daemon=True).start()
-
-
-# --------------------------------------------------------------------------- automatic yt-dlp updates
-
-YTDLP_API = os.environ.get('YTG_YTDLP_API') or 'https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest'
-YTDLP_AUTO = {'checked': 0, 'latest': '', 'error': ''}
-YTDLP_TRIES = os.path.join(DATA, 'ytdlp-auto.json')   # {"target": version, "time": when}: what was installed last, to never repeat it in a loop
-YTDLP_QUIET = 120     # seconds without a click in the page before the program may restart by itself
-LAST_POST = [0.0]     # last time somebody pressed something in the page (reading the state does not count)
-
-
-def ytdlp_decision(current, latest, tried, now):
-    """What the automatic update should do: 'none' (up to date), 'wait' (it already tried this version in the last 24 hours) or 'update'."""
-    if not latest or version_tuple(latest) <= version_tuple(current):
-        return 'none'
-    if tried and tried.get('target') == latest and now - float(tried.get('time') or 0) < 24 * 3600:
-        return 'wait'
-    return 'update'
-
-
-def ytdlp_latest():
-    """The version number of the latest yt-dlp release, from GitHub."""
-    req = urllib.request.Request(YTDLP_API, headers={'User-Agent': 'YTGrabber/' + APP_VERSION, 'Accept': 'application/vnd.github+json'})
-    with urllib.request.urlopen(req, timeout=20) as r:
-        tag = str(json.loads(r.read().decode('utf-8')).get('tag_name') or '')
-    if not re.fullmatch(r'\d{4}\.\d{2}\.\d{2}(\.\d+)?', tag):
-        raise ValueError('unexpected answer from GitHub')
-    return tag
-
-
-def ytdlp_idle():
-    """True when nothing is downloading and nobody is using the page, so that restarting costs nothing."""
-    with LOCK:
-        busy = any(j.status in ('enumerating', 'running') and not j.paused for j in MANAGER_JOBS.values())
-    return not busy and time.time() - LAST_POST[0] > YTDLP_QUIET
-
-
-def ytdlp_auto_loop():
-    """Once a day: if there is a newer yt-dlp, installs it as soon as nothing is downloading, and restarts the program."""
-    time.sleep(90)
-    while not SHUTDOWN.is_set():
-        try:
-            if SETTINGS.get('auto_ytdlp', True):
-                if time.time() - YTDLP_AUTO['checked'] > (24 * 3600 if not YTDLP_AUTO['error'] else 3600):
-                    YTDLP_AUTO.update(latest=ytdlp_latest(), error='', checked=time.time())
-                try:
-                    with open(YTDLP_TRIES, 'r', encoding='utf-8') as f:
-                        tried = json.load(f)
-                except Exception:
-                    tried = {}
-                what = ytdlp_decision(yt_dlp.version.__version__, YTDLP_AUTO['latest'], tried, time.time())
-                if what == 'update' and ytdlp_idle():
-                    log('yt-dlp %s -> %s (automatic update)' % (yt_dlp.version.__version__, YTDLP_AUTO['latest']))
-                    atomic_write(YTDLP_TRIES, json.dumps({'target': YTDLP_AUTO['latest'], 'time': time.time()}))
-                    install_ytdlp()
-                    restart_program()
-                    return
-        except Exception as e:  # noqa: BLE001
-            YTDLP_AUTO.update(error=clean_msg(e), checked=time.time())
-            log('automatic yt-dlp update failed', e)
-        time.sleep(300)
+        updates.restart_program()
 
 
 def open_folder(d):
@@ -2083,109 +1696,9 @@ class Server(ThreadingHTTPServer):
         super().handle_error(request, client_address)
 
 
-# --------------------------------------------------------------------------- new versions, "finished" notices
+# --------------------------------------------------------------------------- notices, shutdown, idle exit
 
-RELEASES_PAGE = 'https://github.com/progliodario/YT-Grabber/releases/latest'
-UPDATE_API = os.environ.get('YTG_UPDATE_URL') or 'https://api.github.com/repos/progliodario/YT-Grabber/releases/latest'
-UPDATE = {'checked': 0, 'latest': '', 'url': '', 'error': '', 'setup_url': '', 'setup_sha': '', 'setup_size': 0}
-UPDATE_INSTALL = {'state': 'idle', 'pct': 0, 'error': ''}   # one-click update: idle | downloading | installing | error
-SETUP_PREFIX = 'https://github.com/progliodario/YT-Grabber/releases/download/'
 FINISH_HOOKS = []   # functions called with a dict when a download has finished (the Windows app adds its tray balloon)
-
-
-def version_tuple(text):
-    parts = re.findall(r'\d+', str(text).split('-')[0].split('+')[0])[:4]
-    return tuple(int(p) for p in parts) or (0,)
-
-
-def setup_url_ok(url):
-    if os.environ.get('YTG_UPDATE_URL'):   # tests: a small local server plays the part of GitHub
-        return url.startswith('http://127.0.0.1:')
-    return url.startswith(SETUP_PREFIX) and url.endswith('.exe')
-
-
-def install_supported():
-    """One-click update: only the Windows app installed with its setup (Scoop, the sources, Linux and the Mac update their own way)."""
-    return bool(FROZEN) and sys.platform == 'win32' and '\\scoop\\' not in sys.executable.lower()
-
-
-def check_update():
-    """Asks GitHub for the latest release (the only thing sent is this program's name and version). True if it worked."""
-    req = urllib.request.Request(UPDATE_API, headers={'User-Agent': 'YTGrabber/' + APP_VERSION,
-                                                      'Accept': 'application/vnd.github+json'})
-    ok = False
-    try:
-        with urllib.request.urlopen(req, timeout=20) as r:
-            d = json.loads(r.read().decode('utf-8'))
-        tag = str(d.get('tag_name') or '')
-        if not re.fullmatch(r'v?\d+(\.\d+){1,3}', tag):
-            raise ValueError('unexpected answer from the update server')
-        url = str(d.get('html_url') or '')
-        latest = tag.lstrip('v')
-        UPDATE.update(latest=latest, error='', setup_url='', setup_sha='', setup_size=0,
-                      url=url if url.startswith('https://github.com/progliodario/YT-Grabber/') else RELEASES_PAGE)
-        for a in d.get('assets') or []:   # the Windows installer of this release, with the SHA-256 GitHub computed for it
-            sha = str(a.get('digest') or '')
-            if a.get('name') == 'YT-Grabber-Setup-%s.exe' % latest and sha.startswith('sha256:') and setup_url_ok(str(a.get('browser_download_url') or '')):
-                UPDATE.update(setup_url=a['browser_download_url'], setup_sha=sha[7:].lower(), setup_size=int(a.get('size') or 0))
-        ok = True
-    except Exception as e:  # noqa: BLE001
-        UPDATE['error'] = clean_msg(e)
-    UPDATE['checked'] = time.time()
-    return ok
-
-
-def update_state():
-    newer = bool(UPDATE['latest']) and version_tuple(UPDATE['latest']) > version_tuple(APP_VERSION)
-    can_install = bool(newer and UPDATE['setup_url'] and UPDATE['setup_sha'] and install_supported())
-    return {'latest': UPDATE['latest'], 'newer': newer, 'url': UPDATE['url'] if newer else '',
-            'checked': UPDATE['checked'], 'error': UPDATE['error'], 'can_install': can_install, 'install': dict(UPDATE_INSTALL)}
-
-
-def launch_installer(path):
-    """Starts the downloaded setup so that it installs silently and starts the new version. It waits a few seconds: this program
-    closes first (a running program cannot be replaced), and Setup is not a child of it, so it survives."""
-    exe = os.path.abspath(sys.executable).lower()
-    program_files = (os.environ.get('ProgramFiles') or '').lower()
-    mode = '/ALLUSERS' if program_files and exe.startswith(program_files) else '/CURRENTUSER'   # keep the kind of installation it already has
-    cmd = 'cmd /c ping -n 4 127.0.0.1 >nul & "%s" /SILENT /SUPPRESSMSGBOXES /NORESTART /RELAUNCH=1 %s' % (path, mode)
-    subprocess.Popen(cmd, shell=True, creationflags=0x00000008 | 0x00000200, close_fds=True)
-
-
-def run_update_install():
-    """Downloads the new setup, checks it against the SHA-256 that GitHub published for it, starts it and closes this program."""
-    st = UPDATE_INSTALL
-    st.update(state='downloading', pct=0, error='')
-    folder = None
-    try:
-        url, want, size = UPDATE['setup_url'], UPDATE['setup_sha'], UPDATE['setup_size']
-        if not (url and want and setup_url_ok(url)):
-            raise ValueError('There is no update to install.')
-        folder = tempfile.mkdtemp(prefix='ytgrab_update_')
-        path = os.path.join(folder, os.path.basename(url))
-        digest = hashlib.sha256()
-        got = 0
-        req = urllib.request.Request(url, headers={'User-Agent': 'YTGrabber/' + APP_VERSION})
-        with urllib.request.urlopen(req, timeout=60) as r, open(path, 'wb') as f:
-            total = int(r.headers.get('Content-Length') or size or 0)
-            while True:
-                chunk = r.read(256 * 1024)
-                if not chunk:
-                    break
-                f.write(chunk)
-                digest.update(chunk)
-                got += len(chunk)
-                st['pct'] = min(99, got * 100 // total) if total else 0
-        if digest.hexdigest() != want:
-            raise ValueError('The downloaded file does not match the checksum published for it: it was not installed.')
-        st.update(state='installing', pct=100)
-        launch_installer(path)
-        shutdown_now(1.0, close_window=True)
-    except Exception as e:  # noqa: BLE001
-        log('update failed', e)
-        st.update(state='error', error=clean_msg(e))
-        if folder:
-            shutil.rmtree(folder, ignore_errors=True)
 
 
 def shutdown_now(delay=0.4, close_window=False):
@@ -2207,16 +1720,6 @@ def shutdown_now(delay=0.4, close_window=False):
     threading.Thread(target=bye, daemon=True).start()
 
 
-def update_loop():
-    """Checks for a new version shortly after the start and then twice a day (once an hour after a failure)."""
-    time.sleep(45)
-    while not SHUTDOWN.is_set():
-        wait = 600
-        if SETTINGS.get('check_updates') and time.time() - UPDATE['checked'] > (12 * 3600 if not UPDATE['error'] else 3600):
-            check_update()
-        time.sleep(wait)
-
-
 def notify_finished(job):
     if not SETTINGS.get('notify_done'):
         return
@@ -2233,14 +1736,27 @@ def notify_finished(job):
 
 
 LAST_ACTIVITY = [time.time()]   # last time somebody used the web page
+LAST_POST = [0.0]               # last time somebody pressed something in the page (reading the state does not count)
+
+
+def downloading_now():
+    """True while any job is being read or downloaded (a paused job is not)."""
+    with LOCK:
+        return any(j.status in ('enumerating', 'running') and not j.paused for j in MANAGER_JOBS.values())
+
+
+# what updates.py needs from the server (it never imports it)
+updates.configure(app_version=APP_VERSION, stopping=SHUTDOWN, log=lambda *a: log(*a), save=lambda: MGR.save_dirty(),
+                  shutdown=lambda *a, **k: shutdown_now(*a, **k), restart_self=lambda: restart_self(),
+                  busy=downloading_now, last_post=lambda: LAST_POST[0])
 
 
 def idle_watch(seconds):
     """For launchers without a window to close (AppImage, Flatpak): ends the program when it has nothing to do."""
     while not SHUTDOWN.is_set():
         time.sleep(30)
+        busy = downloading_now()
         with LOCK:
-            busy = any(j.status in ('enumerating', 'running') and not j.paused for j in MANAGER_JOBS.values())
             subs = any(s.get('enabled') for s in SUBS.values())
         if busy or subs or time.time() - LAST_ACTIVITY[0] < seconds:
             continue
@@ -2324,8 +1840,8 @@ def main():
     MGR.load_jobs()
     MGR.start()
     threading.Thread(target=subs_loop, daemon=True, name='subs').start()
-    threading.Thread(target=update_loop, daemon=True, name='updates').start()
-    threading.Thread(target=ytdlp_auto_loop, daemon=True, name='ytdlp-auto').start()
+    threading.Thread(target=updates.update_loop, daemon=True, name='updates').start()
+    threading.Thread(target=updates.ytdlp_auto_loop, daemon=True, name='ytdlp-auto').start()
     if a.idle_exit > 0:
         threading.Thread(target=idle_watch, args=(a.idle_exit * 60,), daemon=True, name='idle').start()
     atexit.register(MGR.save_dirty)

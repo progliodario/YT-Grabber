@@ -4,7 +4,8 @@
     python tests/a11y/seed.py DATA_ROOT        then:  YTG_DATA_ROOT=DATA_ROOT python program/server.py --no-browser
 
 It writes the same files the program writes itself (data/jobs/*.json, data/subscriptions.json, data/settings.json): finished
-and failed items, skipped ones, a paused job, a single-video job, an active subscription and a paused one with a problem.
+and failed items, skipped ones, a paused job, a single-video job, a playlist waiting for the user to choose its videos, an active
+subscription and a paused one with a problem.
 """
 import json
 import os
@@ -61,6 +62,12 @@ def seed(root, download_dir=None):
          'enum_done': True, 'pid': '', 'dir': os.path.join(download_dir, 'Singles'), 'created': now - 60, 'finished': now - 30,
          'warning': '', 'message': '', 'sub': '',
          'items': [item(1, 'd', 'A single video', file='A single video.mp3'), item(2, 'd', 'Another single video', file='Another single video.mp3')]},
+        {'v': 1, 'id': 'a1000000004', 'url': 'https://www.youtube.com/playlist?list=PLdemo000004', 'urls': [], 'opts': opts,
+         'title': 'Choose the songs', 'kind': 'playlist', 'status': 'running', 'paused': True, 'choosing': True, 'declared': 5,
+         'pad': 2, 'enum_done': True, 'pid': 'PLdemo000004', 'dir': os.path.join(download_dir, 'Choose the songs'),
+         'created': now - 20, 'finished': None, 'warning': '', 'message': '', 'sub': '',
+         'items': [item(1, 'q', 'Opening theme'), item(2, 'q', 'Interlude'), item(3, 'k', 'Bonus track', emsg='user'),
+                   item(4, 'q', 'Ballad'), item(5, 'q', 'Closing theme')]},
     ]
     for j in jobs_data:
         with open(os.path.join(jobs, j['id'] + '.json'), 'w', encoding='utf-8') as f:

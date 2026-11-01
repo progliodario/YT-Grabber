@@ -15,6 +15,7 @@ and YouTube Music. It runs on the user's own computer or phone and is operated t
 - Files are **numbered in playlist order** (`001 - Title.mp3`, `002 - ...`).
 - Each video that fails is **listed with its number and the exact reason**, and can be retried with one click.
 - Downloads can be **stopped and resumed** at any time: files that are already complete are recognised and skipped.
+- **Choose the videos**: any video of a playlist can be left out, before the download starts or while it runs.
 - **Subscriptions**: a channel or playlist can be followed, and its new videos are downloaded automatically. Optionally, only the
   **new videos** are downloaded, leaving out what was published before the subscription.
 - **Notifications** when a download finishes and when a new version of YT Grabber is available (both can be disabled).
@@ -84,10 +85,10 @@ Every release includes `SHA256SUMS` and a GPG signature (`SHA256SUMS.asc`). The 
 YT-Grabber/
 ├─ README.md  CHANGELOG.md  SECURITY.md  CONTRIBUTING.md  LICENSE
 ├─ Start.bat  Start.sh      run from the sources (requires Python 3)
-├─ program/                 the program: server.py, ytworker.py, ytcommon.py, setup_tools.py, web/ (the interface)
+├─ program/                 the program: server.py, the yt*.py modules, setup_tools.py, web/ (the interface); see program/README.md
 ├─ packaging/               everything needed to build each package: windows/ android/ linux/ macos/ termux/
 ├─ tools/                   helper scripts for the maintainer (bump_version.py)
-├─ tests/                   automated tests
+├─ tests/                   automated tests, one file per subject (tests/README.md)
 ├─ docs/                    guides, the release signing key and the screenshots
 ├─ .github/                 automated tests and release builds (GitHub Actions), issue templates
 ├─ dist/                    (not in git) packages built locally

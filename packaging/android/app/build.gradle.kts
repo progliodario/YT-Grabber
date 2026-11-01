@@ -7,14 +7,14 @@ plugins {
 
 // ---------------------------------------------------------------- program files (Python + web interface)
 // They are copied from the project's program\ folder into the APK "assets" at every build,
-// so the app always contains the latest version of server.py, ytworker.py, ytcommon.py and web/.
+// so the app always contains the latest version of the Python modules (server.py, yt*.py) and of web/.
 val repoRoot = File(rootProject.projectDir.parentFile.parentFile, "program")
 val ytgAssetsDir = layout.buildDirectory.dir("generated/ytgAssets")
 
 val prepareYtgAssets by tasks.registering {
     val outDir = ytgAssetsDir
     val libsZip = file("src/main/assets/ytg-libs.zip")
-    inputs.files(fileTree(repoRoot) { include("server.py", "ytcommon.py", "ytworker.py", "web/**") })
+    inputs.files(fileTree(repoRoot) { include("*.py", "web/**"); exclude("setup_tools.py") })
     inputs.files(libsZip)
     outputs.dir(outDir)
     doLast {
@@ -22,7 +22,7 @@ val prepareYtgAssets by tasks.registering {
         delete(dest)
         val target = File(dest, "ytg")
         copy {
-            from(repoRoot) { include("server.py", "ytcommon.py", "ytworker.py", "web/**") }
+            from(repoRoot) { include("*.py", "web/**"); exclude("setup_tools.py") }
             into(target)
         }
         // version = fingerprint of the files: the app reinstalls the files only if they change
