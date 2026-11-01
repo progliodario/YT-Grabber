@@ -23,8 +23,8 @@ jobs:
     name: Windows installer
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Build the installer
@@ -69,7 +69,7 @@ jobs:
           Start-Sleep 3
           if (Test-Path $app) { throw 'The uninstaller left the program behind' }
           Write-Host 'install, start and uninstall OK'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows
           path: dist/windows/*.exe
@@ -79,8 +79,8 @@ jobs:
     name: Linux packages (deb, rpm, AppImage, Flatpak)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Build the .deb and the .rpm
@@ -116,7 +116,7 @@ jobs:
           flatpak build-bundle fp-repo dist/linux/YT-Grabber-x86_64.flatpak io.github.progliodario.YTGrabber
           flatpak --user install -y --noninteractive dist/linux/YT-Grabber-x86_64.flatpak
           dbus-run-session -- sh -c 'flatpak --user run io.github.progliodario.YTGrabber --no-browser --port 8798 > "$RUNNER_TEMP/flatpak.log" 2>&1 & sh .github/scripts/wait_ping.sh 8798 300 || { cat "$RUNNER_TEMP/flatpak.log"; exit 1; }'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux
           path: |
@@ -130,8 +130,8 @@ jobs:
     name: Mac app
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - run: python packaging/macos/build_app.py
@@ -144,7 +144,7 @@ jobs:
           rm YT-Grabber-macOS.zip
           ditto -c -k --keepParent app/YT-Grabber.app YT-Grabber-macOS.zip
           rm -rf app
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: macos
           path: dist/macos/YT-Grabber-macOS.zip
@@ -159,8 +159,8 @@ jobs:
       matrix:
         os: [macos-latest, macos-15-intel]
     steps:
-      - uses: actions/checkout@v4   # only for the helper script
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7   # only for the helper script
+      - uses: actions/download-artifact@v8
         with:
           name: macos
       - name: Unzip, start and call it
@@ -182,8 +182,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
