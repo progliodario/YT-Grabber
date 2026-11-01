@@ -328,7 +328,7 @@
       for (k in S.settings) { if (Object.prototype.hasOwnProperty.call(S.settings, k)) { payload[k] = S.settings[k]; } }
       for (k in opts) { if (Object.prototype.hasOwnProperty.call(opts, k)) { payload[k] = opts[k]; } }
       api('POST', '/api/settings', payload).then(function (r) { S.settings = r.settings; }, function () { /* non-blocking */ })
-        .then(function () { return api('POST', '/api/jobs', { urls: urls, opts: opts, subscribe: self.el('subscribe').checked ? parseInt(self.el('subHours').value, 10) : undefined }); })
+        .then(function () { return api('POST', '/api/jobs', { urls: urls, opts: opts, subscribe: self.el('subscribe').checked ? parseInt(self.el('subHours').value, 10) : undefined, only_new: self.el('subscribe').checked && self.el('onlyNew').checked }); })
         .then(function (r) {
           self.el('urls').value = ''; updateDetect();
           var n = r.created.length;
@@ -506,7 +506,7 @@
   function statsHtml(j) {
     var c = j.counts;
     return tile('ok', c.d, esc(tr('stat.completed'))) + (c.s ? tile('ok', c.s, esc(tr('stat.present'))) : '') + tile('info', c.a, esc(tr('stat.downloading'))) + tile('warn', c.p, esc(tr('stat.converting'))) +
-      tile('', c.q, esc(tr('stat.queued'))) + (c.c ? tile('', c.c, esc(tr('stat.cancelled'))) : '') +
+      tile('', c.q, esc(tr('stat.queued'))) + (c.c ? tile('', c.c, esc(tr('stat.cancelled'))) : '') + (c.k ? tile('', c.k, esc(tr('stat.skipped'))) : '') +
       (c.e ? '<button type="button" class="stat err" data-act="goerr" data-id="' + j.id + '" title="' + esc(tr('stat.errorsTitle')) + '"><b>' + c.e + '</b><span>' + esc(tr('stat.errorsShow')) + '</span></button>' : tile('err', 0, esc(tr('stat.errors'))));
   }
 
@@ -527,7 +527,7 @@
       var okN = c.d + c.s;
       h += '<div class="alert ' + (c.e ? '' : 'ok') + '">' + (c.e
         ? tr('alert.finishedErr', { ok: okN, e: c.e, nums: errNums(j) })
-        : tr('alert.finishedOk', { n: okN })) + '</div>';
+        : (okN || !c.k ? tr('alert.finishedOk', { n: okN }) : tr('alert.skipped', { n: c.k }))) + '</div>';
     } else if (c.e && (j.err_idx || []).length) {
       h += '<div class="alert">' + tr('alert.errorsSoFar', { nums: errNums(j) }) + '</div>';
     }
@@ -578,7 +578,7 @@
     var sub = [j.kind === 'single' ? tr('job.single') : tr('job.playlist'), tr('items.count', { n: T })];
     setH(card.meta, badge(j) + '<span>' + esc(sub.join(' · ')) + '</span>' + (j.dir ? '<span class="path" title="' + esc(j.dir) + '">' + esc(j.dir) + '</span>' : '') + '<span>' + fmtDate(j.created) + '</span>');
     setH(card.ring, ringHtml(j));
-    setH(card.bar, '<i class="g" style="width:' + w(c.d + c.s) + '%"></i><i class="a" style="width:' + w(c.p) + '%"></i><i class="b" style="width:' + w(c.a) + '%"></i><i class="r" style="width:' + w(c.e) + '%"></i>');
+    setH(card.bar, '<i class="g" style="width:' + w(c.d + c.s) + '%"></i><i class="k" style="width:' + w(c.k) + '%"></i><i class="a"style="width:' + w(c.p) + '%"></i><i class="b" style="width:' + w(c.a) + '%"></i><i class="r" style="width:' + w(c.e) + '%"></i>');
     setH(card.stats, statsHtml(j));
     var lv = liveHtml(j); setH(card.live, lv); card.live.style.display = lv ? '' : 'none';
     setH(card.alerts, alertsHtml(j));
@@ -785,6 +785,9 @@
       case 'c':
         sub = esc(tr('row.cancelled')); side = esc(tr('row.cancelled'));
         break;
+      case 'k':
+        sub = esc(tr('row.skippedWhy')); side = esc(tr('row.skipped'));
+        break;
     }
     if (k.top !== top) { k.top = top; r.el.style.top = top + 'px'; }
     var cls = 'row s-' + it.s;
@@ -898,6 +901,7 @@
     var st = s.status === 'checking' ? tr('subs.checking') : s.status === 'error' ? tr('subs.error') : s.status === 'errors' ? tr('subs.errors') : '';
     var res = s.last_new == null ? '' : (s.last_new ? tr('subs.new', { n: s.last_new }) : tr('subs.nothingNew'));
     h += '<div class="sub-meta">' + (s.enabled ? '' : '<span class="badge pause">' + esc(tr('subs.pausedTag')) + '</span>') +
+      (s.only_new ? '<span class="badge done">' + esc(tr('subs.onlyNew')) + '</span>' : '') +
       (st ? '<span class="badge ' + (s.status === 'checking' ? 'run' : 'bad') + '">' + esc(st) + '</span>' : '') +
       '<span>' + esc(tr('subs.last', { t: fmtWhen(s.last_check) })) + (res ? ' · ' + esc(res) : '') + '</span>' +
       (s.enabled ? '<span>' + esc(tr('subs.next', { t: fmtWhen(s.next_check) })) + '</span>' : '') + '</div>';
@@ -967,7 +971,7 @@
     for (li = 0; li < LANGS.length; li++) { lh += '<option value="' + LANGS[li][0] + '">' + LANGS[li][1] + '</option>'; }
     lsel.innerHTML = lh;
     lsel.addEventListener('change', function () { setLanguage(lsel.value, true); });
-    $('#subscribe').addEventListener('change', function () { $('#subHours').hidden = !this.checked; });
+    $('#subscribe').addEventListener('change', function () { $('#subHours').hidden = !this.checked; $('#onlyNewRow').hidden = !this.checked; });
     $('#subs').addEventListener('change', function (ev) {
       var id = ev.target && ev.target.getAttribute('data-subint');
       if (id) { subAction(id, { action: 'interval', hours: parseInt(ev.target.value, 10) }); ev.target.blur(); }

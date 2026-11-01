@@ -120,7 +120,16 @@ sudo dnf install yt-grabber
 Tick **Keep playlists and channels up to date** under the link box, choose how often to check (every hour up to once a week) and
 press **Download**. The *Subscriptions* section lists everything you follow: when it was last checked, how many
 videos were found, and buttons to check now, pause or remove. Only videos that are not already in the folder are
-downloaded, so a check never repeats work. The program must be running for checks to happen (on Linux the package
+downloaded, so a check never repeats work.
+
+![The two options for subscriptions: how often to check, and only new videos](docs/screenshots/only-new.png)
+
+If you only want what is published **from now on**, also tick **Only new videos: skip the ones already there**. YT Grabber
+then makes a note of everything that is in the playlist, album or channel at that moment, downloads none of it, and from
+the next check on downloads only the videos that were not on that list. The files keep the number of their position in
+the playlist, and the skipped videos are listed as *Skipped* (and the subscription shows an *only new videos* tag). To
+switch an existing subscription from one mode to the other, subscribe to the same link again with the option ticked or not:
+what is there at that moment becomes the starting point. The program must be running for checks to happen (on Linux the package
 includes a systemd user service: `systemctl --user enable --now yt-grabber`).
 
 ## How it works

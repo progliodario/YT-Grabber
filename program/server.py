@@ -175,6 +175,7 @@ class Item:
         self.dupn = dupn
         self.slot = False    # occupies one of the 10 download slots
         self.state = 'q'     # q queued | a downloading | p converting | d done | e error | s already present | c cancelled
+        #                      k skipped: it was already there when the subscription ("only new videos") started
         self.progress = 0.0
         self.speed = 0
         self.eta = None
@@ -277,7 +278,7 @@ class Job:
                 speed += it.speed or 0
             elif it.state == 'e' and len(err_idx) < 80:
                 err_idx.append(it.idx)
-        finished_n = c['d'] + c['s'] + c['e'] + c['c']
+        finished_n = c['d'] + c['s'] + c['e'] + c['c'] + c['k']
         eta = None
         if self.status in ('running', 'enumerating') and not self.paused:
             win = [t for t in self.recent if now - t <= 90]
@@ -291,7 +292,7 @@ class Job:
             'paused': self.paused, 'interrupted': self.interrupted, 'dir': self.dir, 'created': self.created,
             'finished': self.finished, 'warning': self.warning, 'message': self.message, 'seq': self.seq,
             'declared': self.declared, 'enum_done': self.enum_done, 'total': total, 'pad': self.pad or 0,
-            'counts': {k: c[k] for k in ('q', 'a', 'p', 'd', 'e', 's', 'c')}, 'speed': int(speed), 'eta': eta,
+            'counts': {k: c[k] for k in ('q', 'a', 'p', 'd', 'e', 's', 'c', 'k')}, 'speed': int(speed), 'eta': eta,
             'processed': finished_n, 'opts': self.opts, 'err_idx': err_idx,
             'cover': self.items[0].vid if self.items else '',
         }
@@ -1124,6 +1125,11 @@ def enumerate_playlist(job):
             COND.notify_all()
         n = 0
         have = len(job.items)
+        # "only new videos" subscriptions: what was already there is listed but never downloaded
+        sub = SUBS.get(job.sub_id) if job.sub_id else None
+        only_new = bool(sub and sub.get('only_new'))
+        baseline = only_new and sub.get('seen') is None   # first look: everything that is there now counts as old
+        known = set(sub.get('seen') or ()) if only_new and not baseline else set()
         for e in iter_entries(ydl, info):
             if job.cancel:
                 with LOCK:
@@ -1153,6 +1159,9 @@ def enumerate_playlist(job):
                     it.ekind = 'private' if 'private' in tl else ('deleted' if 'deleted' in tl else 'unavailable')
                     it.emsg = t + ' (already reported as unavailable in the playlist)'
                     it.stage = 'Error'
+                elif only_new and (baseline or vid in known):
+                    it.state = 'k'
+                    it.stage = 'Skipped'
                 job.add_item(it)
                 COND.notify_all()
         with LOCK:
@@ -1171,8 +1180,12 @@ def enumerate_playlist(job):
                 if job.status == 'enumerating':
                     job.status = 'running'
                 job.dirty = True
+                if baseline:   # remember what was there: from now on only the videos that are not in this list are new
+                    sub['seen'] = sorted({i.vid for i in job.items if i.state == 'k' and i.vid})
             COND.notify_all()
             maybe_finish(job)
+        if baseline:
+            save_subs()
     finally:
         try:
             ydl.close()
@@ -1377,7 +1390,7 @@ def remove_job(job):
         pass
 
 
-def create_jobs(raw_urls, opts, subscribe=None):
+def create_jobs(raw_urls, opts, subscribe=None, only_new=False):
     opts = clean_opts(opts)
     hours = subscribe if subscribe in SUB_INTERVALS else None
     parsed, rejected = [], []
@@ -1412,7 +1425,7 @@ def create_jobs(raw_urls, opts, subscribe=None):
             job = Job(MGR.new_id(), c[1], dict(opts))
             job.kind = 'playlist'
             if hours:
-                job.sub_id = add_sub(c[1], opts, hours)   # this job is the first run of the subscription
+                job.sub_id = add_sub(c[1], opts, hours, only_new)   # this job is the first run of the subscription
             MGR.add_job(job)
             MGR.start_enum(job)
             created.append(job.id)
@@ -1426,10 +1439,14 @@ SUB_INTERVALS = (1, 3, 6, 12, 24, 72, 168)   # hours between two checks
 SUBS = {}
 
 
+SUBS_SAVE = threading.Lock()   # two threads writing the file at the same moment would fight over its temporary copy
+
+
 def save_subs():
-    with LOCK:
-        data = list(SUBS.values())
-    atomic_write(SUBS_FILE, json.dumps(data, ensure_ascii=False, indent=1))
+    with SUBS_SAVE:
+        with LOCK:
+            text = json.dumps(list(SUBS.values()), ensure_ascii=False, indent=1)
+        atomic_write(SUBS_FILE, text)
 
 
 def load_subs():
@@ -1444,17 +1461,24 @@ def load_subs():
             s['opts']['force'] = False   # a check must never download everything again
             if s.get('hours') not in SUB_INTERVALS:
                 s['hours'] = 24
+            s['only_new'] = bool(s.get('only_new'))
+            if not isinstance(s.get('seen'), list):
+                s['seen'] = None   # None = the videos that are there now have not been looked at yet
             SUBS[s['id']] = s
 
 
-def add_sub(url, opts, hours):
-    """Creates (or updates) the subscription for this link. Its first run is the job that is being created now."""
+def add_sub(url, opts, hours, only_new=False):
+    """Creates (or updates) the subscription for this link. Its first run is the job that is being created now.
+    only_new: do not download what is already in the playlist or channel, only the videos that appear later."""
     now = time.time()
+    only_new = bool(only_new)
     with LOCK:
         sid = next((s['id'] for s in SUBS.values() if s['url'] == url), None)
         if sid:
             s = SUBS[sid]
             s.update(hours=hours, enabled=True, next_check=now + hours * 3600)
+            if only_new != bool(s.get('only_new')):   # the mode changed: look at what is there now once more
+                s.update(only_new=only_new, seen=None)
         else:
             sid = 's%x%02x' % (int(now), random.randint(0, 255))
             while sid in SUBS:
@@ -1463,7 +1487,7 @@ def add_sub(url, opts, hours):
             o['force'] = False
             SUBS[sid] = {'id': sid, 'url': url, 'title': '', 'opts': o, 'hours': hours, 'enabled': True,
                          'created': now, 'last_check': now, 'next_check': now + hours * 3600, 'last_new': None,
-                         'status': 'checking', 'message': ''}
+                         'status': 'checking', 'message': '', 'only_new': only_new, 'seen': None}
     save_subs()
     return sid
 
@@ -1497,6 +1521,8 @@ def sub_run_finished(job):
         sub['title'] = job.title or sub.get('title', '')
         new, errs = job.counts['d'], job.counts['e']
         sub.update(last_new=new, status='errors' if errs else 'ok', message='')
+        if sub.get('only_new') and isinstance(sub.get('seen'), list):   # what was downloaded now is old for the next check
+            sub['seen'] = sorted(set(sub['seen']) | {i.vid for i in job.items if i.state in ('d', 's', 'k') and i.vid})
         quiet = job.sub_auto and new == 0 and errs == 0 and job.status == 'done'
     save_subs()
     if quiet:   # nothing new: do not leave a card in the list after every check
@@ -1527,7 +1553,7 @@ def subs_state():
         return [{'id': s['id'], 'url': s['url'], 'title': s.get('title') or '', 'hours': s['hours'],
                  'enabled': bool(s.get('enabled')), 'last_check': s.get('last_check'),
                  'next_check': s.get('next_check'), 'last_new': s.get('last_new'), 'status': s.get('status', ''),
-                 'message': s.get('message', '')}
+                 'message': s.get('message', ''), 'only_new': bool(s.get('only_new'))}
                 for s in sorted(SUBS.values(), key=lambda x: x.get('created', 0))]
 
 
@@ -1659,7 +1685,8 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/jobs':
                 sub_hours = body.get('subscribe')
                 created, rejected, dups = create_jobs(body.get('urls', ''), body.get('opts') or {},
-                                                      sub_hours if isinstance(sub_hours, int) else None)
+                                                      sub_hours if isinstance(sub_hours, int) else None,
+                                                      bool(body.get('only_new')))
                 if not created:
                     if dups:
                         return self.err(409, 'This link is already in progress: you can find it in the list below.')

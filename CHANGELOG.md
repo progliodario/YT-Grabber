@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Only new videos** option for subscriptions: the videos that are already in the playlist, album or channel are not
+  downloaded; only those published after you subscribed are. They are listed as *Skipped*.
+- Fix: two saves of the subscription list at the same moment could fail on Windows.
+
 ## 1.2.0
 
 - **New-version notice:** the page tells you when a newer YT Grabber has been released (one request to GitHub twice a day,

@@ -192,7 +192,7 @@ textarea:focus, input[type=text]:focus, select:focus, input[type=search]:focus {
 
 .bar { height: 10px; border-radius: 999px; background: var(--track); overflow: hidden; display: flex; margin: 16px 0 14px; }
 .bar i { display: block; height: 100%; transition: width .45s ease; }
-.bar .g { background: var(--ok); } .bar .a { background: var(--warn); } .bar .r { background: var(--err); }
+.bar .g { background: var(--ok); } .bar .k { background: var(--muted); opacity: .4; } .bar .a { background: var(--warn); } .bar .r { background: var(--err); }
 .bar .b { background: var(--info); background-image: linear-gradient(115deg, rgba(255, 255, 255, .0) 30%, rgba(255, 255, 255, .35) 50%, rgba(255, 255, 255, 0) 70%); background-size: 200% 100%; animation: shimmer 1.6s linear infinite; }
 @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
@@ -335,3 +335,4 @@ button.stat.err:hover { filter: brightness(1.05); transform: translateY(-1px); }
 .sub-act { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 [dir="rtl"] body { text-align: right; }
 @media (max-width: 760px) { .lang-select { max-width: 6.2rem; } }
+.row.s-k { opacity: .62; }
