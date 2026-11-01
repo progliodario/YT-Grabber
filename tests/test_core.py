@@ -330,8 +330,10 @@ class WindowsTextTests(unittest.TestCase):
 class VersionTests(unittest.TestCase):
     def test_versions_agree(self):
         version = server.APP_VERSION
-        with open(os.path.join(ROOT, 'build-windows', 'version.txt'), encoding='utf-8') as f:
-            text = f.read()
+        with open(os.path.join(ROOT, 'build-windows', 'version.txt'), 'rb') as f:
+            raw = f.read()
+        self.assertFalse(raw.startswith(b'\xef\xbb\xbf\xef\xbb\xbf'), 'two byte-order marks: PyInstaller cannot read it')
+        text = raw.decode('utf-8-sig')
         self.assertIn("'%s'" % version, text)
         self.assertIn('(%s, 0)' % version.replace('.', ', '), text)
         with open(os.path.join(ROOT, 'build-linux', 'flatpak', 'io.github.progliodario.YTGrabber.metainfo.xml'), encoding='utf-8') as f:

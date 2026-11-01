@@ -1,4 +1,4 @@
-﻿﻿# UTF-8
+﻿# UTF-8
 # Informazioni di versione incorporate in YT-Grabber.exe (le mostra Windows in Proprieta e in Gestione attivita)
 VSVersionInfo(
   ffi=FixedFileInfo(
