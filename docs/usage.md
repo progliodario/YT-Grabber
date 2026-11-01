@@ -10,6 +10,9 @@ How to install it is in the [installation guide](install.md). This guide is abou
 
 ![The main page: paste links, choose the format, press Download](screenshots/main-light.png)
 
+Everything can be done with the keyboard and works with screen readers, high contrast and zoom: keys and details are in the
+[accessibility statement](accessibility.md).
+
 ## Downloading
 
 1. Paste one or more links in the box, **one per line**. Videos, playlists, albums, whole channels and YouTube Music links

@@ -36,6 +36,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
 import java.io.File
 import java.net.URL
 import java.net.URLEncoder
@@ -150,14 +151,19 @@ class MainActivity : AppCompatActivity() {
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(fg)
             gravity = Gravity.CENTER
+            ViewCompat.setAccessibilityHeading(this, true)   // TalkBack: a heading
         }
-        progress = ProgressBar(this).apply { isIndeterminate = true }
+        progress = ProgressBar(this).apply {
+            isIndeterminate = true
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO   // the status text next to it says what is going on
+        }
         statusText = TextView(this).apply {
             text = getString(R.string.status_starting)
             textSize = 15f
             setTextColor(fg)
             gravity = Gravity.CENTER
             setPadding(0, dp(16), 0, dp(16))
+            accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE   // every new status (and a failure) is read out
         }
         retryBtn = Button(this).apply {
             text = getString(R.string.retry)
@@ -319,7 +325,10 @@ class MainActivity : AppCompatActivity() {
             domStorageEnabled = true
             allowFileAccess = false
             allowContentAccess = false
-            setSupportZoom(false)
+            // pinch zoom stays available (people with low vision need it); the page has its own zoom-friendly layout
+            setSupportZoom(true)
+            builtInZoomControls = true
+            displayZoomControls = false
             userAgentString = userAgentString + " YTGrabberApp/1.0"
         }
         web.addJavascriptInterface(Bridge(), "AndroidBridge")
@@ -398,6 +407,10 @@ class MainActivity : AppCompatActivity() {
             val clip = cm.primaryClip
             return if (clip != null && clip.itemCount > 0) clip.getItemAt(0).coerceToText(this@MainActivity).toString() else ""
         }
+
+        /** The font size the user chose in the system settings (1.0 = normal): the page enlarges its text to match. */
+        @JavascriptInterface
+        fun fontScale(): Float = resources.configuration.fontScale
 
         @JavascriptInterface
         fun openExternal(url: String) {

@@ -21,6 +21,9 @@ It runs on your own computer or phone and is used from a local web page, in any 
 - **16 languages**: English, Italiano, Español, Français, Deutsch, Português, Nederlands, Polski, Русский, Türkçe,
   العربية, हिन्दी, Bahasa Indonesia, 中文, 日本語, 한국어. The interface follows your device and can be changed from the page.
 - Audio (MP3, M4A, Opus) or video (up to 4K), with cover art and tags.
+- **Accessible**: fully usable with the keyboard and with screen readers, high contrast and forced-colours modes, zoom up to 400%,
+  reduced motion and touch screens. It aims at WCAG 2.2 level AA and is checked automatically at every change
+  ([accessibility statement](docs/accessibility.md)).
 - Free and open source ([MIT](LICENSE)). Nothing is sent anywhere except to YouTube and GitHub
   (see [SECURITY.md](SECURITY.md)).
 
@@ -61,6 +64,7 @@ The first start installs what it needs (yt-dlp, a JavaScript runtime, ffmpeg): y
 |---|---|
 | [docs/install.md](docs/install.md) | installing, updating and removing, for every platform |
 | [docs/usage.md](docs/usage.md) | the interface, numbering, errors, resuming, cookies, subscriptions, command-line options, troubleshooting |
+| [docs/accessibility.md](docs/accessibility.md) | keyboard use, screen readers, what has been done and checked for accessibility, known limits |
 | [docs/development.md](docs/development.md) | how it works inside, running from source, tests, building, releasing |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | reporting problems, fixing a translation, sending a change |
 | [SECURITY.md](SECURITY.md) | checking that a download is genuine, antivirus and "unknown publisher" warnings, privacy |

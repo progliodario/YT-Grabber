@@ -58,7 +58,7 @@ packaging/
   macos/            the .app (assembled, no Mac needed): build.bat, build_app.py, launcher, run.sh
   termux/           installing on a phone with Termux: Share-to-phone.bat, share_to_phone.py, install-termux.sh
 tools/              bump_version.py
-tests/              test_core.py
+tests/              test_core.py, test_accessibility.py, a11y/ (seed.py: sample data; audit.py: axe-core and keyboard audit in a browser)
 docs/               guides, release-key.asc (public GPG key), screenshots/
 .github/            workflows/ (ci, release, finalize), scripts/, issue and pull request templates, dependabot.yml
 Start.bat Start.sh  run from the sources
@@ -87,6 +87,21 @@ links, error classification, format selection, settings, subscriptions (includin
 download notices, the language files (every language has every key and the same placeholders, no key is unused), the Windows texts,
 the version numbers and `tools/bump_version.py`. CI also checks the JavaScript syntax with Node and starts the server on Windows, macOS and Linux.
 
+**Accessibility.** `tests/test_accessibility.py` (part of the same command) checks the markup of the page, the contrast of every colour pair
+of the design and the CSS for the user's preferences. `tests/a11y/audit.py` is a real audit: it drives headless Chrome, Chromium or Edge
+through the DevTools protocol, runs [axe-core](https://github.com/dequelabs/axe-core) (WCAG 2.0 to 2.2, A and AA, and best practices) in
+light, dark, with a list and the settings window open, in Arabic and at 320 pixels, and checks by keyboard the skip link, the focus order,
+the dialog and the zoom. `tests/a11y/seed.py` fills a data folder with sample downloads, so no network is needed:
+
+```
+python tests/a11y/seed.py /tmp/ytg-a11y
+YTG_DATA_ROOT=/tmp/ytg-a11y python program/server.py --no-browser --port 8782 &
+python tests/a11y/audit.py http://localhost:8782/        # needs: pip install websockets
+```
+
+The *Accessibility audit* job of `ci.yml` does exactly this. The rules to follow are in [CONTRIBUTING.md](../CONTRIBUTING.md#accessibility)
+and the statement for users is [accessibility.md](accessibility.md).
+
 ## Building the packages
 
 Everything is built by [GitHub Actions](#automatic-builds-github-actions) for the releases. To build one yourself:
@@ -106,7 +121,7 @@ Each folder in `packaging/` has a README with the details of that package.
 
 | Workflow | When | What it does |
 |---|---|---|
-| `ci.yml` | every push and pull request | unit tests, JavaScript syntax check, and a smoke test (start the server, call it) on Ubuntu, Windows and macOS |
+| `ci.yml` | every push and pull request | unit tests, JavaScript syntax check, and a smoke test (start the server, call it) on Ubuntu, Windows and macOS; and the accessibility audit (axe-core in Chrome) |
 | `release.yml` | a tag `v*` is pushed, or by hand | builds every package, **installs and starts each one** to prove it works (Windows: install, start, uninstall; Ubuntu: `.deb` and AppImage; Fedora: `.rpm`; Flatpak: build and run; Apple Silicon and Intel Macs), then attaches the files to the release |
 | `finalize.yml` | called by `release.yml`, or by hand | signs the `.rpm`, writes `SHA256SUMS` and signs it with GPG, adds build attestations, builds the signed apt and dnf repositories, installs from them on Ubuntu and Fedora, and publishes them on GitHub Pages |
 

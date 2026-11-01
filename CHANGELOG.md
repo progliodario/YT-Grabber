@@ -4,6 +4,15 @@ All notable changes, newest first. The version numbers follow `MAJOR.MINOR.PATCH
 
 ## Unreleased
 
+- **Accessibility (WCAG 2.2 AA):** the whole interface was reworked and is now checked automatically at every change.
+  Keyboard: skip link, real buttons, a settings window that traps and returns the focus, focus that survives the page refreshing.
+  Screen readers: names and states for every control, switches, progress bars, the list of items with positions, announcements
+  when a download finishes or fails, labelled groups and regions. Visual: colours with enough contrast in both themes (the accent
+  colour is darker), borders of controls at 3:1, marks besides colours, text sizes in `rem`, zoom up to 400%, 44-pixel touch targets,
+  forced-colours and more-contrast modes, no animation with "reduce motion". Messages in the corner can be closed and wait for you.
+  Android: pinch zoom, system font size, a start-up screen that screen readers follow. Windows: a sharper start-up window.
+  See [docs/accessibility.md](docs/accessibility.md).
+
 - **Repository reorganized.** The build folders now live under `packaging/` (`windows`, `android`, `linux`, `macos`, `termux`), the
   results of local builds go to `dist/`, the public signing key moved to `docs/release-key.asc`, and every `build-*.bat` is now
   `build.bat` in its folder. Nothing changes for people who install a release.

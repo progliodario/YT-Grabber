@@ -81,6 +81,7 @@
           S.detail.panelHtml = ''; S.detail.tabsHtml = '';
           var inp = S.detail.box.parentNode.querySelector('.search');
           if (inp) { inp.placeholder = tr('detail.search'); inp.setAttribute('aria-label', tr('detail.searchLabel')); }
+          S.detail.tabsEl.setAttribute('aria-label', tr('detail.filters')); S.detail.box.setAttribute('aria-label', tr('list.label'));
           renderDetail();
         }
       }
@@ -102,7 +103,12 @@
   var SUB_HOURS = [1, 3, 6, 12, 24, 72, 168];
 
   var ROW = 64;   // row height: 92 on narrow screens (see CSS), updated in calcRow()
-  function calcRow() { ROW = window.innerWidth <= 760 ? 92 : 64; }
+  // The rows of the list follow the text size (the font size of the page, which the user may have enlarged) as well as the width.
+  function calcRow() {
+    var rem = parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
+    ROW = Math.round(rem * (window.innerWidth <= 760 ? 5.75 : 4));
+    document.documentElement.style.setProperty('--row', ROW + 'px');
+  }
   var TABS = ['all', 'a', 'p', 'q', 'd', 'e', 'c'];
 
   var S = {
@@ -142,7 +148,18 @@
     if (d.toDateString() === now.toDateString()) { return tr('date.today', { t: hm }); }
     return d.getDate() + '/' + (d.getMonth() + 1) + ' ' + hm;
   }
-  function setH(el, html) { if (el._h !== html) { el._h = html; el.innerHTML = html; } }
+  // Replaces the content of an element but keeps the keyboard focus on the same control when it is still there:
+  // the page refreshes itself every second or so, and a button that loses focus under your fingers is unusable.
+  function focusKey(f) { return [f.getAttribute('data-act'), f.getAttribute('data-id'), f.getAttribute('data-idx'), f.getAttribute('data-tab'), f.getAttribute('data-kind')].join('|'); }
+  function setHtmlKeepFocus(el, html) {
+    var f = document.activeElement, key = (f && f !== document.body && el.contains(f) && f.getAttribute('data-act')) ? focusKey(f) : null, i, list;
+    el.innerHTML = html;
+    if (key) {
+      list = el.querySelectorAll('[data-act]');
+      for (i = 0; i < list.length; i++) { if (focusKey(list[i]) === key) { list[i].focus(); break; } }
+    }
+  }
+  function setH(el, html) { if (el._h !== html) { el._h = html; setHtmlKeepFocus(el, html); } }
   function api(method, url, body) {
     return new Promise(function (resolve, reject) {
       var x = new XMLHttpRequest();
@@ -161,12 +178,27 @@
       x.send(body !== undefined ? JSON.stringify(body) : null);
     });
   }
+  // A message for screen readers only (a download finished, a problem). Emptying the region first makes them read a message that did not change.
+  function announce(msg) {
+    var el = $('#announce');
+    el.textContent = '';
+    setTimeout(function () { el.textContent = msg; }, 60);
+  }
+  // A short message in the corner. It has a close button, stays while the pointer or the focus is on it, and lasts long enough to be read.
   function toast(msg, bad) {
-    var el = document.createElement('div');
+    var el = document.createElement('div'), tx = document.createElement('span'), x = document.createElement('button'), t = null, left = bad ? 15000 : 7000, started = 0;
     el.className = 'toast' + (bad ? ' bad' : '');
-    el.textContent = msg;
+    tx.textContent = msg; el.appendChild(tx);
+    x.type = 'button'; x.className = 'toast-x'; x.textContent = '×'; x.setAttribute('aria-label', tr('close'));
+    el.appendChild(x);
     $('#toasts').appendChild(el);
-    setTimeout(function () { if (el.parentNode) { el.parentNode.removeChild(el); } }, bad ? 7000 : 3500);
+    function gone() { if (t) { clearTimeout(t); t = null; } if (el.parentNode) { el.parentNode.removeChild(el); } }
+    function start() { if (!t) { started = Date.now(); t = setTimeout(gone, left); } }
+    function pause() { if (t) { clearTimeout(t); t = null; left = Math.max(4000, left - (Date.now() - started)); } }
+    x.addEventListener('click', gone);
+    el.addEventListener('mouseenter', pause); el.addEventListener('mouseleave', start);
+    el.addEventListener('focusin', pause); el.addEventListener('focusout', start);
+    start();
   }
   function copyText(text) {
     function fallback() {
@@ -215,6 +247,10 @@
     light: '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
     dark: '<svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>'
   };
+  (function () {   // the icons only decorate: the text of the button is its name
+    var k;
+    for (k in IC) { if (Object.prototype.hasOwnProperty.call(IC, k)) { IC[k] = IC[k].replace('<svg class="ic"', '<svg class="ic" aria-hidden="true" focusable="false"'); } }
+  }());
   function btn(act, id, label, icon, cls, extra) {
     return '<button type="button" class="btn sm ' + (cls || '') + '" data-act="' + act + '" data-id="' + id + '"' + (extra || '') + '>' + (icon || '') + label + '</button>';
   }
@@ -439,7 +475,12 @@
     var seen = S.seen || {}, first = !S.seen, i, j, now = {};
     for (i = 0; i < S.jobs.length; i++) {
       j = S.jobs[i]; now[j.id] = j.status;
-      if (!first && j.status === 'done' && (seen[j.id] === 'running' || seen[j.id] === 'enumerating')) { notifyDone(j); }
+      if (!first && j.status === 'done' && (seen[j.id] === 'running' || seen[j.id] === 'enumerating')) {
+        notifyDone(j);
+        if (j.counts && (j.counts.d || j.counts.e)) { announce(tr(j.counts.e ? 'notify.err' : 'notify.ok', { title: j.title, n: j.counts.d, e: j.counts.e })); }   // for screen readers, whatever the notification settings
+      } else if (!first && j.status === 'error' && (seen[j.id] === 'running' || seen[j.id] === 'enumerating') && j.message) {
+        announce(j.title + ': ' + j.message);
+      }
     }
     S.seen = now;
   }
@@ -496,7 +537,7 @@
   function ringHtml(j) {
     var T = j.total || 0, pct = T ? Math.floor(j.processed / T * 100) : 0, r = 25, c = 2 * Math.PI * r;
     var cls = j.status === 'done' ? (j.counts.e ? 'bad' : 'ok') : (j.status === 'running' || j.status === 'enumerating') && !j.paused ? 'run' : '';
-    return '<svg class="ring" viewBox="0 0 62 62" role="img" aria-label="' + esc(tr('ring.label', { pct: pct })) + '"><circle class="rt" cx="31" cy="31" r="' + r + '"/>' +
+    return '<svg class="ring" viewBox="0 0 62 62" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-valuetext="' + esc(tr('ring.label', { pct: pct })) + '" aria-label="' + esc(tr('a11y.progress')) + '"><circle class="rt" cx="31" cy="31" r="' + r + '"/>' +
       '<circle class="rv ' + cls + '" cx="31" cy="31" r="' + r + '" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + (c * (1 - pct / 100)).toFixed(1) + '" transform="rotate(-90 31 31)"/>' +
       '<text x="31" y="36">' + pct + '%</text></svg>';
   }
@@ -541,7 +582,7 @@
     if (live && !j.paused) { h += btn('pause', id, esc(tr('act.pause')), IC.pause); }
     if (j.status === 'cancelled' || j.status === 'error') { h += btn('resume', id, esc(tr('act.resume')), IC.play, 'solid'); }
     if (c.e && !live) { h += btn('retry_failed', id, esc(tr('act.retryErrors', { n: c.e })), IC.retry, 'solid'); }
-    h += btn('toggle', id, esc(S.openId === id ? tr('act.closeList') : tr('act.openList')), IC.list);
+    h += btn('toggle', id, esc(S.openId === id ? tr('act.closeList') : tr('act.openList')), IC.list, '', ' aria-expanded="' + (S.openId === id) + '" aria-controls="jd-' + id + '"');
     if (live) { h += btn('cancel', id, esc(tr('act.cancel')), IC.stop, 'danger'); }
     if (S.local && !S.android && j.dir) { h += btn('open_folder', id, esc(tr('act.folder')), IC.folder); }
     if (c.d + c.s > 0 && j.kind !== 'single') { h += '<a class="btn sm" href="/api/jobs/' + id + '/playlist.m3u8" download>' + IC.m3u + esc(tr('act.m3u')) + '</a>'; }
@@ -555,14 +596,15 @@
     el.className = 'job'; el.setAttribute('data-id', j.id);
     el.innerHTML =
       '<div class="jbody"><div class="jmain">' +
-      '<div class="jcover" data-act="toggle" data-id="' + j.id + '"><span class="jicon"></span><img alt="" referrerpolicy="no-referrer"></div>' +
-      '<div class="jinfo"><div class="jtitle" data-act="toggle" data-id="' + j.id + '" role="button" tabindex="0"></div><div class="jmeta"></div></div>' +
+      '<div class="jcover" data-act="toggle" data-id="' + j.id + '" aria-hidden="true"><span class="jicon"></span><img alt="" referrerpolicy="no-referrer"></div>' +
+      '<div class="jinfo"><h3 class="jtitle"><button type="button" class="jtitle-btn" id="jt-' + j.id + '" data-act="toggle" data-id="' + j.id + '" aria-expanded="false" aria-controls="jd-' + j.id + '" dir="auto"></button></h3><div class="jmeta"></div></div>' +
       '<div class="jring"></div></div>' +
-      '<div class="bar"></div><div class="stats"></div><div class="jlive"></div><div class="jalerts"></div><div class="jact"></div></div>' +
-      '<div class="jdetail" hidden></div>';
+      '<div class="bar" aria-hidden="true"></div><div class="stats"></div><div class="jlive"></div><div class="jalerts"></div><div class="jact"></div></div>' +
+      '<div class="jdetail" id="jd-' + j.id + '" role="region" aria-labelledby="jt-' + j.id + '" hidden></div>';
+    el.setAttribute('aria-labelledby', 'jt-' + j.id);
     var body = el.firstChild, main = body.firstChild, img = main.firstChild.lastChild;
     var card = {
-      el: el, err: false, cover: null, img: img, icon: main.firstChild.firstChild, title: main.children[1].firstChild, meta: main.children[1].lastChild,
+      el: el, err: false, cover: null, img: img, icon: main.firstChild.firstChild, title: main.children[1].firstChild.firstChild, meta: main.children[1].lastChild,
       ring: main.children[2], bar: body.children[1], stats: body.children[2], live: body.children[3], alerts: body.children[4], act: body.children[5],
       detail: el.lastChild
     };
@@ -575,6 +617,7 @@
     var c = j.counts, T = j.total || 0;
     var w = function (n) { return T ? (n / T * 100).toFixed(2) : 0; };
     if (card.title._t !== j.title) { card.title._t = j.title; card.title.textContent = j.title; }
+    card.title.setAttribute('aria-expanded', S.openId === j.id ? 'true' : 'false');
     var sub = [j.kind === 'single' ? tr('job.single') : tr('job.playlist'), tr('items.count', { n: T })];
     setH(card.meta, badge(j) + '<span>' + esc(sub.join(' · ')) + '</span>' + (j.dir ? '<span class="path" title="' + esc(j.dir) + '">' + esc(j.dir) + '</span>' : '') + '<span>' + fmtDate(j.created) + '</span>');
     setH(card.ring, ringHtml(j));
@@ -594,7 +637,7 @@
   }
 
   function renderJobs() {
-    var box = $('#jobs'), jobs = S.jobs.slice().reverse(), seen = {}, i, j, card;
+    var box = $('#jobs'), jobs = S.jobs.slice().reverse(), seen = {}, i, j, card, lostFocus = false;
     for (i = 0; i < jobs.length; i++) {
       j = jobs[i]; seen[j.id] = true; card = S.cards[j.id];
       if (!card) { card = S.cards[j.id] = makeCard(j); }
@@ -603,16 +646,22 @@
     }
     for (var id in S.cards) {
       if (Object.prototype.hasOwnProperty.call(S.cards, id) && !seen[id]) {
+        if (S.cards[id].el.contains(document.activeElement)) { lostFocus = true; }
         if (S.cards[id].el.parentNode) { S.cards[id].el.parentNode.removeChild(S.cards[id].el); }
         delete S.cards[id];
         if (S.openId === id) { closeDetail(); }
       }
     }
+    if (lostFocus) { $('#jobsTitle').focus(); }   // the card that had the focus is gone: do not drop the keyboard user at the top of the page
   }
 
   // ------------------------------------------------------------------ detail with virtual list
   function closeDetail() {
-    if (S.openId && S.cards[S.openId]) { S.cards[S.openId].detail.hidden = true; S.cards[S.openId].detail.innerHTML = ''; }
+    if (S.openId && S.cards[S.openId]) {
+      var cd = S.cards[S.openId];
+      if (cd.detail.contains(document.activeElement)) { cd.title.focus(); }   // the focus was inside the list that is closing
+      cd.detail.hidden = true; cd.detail.innerHTML = '';
+    }
     S.openId = null; S.detail = null;
     if (detailTimer) { clearTimeout(detailTimer); detailTimer = null; }
   }
@@ -628,8 +677,8 @@
       el.hidden = false;
       el.innerHTML =
         '<div class="errpanel" hidden></div>' +
-        '<div class="tabs"><span class="tabbtns"></span><input class="search" type="search" placeholder="' + esc(tr('detail.search')) + '" aria-label="' + esc(tr('detail.searchLabel')) + '"></div>' +
-        '<div class="vbox"><div class="vspacer"></div><div class="vempty" hidden></div></div>';
+        '<div class="tabs"><div class="tabbtns" role="group" aria-label="' + esc(tr('detail.filters')) + '"></div><input class="search" type="search" placeholder="' + esc(tr('detail.search')) + '" aria-label="' + esc(tr('detail.searchLabel')) + '"></div>' +
+        '<div class="vbox" role="region" tabindex="0" aria-label="' + esc(tr('list.label')) + '"><div class="vspacer" role="list"></div><div class="vempty" hidden></div></div>';
       S.detail = {
         id: id, items: [], seq: 0, tab: 'all', q: '', kind: '', view: [], summary: null, rowEls: {}, busy: false,
         panel: el.children[0], tabsEl: el.children[1].firstChild, box: el.children[2], spacer: el.children[2].children[0],
@@ -705,7 +754,7 @@
     }
     var ph = '';
     if (c.e) {
-      ph = '<h3>' + esc(tr('err.notdl', { n: c.e })) + '</h3><div class="errgroups">';
+      ph = '<h4>' + esc(tr('err.notdl', { n: c.e })) + '</h4><div class="errgroups">';
       for (var k in byKind) {
         if (Object.prototype.hasOwnProperty.call(byKind, k)) {
           ph += '<button type="button" class="errgroup" data-act="errkind" data-kind="' + esc(k) + '" title="' + esc(errHint(k)) + '">' + esc(errLabel(k)) + ': ' + byKind[k] + '</button>';
@@ -727,7 +776,7 @@
       tk = TABS[i];
       n = tk === 'all' ? s.total : tk === 'd' ? c.d + c.s : c[tk];
       if (tk === 'c' && !n) { continue; }
-      th += '<button type="button" class="tab t-' + tk + (d.tab === tk ? ' on' : '') + '" data-act="tab" data-tab="' + tk + '">' + esc(tr('tab.' + tk)) + '<b>' + n + '</b></button>';
+      th += '<button type="button" class="tab t-' + tk + (d.tab === tk ? ' on' : '') + '" data-act="tab" data-tab="' + tk + '" aria-pressed="' + (d.tab === tk) + '">' + esc(tr('tab.' + tk)) + '<b>' + n + '</b></button>';
     }
     if (d.kind) { th += '<button type="button" class="tab on" data-act="clearkind">' + esc(tr('detail.filter', { k: errLabel(d.kind) })) + ' ✕</button>'; }
     if (th !== d.tabsHtml) { d.tabsHtml = th; d.tabsEl.innerHTML = th; }
@@ -739,15 +788,16 @@
   function makeRow() {
     var el = document.createElement('div');
     el.className = 'row';
+    el.setAttribute('role', 'listitem');   // only the rows near the screen exist: the position and the size tell where this one is in the whole list
     el.innerHTML = '<div class="rthumb"><img alt="" referrerpolicy="no-referrer"></div><div class="rnum"></div>' +
-      '<div class="rmain"><div class="rtitle"></div><div class="rsub"></div></div><div class="rside"></div><div class="ract"></div>';
+      '<div class="rmain"><div class="rtitle" dir="auto"></div><div class="rsub"></div></div><div class="rside"></div><div class="ract"></div>';
     var r = { el: el, img: el.firstChild.firstChild, num: el.children[1], title: el.children[2].firstChild, sub: el.children[2].lastChild, side: el.children[3], act: el.children[4], k: {} };
     r.img.onload = function () { r.img.style.visibility = 'visible'; };
     r.img.onerror = function () { r.img.style.visibility = 'hidden'; };
     return r;
   }
 
-  function updateRow(r, it, pad, jid, top) {
+  function updateRow(r, it, pad, jid, top, total) {
     var k = r.k, link = it.v ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(it.v) : '';
     var title = it.t || (it.v ? tr('row.video', { id: it.v }) : tr('row.reading'));
     var sub = '', side = '', act = '', tip = '';
@@ -770,7 +820,7 @@
       case 'd':
         sub = esc(it.f || ''); side = '<div class="st ok">' + esc(tr('row.completed')) + '</div>' + (it.sz ? fmtBytes(it.sz) : '');
         // on the phone the file is already in the Download folder: a "Save" button would make a useless copy
-        act = S.android ? '' : '<a class="btn sm" href="/api/jobs/' + jid + '/file/' + it.i + '" download title="' + esc(tr('row.saveTitle')) + '">' + IC.save + '</a>';
+        act = S.android ? '' : '<a class="btn sm" href="/api/jobs/' + jid + '/file/' + it.i + '" download title="' + esc(tr('row.saveTitle')) + '" aria-label="' + esc(tr('row.saveTitle')) + '">' + IC.save + '</a>';
         break;
       case 's':
         sub = esc(it.f || ''); side = '<div class="st ok">' + esc(tr('row.present')) + '</div>';
@@ -779,8 +829,8 @@
         sub = '<b>' + esc(errLabel(it.ek)) + '</b> · ' + esc(trunc(it.em, 160));
         side = '<div class="st bad">' + esc(tr('row.error')) + '</div>' + (it.a > 1 ? esc(tr('row.attempts', { n: it.a })) : '');
         tip = errLabel(it.ek) + '\n' + errHint(it.ek) + '\n\n' + (it.em || '');
-        act = '<button class="btn sm" data-act="retry_item" data-id="' + jid + '" data-idx="' + it.i + '" title="' + esc(tr('row.retryTitle')) + '">' + IC.retry + '</button>' +
-          (link ? '<a class="btn sm" href="' + link + '" target="_blank" rel="noopener noreferrer" title="' + esc(tr('row.openYT')) + '">' + IC.open + '</a>' : '');
+        act = '<button type="button" class="btn sm" data-act="retry_item" data-id="' + jid + '" data-idx="' + it.i + '" title="' + esc(tr('row.retryTitle')) + '" aria-label="' + esc(tr('row.retryTitle')) + '">' + IC.retry + '</button>' +
+          (link ? '<a class="btn sm" href="' + link + '" target="_blank" rel="noopener noreferrer" title="' + esc(tr('row.openYT')) + '" aria-label="' + esc(tr('row.openYT') + ' ' + tr('a11y.newTab')) + '">' + IC.open + '</a>' : '');
         break;
       case 'c':
         sub = esc(tr('row.cancelled')); side = esc(tr('row.cancelled'));
@@ -802,7 +852,9 @@
     if (k.title !== title) { k.title = title; r.title.textContent = title; }
     if (k.sub !== sub) { k.sub = sub; r.sub.innerHTML = sub; }
     if (k.side !== side) { k.side = side; r.side.innerHTML = side; }
-    if (k.act !== act) { k.act = act; r.act.innerHTML = act; }
+    if (k.act !== act) { k.act = act; setHtmlKeepFocus(r.act, act); }
+    var pos = it.i + '/' + total;
+    if (k.pos !== pos) { k.pos = pos; r.el.setAttribute('aria-posinset', it.i); r.el.setAttribute('aria-setsize', total); }
     var tt = tip || title;
     if (k.tip !== tt) { k.tip = tt; r.el.title = tt; }
   }
@@ -820,7 +872,7 @@
     for (k = first; k < last; k++) {
       it = d.items[d.view[k]]; key = it.i; need[key] = true; r = d.rowEls[key];
       if (!r) { r = d.rowEls[key] = makeRow(); d.spacer.appendChild(r.el); }
-      updateRow(r, it, pad, d.id, k * ROW);
+      updateRow(r, it, pad, d.id, k * ROW, s.total);
     }
     for (key in d.rowEls) {
       if (Object.prototype.hasOwnProperty.call(d.rowEls, key) && !need[key]) {
@@ -897,7 +949,7 @@
     return d.getDate() + '/' + (d.getMonth() + 1) + ' ' + hm;
   }
   function subHtml(s) {
-    var h = '<div class="sub' + (s.enabled ? '' : ' off') + '"><div class="sub-main"><b class="sub-title">' + esc(s.title || s.url) + '</b>';
+    var h = '<div class="sub' + (s.enabled ? '' : ' off') + '" role="group" aria-label="' + esc(s.title || s.url) + '"><div class="sub-main"><b class="sub-title" dir="auto">' + esc(s.title || s.url) + '</b>';
     var st = s.status === 'checking' ? tr('subs.checking') : s.status === 'error' ? tr('subs.error') : s.status === 'errors' ? tr('subs.errors') : '';
     var res = s.last_new == null ? '' : (s.last_new ? tr('subs.new', { n: s.last_new }) : tr('subs.nothingNew'));
     h += '<div class="sub-meta">' + (s.enabled ? '' : '<span class="badge pause">' + esc(tr('subs.pausedTag')) + '</span>') +
@@ -945,9 +997,36 @@
     $('#notifyHint').hidden = S.android || S.nativeNotify;       // in the Windows app the tray icon does it: no browser permission needed
     $('#notifyHint').textContent = (window.Notification && Notification.permission === 'denied') ? tr('set.notifyBlocked') : tr('set.notifyHint');
     showUpdateInfo();
+    settingsOpener = document.activeElement;
     $('#settingsOv').hidden = false;
+    setBackgroundInert(true);
+    $('#setTitle').focus();   // a screen reader reads the name of the dialog, and Tab starts from its first control
   }
-  function closeSettings() { $('#settingsOv').hidden = true; }
+  function closeSettings() {
+    $('#settingsOv').hidden = true;
+    setBackgroundInert(false);
+    if (settingsOpener && settingsOpener.focus && document.body.contains(settingsOpener)) { settingsOpener.focus(); }
+    settingsOpener = null;
+  }
+  // While the settings dialog is open nothing behind it can be reached (keyboard, screen reader or pointer).
+  var settingsOpener = null;
+  function setBackgroundInert(on) {
+    var els = document.querySelectorAll('.top, #main, .foot, .skip'), i;
+    for (i = 0; i < els.length; i++) {
+      if (on) { els[i].setAttribute('inert', ''); els[i].setAttribute('aria-hidden', 'true'); }
+      else { els[i].removeAttribute('inert'); els[i].removeAttribute('aria-hidden'); }
+    }
+  }
+  function keepFocusInDialog(ev) {
+    var box = $('#settingsOv .modal'), list = box.querySelectorAll('a[href], button, input, select, textarea, [tabindex]'), ok = [], i, first, last;
+    for (i = 0; i < list.length; i++) {
+      if (!list[i].disabled && list[i].tabIndex >= 0 && list[i].offsetParent !== null) { ok.push(list[i]); }
+    }
+    if (!ok.length) { return; }
+    first = ok[0]; last = ok[ok.length - 1];
+    if (ev.shiftKey && (document.activeElement === first || document.activeElement === $('#setTitle'))) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+  }
   function setMsg(t, ok) { var m = $('#setMsg'); m.hidden = !t; m.textContent = t || ''; m.className = 'msg' + (ok ? ' ok' : ''); }
 
   function saveSettings() {
@@ -968,7 +1047,7 @@
 
   function init() {
     var lsel = $('#langSel'), lh = '', li;
-    for (li = 0; li < LANGS.length; li++) { lh += '<option value="' + LANGS[li][0] + '">' + LANGS[li][1] + '</option>'; }
+    for (li = 0; li < LANGS.length; li++) { lh += '<option value="' + LANGS[li][0] + '" lang="' + LANGS[li][0] + '" translate="no">' + LANGS[li][1] + '</option>'; }
     lsel.innerHTML = lh;
     lsel.addEventListener('change', function () { setLanguage(lsel.value, true); });
     $('#subscribe').addEventListener('change', function () { $('#subHours').hidden = !this.checked; $('#onlyNewRow').hidden = !this.checked; });
@@ -980,8 +1059,10 @@
     $('#btnTheme').addEventListener('click', cycleTheme);
     document.addEventListener('click', onClick);
     document.addEventListener('keydown', function (ev) {
-      if ((ev.key === 'Enter' || ev.key === ' ') && ev.target && ev.target.className === 'jtitle') { ev.preventDefault(); openJob(ev.target.getAttribute('data-id')); }
-      if (ev.key === 'Escape' && !$('#settingsOv').hidden) { closeSettings(); }
+      if (!$('#settingsOv').hidden) {
+        if (ev.key === 'Escape') { closeSettings(); }
+        else if (ev.key === 'Tab') { keepFocusInDialog(ev); }
+      }
     });
     $('#form').addEventListener('submit', form.submit);
     $('#form').addEventListener('change', function (ev) {
@@ -1051,6 +1132,16 @@
     });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) { pollState(); if (S.detail) { fetchDetail(); } } });
     window.addEventListener('resize', function () { calcRow(); if (S.detail) { renderVList(); } });
+    // Android app: make the text as large as the system font size asks for (a WebView does not always do it by itself).
+    // The page sizes everything in rem, so one change of the root font size enlarges all of it.
+    try {
+      if (window.AndroidBridge && window.AndroidBridge.fontScale) {
+        var fs = parseFloat(window.AndroidBridge.fontScale());
+        if (fs > 1.02 && Math.abs(parseFloat(window.getComputedStyle(document.documentElement).fontSize) - 16) < 0.5) {
+          document.documentElement.style.fontSize = Math.round(fs * 100) + '%';
+        }
+      }
+    } catch (e) { /* ignored */ }
     calcRow();
     // link received from "Share" (Android app): /?u=<text>
     try {

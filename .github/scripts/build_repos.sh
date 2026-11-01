@@ -53,20 +53,41 @@ EOF
 cat > "$SITE/index.html" <<EOF
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YT Grabber packages</title>
-<style>body{font:16px/1.5 system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem}pre{background:#8881;padding:.8rem;overflow:auto;border-radius:6px}</style>
+<meta name="color-scheme" content="light dark">
+<title>YT Grabber packages (apt and dnf)</title>
+<style>
+:root{--bg:#fff;--fg:#14172a;--muted:#4b5268;--code:#eef0f6;--link:#1d3fb8;--focus:#b02d44}
+@media (prefers-color-scheme:dark){:root{--bg:#10131c;--fg:#eceef6;--muted:#b4bacb;--code:#1c2130;--link:#9db4ff;--focus:#fc728c}}
+body{margin:0;background:var(--bg);color:var(--fg);font:1rem/1.6 system-ui,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:46rem;margin:0 auto;padding:1.5rem 1rem 3rem}
+a{color:var(--link)}
+a:focus-visible,pre:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.skip{position:absolute;left:.5rem;top:-4rem;background:var(--fg);color:var(--bg);padding:.6rem 1rem;border-radius:6px}
+.skip:focus{top:.5rem}
+pre{background:var(--code);padding:1rem;overflow:auto;border-radius:8px;font:.9rem/1.5 ui-monospace,Consolas,Menlo,monospace}
+code{font:.9rem ui-monospace,Consolas,Menlo,monospace;overflow-wrap:anywhere}
+.muted{color:var(--muted)}
+</style>
 </head><body>
+<a class="skip" href="#main">Skip to the main content</a>
+<div class="wrap">
+<header><p class="muted"><a href="https://github.com/progliodario/YT-Grabber">YT Grabber on GitHub</a></p></header>
+<main id="main">
 <h1>YT Grabber packages</h1>
-<p>Signed repositories for <a href="https://github.com/progliodario/YT-Grabber">YT Grabber</a>. Updates arrive with the normal system updates.</p>
-<h2>Debian, Ubuntu, Linux Mint, Raspberry Pi OS</h2>
-<pre>sudo install -d /etc/apt/keyrings
+<p>Signed apt and dnf repositories for <a href="https://github.com/progliodario/YT-Grabber">YT Grabber</a>. Updates arrive with the normal system updates.</p>
+<h2 id="apt">Debian, Ubuntu, Linux Mint, Raspberry Pi OS</h2>
+<pre tabindex="0" aria-labelledby="apt">sudo install -d /etc/apt/keyrings
 curl -fsSL $BASE/yt-grabber.gpg | sudo tee /etc/apt/keyrings/yt-grabber.gpg &gt; /dev/null
 echo "deb [signed-by=/etc/apt/keyrings/yt-grabber.gpg] $BASE/apt stable main" | sudo tee /etc/apt/sources.list.d/yt-grabber.list
 sudo apt update &amp;&amp; sudo apt install yt-grabber</pre>
-<h2>Fedora, RHEL, Rocky, Alma, openSUSE</h2>
-<pre>sudo curl -fsSL -o /etc/yum.repos.d/yt-grabber.repo $BASE/yt-grabber.repo
+<h2 id="dnf">Fedora, RHEL, Rocky, Alma, openSUSE</h2>
+<pre tabindex="0" aria-labelledby="dnf">sudo curl -fsSL -o /etc/yum.repos.d/yt-grabber.repo $BASE/yt-grabber.repo
 sudo dnf install yt-grabber</pre>
-<p>Signing key fingerprint: <code>$FPR</code> (<a href="yt-grabber.asc">yt-grabber.asc</a>).</p>
+<h2>Check the signature</h2>
+<p>Signing key fingerprint: <code>$FPR</code>. The public key is <a href="yt-grabber.asc">yt-grabber.asc</a>.</p>
+</main>
+<footer><p class="muted">Accessibility of YT Grabber itself: <a href="https://github.com/progliodario/YT-Grabber/blob/main/docs/accessibility.md">accessibility statement</a>.</p></footer>
+</div>
 </body></html>
 EOF
 touch "$SITE/.nojekyll"

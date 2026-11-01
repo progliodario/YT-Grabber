@@ -50,6 +50,31 @@ window.I18N.it = {
   to the languages of `packaging/windows/installer.iss`, and add `packaging/android/app/src/main/res/values-<code>/strings.xml`.
   The tests tell you if something is missing. Right-to-left languages work already (Arabic is the example).
 
+## Accessibility
+
+YT Grabber aims at WCAG 2.2 level AA (see [docs/accessibility.md](docs/accessibility.md)). When you change the page (`program/web/`):
+
+- every control needs a name (a visible label, or `aria-label` for an icon), toggles are `role="switch"`, groups of options are labelled;
+- a button is a `<button>`, a link is an `<a href>`: never a `<div>` with a click handler. Icons that only decorate get `aria-hidden="true"`;
+- never take the outline off a focusable element; do not rely on colour alone (add a word, a mark or a shape);
+- colours come from the tokens at the top of `app.css` (`--fg`, `--muted`, `--accent-ink`, `--ctrl`...), which have enough contrast in both
+  themes: `tests/test_accessibility.py` fails if a pair does not. Do not use `opacity` on text;
+- sizes of text in `rem`, never `px`; layouts must still work at 320 CSS pixels and with the text at 200%;
+- when the page changes by itself (something finished, something failed), say it with `announce()` or a toast, not only visually;
+  when you rebuild part of the page, keep the keyboard focus (`setH`, `setHtmlKeepFocus`);
+- a new dialog needs a title, a focus trap, Escape to close and the focus returned to the button that opened it (copy the settings window);
+- texts for screen readers (names, announcements) live in `en.js` and the other languages like any other text.
+
+Check it: `python -m unittest discover -s tests` always, and, with the page running on sample data, the browser audit:
+
+```
+python tests/a11y/seed.py /tmp/ytg-a11y
+YTG_DATA_ROOT=/tmp/ytg-a11y python program/server.py --no-browser --port 8782 &
+python tests/a11y/audit.py http://localhost:8782/
+```
+
+It needs `pip install websockets` and a Chrome, Chromium or Edge, and it runs in CI as well.
+
 ## Changing the code
 
 - Read [docs/development.md](docs/development.md): how it works, the layout, how to run it from the sources and the tests.

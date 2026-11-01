@@ -398,6 +398,13 @@ def run_with_splash(task, icon_path=None, subtitle='Starting...', first_text='St
         return task(lambda text: None)
 
     state = {'text': first_text, 'result': None, 'error': None}
+    try:   # sharp text on high-resolution screens and with the "scale" setting of Windows (the window must know about it)
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        try:
+            user32.SetProcessDPIAware()
+        except Exception:
+            pass
 
     def work():
         try:
@@ -406,8 +413,9 @@ def run_with_splash(task, icon_path=None, subtitle='Starting...', first_text='St
             state['error'] = e
 
     root = tk.Tk()
-    root.title('YT Grabber')
+    root.title('YT Grabber - ' + subtitle.split('\n')[0])   # a screen reader reads the title of a window that takes the focus
     root.resizable(False, False)
+    scale = max(1.0, root.winfo_fpixels('1i') / 96.0)
     root.attributes('-topmost', True)
     if icon_path and os.path.isfile(icon_path):
         try:
@@ -418,16 +426,17 @@ def run_with_splash(task, icon_path=None, subtitle='Starting...', first_text='St
     frame = ttk.Frame(root, padding=24)
     frame.pack()
     ttk.Label(frame, text='YT Grabber', font=('Segoe UI', 16, 'bold')).pack(anchor='w')
-    ttk.Label(frame, text=subtitle, justify='left').pack(anchor='w', pady=(6, 14))
-    status = ttk.Label(frame, text=state['text'], width=58)
+    ttk.Label(frame, text=subtitle, justify='left', wraplength=int(440 * scale)).pack(anchor='w', pady=(6, 14))
+    status = ttk.Label(frame, text=state['text'], wraplength=int(440 * scale), justify='left')
     status.pack(anchor='w')
-    bar = ttk.Progressbar(frame, mode='indeterminate', length=420)
+    bar = ttk.Progressbar(frame, mode='indeterminate', length=int(420 * scale))
     bar.pack(pady=(10, 0))
     bar.start(12)
     root.update_idletasks()
     w, h = root.winfo_reqwidth(), root.winfo_reqheight()
     root.geometry('+%d+%d' % ((root.winfo_screenwidth() - w) // 2, (root.winfo_screenheight() - h) // 3))
 
+    root.focus_force()   # the window must be the one a screen reader announces and the keyboard writes to
     t = threading.Thread(target=work, daemon=True)
     t.start()
 
