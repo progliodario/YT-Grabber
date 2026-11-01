@@ -1,15 +1,15 @@
-## What changed
+## Changes
 
-<!-- One thing per pull request. -->
+<!-- One subject per pull request. -->
 
-## How you tried it
+## Testing
 
-<!-- Which tests you ran, what you did by hand. -->
+<!-- The tests that were run and any manual checks. -->
 
 ## Checklist
 
 - [ ] `python -m unittest discover -s tests` passes
-- [ ] texts of the page changed in `en.js` and in the other languages (a machine translation is fine for a start)
-- [ ] if the page changed: still usable with the keyboard only, and the checklist in CONTRIBUTING.md (accessibility) respected
-- [ ] documentation updated if something visible changed
-- [ ] the version number is not changed (the maintainer does it when releasing)
+- [ ] texts of the page are updated in `en.js` and in the other languages (a machine translation is acceptable as a first version)
+- [ ] if the page changed: it is still usable with the keyboard alone, and the accessibility rules in CONTRIBUTING.md are respected
+- [ ] the documentation is updated if anything visible changed
+- [ ] the version number is unchanged (the maintainer sets it when releasing)

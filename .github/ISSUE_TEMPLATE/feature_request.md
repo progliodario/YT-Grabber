@@ -4,10 +4,11 @@ about: Suggest something new
 labels: enhancement
 ---
 
-**What do you want to do?**
-<!-- Describe the situation, not only the feature. -->
+**Purpose**
+<!-- Describe the situation and what is to be achieved, not only the feature. -->
 
-**How would you like it to work?**
+**Proposed behaviour**
+<!-- How the feature should work. -->
 
-**Anything else**
-<!-- Alternatives you considered, examples from other programs... -->
+**Additional information**
+<!-- Alternatives considered, examples from other programs, and so on. -->
