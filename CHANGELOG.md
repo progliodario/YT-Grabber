@@ -2,7 +2,7 @@
 
 All notable changes, newest first. The version numbers follow `MAJOR.MINOR.PATCH`.
 
-## Unreleased
+## 1.4.0
 
 - **Accessibility (WCAG 2.2 AA):** the whole interface was reworked and is now checked automatically at every change.
   Keyboard: skip link, real buttons, a settings window that traps and returns the focus, focus that survives the page refreshing.
@@ -12,7 +12,8 @@ All notable changes, newest first. The version numbers follow `MAJOR.MINOR.PATCH
   forced-colours and more-contrast modes, no animation with "reduce motion". Messages in the corner can be closed and wait for you.
   Android: pinch zoom, system font size, a start-up screen that screen readers follow. Windows: a sharper start-up window.
   See [docs/accessibility.md](docs/accessibility.md).
-
+- Downloading ffmpeg and the other tools on the first start now **retries** when the connection drops half way (a weak network
+  could stop the setup).
 - **Repository reorganized.** The build folders now live under `packaging/` (`windows`, `android`, `linux`, `macos`, `termux`), the
   results of local builds go to `dist/`, the public signing key moved to `docs/release-key.asc`, and every `build-*.bat` is now
   `build.bat` in its folder. Nothing changes for people who install a release.
