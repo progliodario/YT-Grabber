@@ -60,6 +60,8 @@ By default a whole playlist is downloaded. To leave some videos out, there are t
 - **While the download runs.** Every video that is still waiting has a **Do not download this video** button. A video that was left
   out shows **Download this video after all**, also when the job has already finished.
 
+![A playlist waiting for the choice: a box in every row, Select all and Select none, and the Start button](screenshots/choose-videos.png)
+
 The videos that were left out are listed as *Skipped* ("You chose not to download it"), with their own tab in the list. The files keep
 the number of their position in the playlist, so the numbers of the downloaded files have gaps where videos were left out. A
 subscription that checks the same playlist later downloads the videos that are missing from the folder again: leaving a video out

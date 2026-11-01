@@ -2,7 +2,7 @@
 
 All notable changes are listed here, newest first. Version numbers follow `MAJOR.MINOR.PATCH`.
 
-## Unreleased
+## 1.6.0
 
 - **Choose the videos of a playlist:** *Let me choose the videos first* reads the list and waits; untick what is not wanted (all or
   none with one press, or one by one, also with the keyboard: arrow keys and Space) and press *Start*. While a download runs, any
@@ -11,6 +11,10 @@ All notable changes are listed here, newest first. Version numbers follow `MAJOR
   updates are in `ytsettings.py`, `ytmodel.py`, `ytlinks.py` and `ytupdates.py`; the tests are split into one file per subject
   (`tests/README.md`); `program/README.md` describes the modules. Nothing changes for users.
 - The Android build now includes every `*.py` of `program/`, so a new module needs no change there.
+- Links inside the hints of the settings window (the new Android hint has two) use the accent colour and an underline, so they stay
+  readable in the dark theme and in forced-colours mode.
+- A playlist that was waiting for the user's choice when the program was closed continues reading its list when the program starts again.
+- Documentation: a new picture for choosing the videos, and a settings picture that shows the current options.
 
 ## 1.5.1
 

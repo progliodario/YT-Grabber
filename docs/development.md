@@ -44,7 +44,7 @@ The course of a download:
 one due subscription every 20 seconds). In "only new videos" mode, the subscription keeps the list of the video identifiers it has
 already seen. Items in that list are created in state `k` and are never downloaded.
 
-**Updates.** `check_update()` queries the GitHub releases API twice a day and records the latest version and, when present, the
+**Updates** (`program/ytupdates.py`). `check_update()` queries the GitHub releases API twice a day and records the latest version and, when present, the
 address, SHA-256 fingerprint and size of the Windows installer asset. In the frozen Windows application (not under Scoop),
 `POST /api/appupdate/install` runs `run_update_install()`: it downloads the installer (only from
 `https://github.com/progliodario/YT-Grabber/releases/download/`), verifies the fingerprint, starts it detached with
@@ -147,14 +147,14 @@ builds and tests; nothing is published.
 
 ## Making a release
 
-1. Set the version everywhere: `python tools/bump_version.py 1.5.0`. The script changes `program/server.py`, the Windows version file,
+1. Set the version everywhere: `python tools/bump_version.py 1.6.0`. The script changes `program/server.py`, the Windows version file,
    the Flatpak metadata and the Android `versionName` and `versionCode`, and reports if `CHANGELOG.md` has no section for the version.
 2. Write the section of `CHANGELOG.md` and run the tests. Commit and push, then wait for the **CI** to pass.
-3. Push the tag: `git tag -a v1.5.0 -m "YT Grabber 1.5.0" && git push origin v1.5.0`. `release.yml` builds and tests everything and
+3. Push the tag: `git tag -a v1.6.0 -m "YT Grabber 1.6.0" && git push origin v1.6.0`. `release.yml` builds and tests everything and
    creates the GitHub release; `finalize.yml` adds the checksums, the signature and the repositories.
 4. Build the APKs on the maintainer's computer (`packaging\android\build.bat`; the signing key exists only there), upload them to the
-   release (`gh release upload v1.5.0 dist\android\*.apk`), and run **Finalize** again manually
-   (`gh workflow run finalize.yml -f tag=v1.5.0`) so that `SHA256SUMS` includes them.
+   release (`gh release upload v1.6.0 dist\android\*.apk`), and run **Finalize** again manually
+   (`gh workflow run finalize.yml -f tag=v1.6.0`) so that `SHA256SUMS` includes them.
 5. Update the [distribution channels](#distribution-channels) with the new file hashes.
 6. Verify the release from outside: the signature (`gpg --verify SHA256SUMS.asc SHA256SUMS`), an attestation
    (`gh attestation verify`), and the apt and dnf repositories.

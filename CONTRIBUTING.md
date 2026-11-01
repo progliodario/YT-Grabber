@@ -49,7 +49,7 @@ window.I18N.it = {
   `cookies.txt` are not translated.
 - To **correct a text**, edit the relevant file and submit a pull request, or open an issue containing the corrected text.
 - To **add a language**, create `lang/<code>.js` and also: add the language to `LANGS` in `program/web/app.js` and to `LANG_CODES` in
-  `program/server.py`; to `CODES` and `TEXTS` in `packaging/windows/winlang.py` (the Windows tray menu and start-up window); to the
+  `program/ytsettings.py`; to `CODES` and `TEXTS` in `packaging/windows/winlang.py` (the Windows tray menu and start-up window); to the
   languages of `packaging/windows/installer.iss`; and create `packaging/android/app/src/main/res/values-<code>/strings.xml`.
   The tests report anything that is missing. Right-to-left languages are already supported (Arabic is the example).
 

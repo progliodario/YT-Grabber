@@ -54,7 +54,7 @@ except Exception:
 import yt_dlp  # noqa: E402
 
 APP_NAME = 'yt-grabber'
-APP_VERSION = '1.5.1'
+APP_VERSION = '1.6.0'
 CONCURRENCY = 10  # simultaneous downloads: fixed by requirement
 
 LOCK = threading.RLock()
@@ -388,6 +388,8 @@ class Manager:
                 job.dirty = False
                 MANAGER_JOBS[job.id] = job
                 JOB_ORDER.append(job.id)
+                if job.choosing and not job.enum_done and job.status == 'enumerating':
+                    self.start_enum(job)   # the user is still to choose: read the rest of the list (nothing is downloaded: the job is paused)
             except Exception as e:
                 log('unreadable job', fn, e)
         JOB_ORDER.sort(key=lambda j: MANAGER_JOBS[j].created)
