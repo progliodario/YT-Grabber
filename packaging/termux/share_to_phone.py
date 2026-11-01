@@ -122,7 +122,7 @@ def main():
         f.write(data)
     print('Created %s (%d KB)' % (out, len(data) // 1024))
     if a.zip_only:
-        print('Copy it to the phone and follow packaging/termux/README.md (section "Without a shared Wi-Fi").')
+        print('Copy it to the phone and follow docs/install.md (Android -> Termux -> "Without a shared Wi-Fi").')
         return 0
 
     Handler.zip_bytes = data

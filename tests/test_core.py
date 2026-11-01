@@ -407,6 +407,41 @@ class WindowsTextTests(unittest.TestCase):
                                  sorted(re.findall(r'\{(\w+)\}', winlang.TEXTS[code][key])), '%s %s' % (code, key))
 
 
+class DownloadRetryTests(unittest.TestCase):
+    """setup_tools.download: a connection that drops half way is retried, a permanent failure is reported."""
+
+    def setUp(self):
+        import setup_tools
+        self.tool = setup_tools
+        self.calls = 0
+        self.old = (setup_tools.urllib.request.urlretrieve, setup_tools.time.sleep, setup_tools.say)
+        setup_tools.time.sleep = lambda s: None
+        setup_tools.say = lambda msg: None
+        self.addCleanup(self.restore)
+
+    def restore(self):
+        self.tool.urllib.request.urlretrieve, self.tool.time.sleep, self.tool.say = self.old
+
+    def test_retries_after_an_interruption(self):
+        def flaky(url, dest, progress=None):
+            self.calls += 1
+            if self.calls < 3:
+                raise OSError('retrieval incomplete: got only 5 out of 20 bytes')
+            return dest, None
+        self.tool.urllib.request.urlretrieve = flaky
+        self.assertEqual(self.tool.download('http://x/y', 'z')[0], 'z')
+        self.assertEqual(self.calls, 3)
+
+    def test_gives_up_after_the_last_try(self):
+        def broken(url, dest, progress=None):
+            self.calls += 1
+            raise OSError('no route')
+        self.tool.urllib.request.urlretrieve = broken
+        with self.assertRaises(OSError):
+            self.tool.download('http://x/y', 'z', tries=2)
+        self.assertEqual(self.calls, 2)
+
+
 class BumpVersionTests(unittest.TestCase):
     """tools/bump_version.py, run on a scratch copy of the files that carry the version."""
     FILES = ('program/server.py', 'packaging/windows/version.txt',

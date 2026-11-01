@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 import urllib.request
 import zipfile
 
@@ -29,6 +30,18 @@ ANDROID_PKGS = ['yt-dlp', 'yt-dlp-ejs', 'mutagen', 'requests', 'urllib3', 'webso
 
 def say(msg):
     print('[setup] ' + msg, flush=True)
+
+
+def download(url, dest, progress=None, tries=3):
+    """urlretrieve with retries: a connection that drops half way (weak Wi-Fi, a busy server) must not stop the setup."""
+    for attempt in range(1, tries + 1):
+        try:
+            return urllib.request.urlretrieve(url, dest, progress)
+        except Exception as e:  # noqa: BLE001
+            if attempt == tries:
+                raise
+            say('Download interrupted (%s): trying again (%d of %d)...' % (e, attempt + 1, tries))
+            time.sleep(3 * attempt)
 
 
 def deps_ok():
@@ -71,7 +84,7 @@ def install_ffmpeg_macos(arm):
     try:
         for tool in ('ffmpeg', 'ffprobe'):
             arc = os.path.join(tmp, tool + '.zip')
-            urllib.request.urlretrieve(MAC_FFMPEG_URL % (tool, suffix), arc)
+            download(MAC_FFMPEG_URL % (tool, suffix), arc)
             with zipfile.ZipFile(arc) as z:
                 member = next((m for m in z.namelist() if os.path.basename(m) == tool and '__MACOSX' not in m), None)
                 if not member:
@@ -126,7 +139,7 @@ def install_ffmpeg():
                 if pct >= last[0] + 10:
                     last[0] = pct
                     say('  %d%%' % pct)
-        urllib.request.urlretrieve(BASE + name, arc, prog)
+        download(BASE + name, arc, prog)
         want = ('ffmpeg' + EXE, 'ffprobe' + EXE)
         found = 0
         if name.endswith('.zip'):
@@ -166,7 +179,7 @@ def install_deno():
     tmp = tempfile.mkdtemp(prefix='ytgrab_deno_')
     try:
         arc = os.path.join(tmp, 'deno.zip')
-        urllib.request.urlretrieve(DENO_URL % arch, arc)
+        download(DENO_URL % arch, arc)
         with zipfile.ZipFile(arc) as z:
             with z.open('deno.exe') as src, open(DENO, 'wb') as dst:
                 shutil.copyfileobj(src, dst)

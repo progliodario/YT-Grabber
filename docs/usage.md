@@ -102,6 +102,8 @@ new leaves no card in the list.
 - When a newer version of YT Grabber exists, a **notice** appears at the top of the page. For that, the program asks GitHub
   twice a day which is the latest release, sending only its name and version.
 
+![The notice shown when a new version is available](screenshots/update-banner.png)
+
 Both can be switched off in *Settings → Notifications and updates*, where *Check now* also looks for a new version at once.
 
 ## Languages
