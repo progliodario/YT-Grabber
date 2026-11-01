@@ -53,7 +53,9 @@ jobs:
           Invoke-RestMethod -Method Post -Headers @{ 'X-YTG' = '1' } -ContentType 'application/json' -Body '{}' http://127.0.0.1:8795/api/quit | Out-Null
           Start-Sleep 5
           # what "Update now" does: install over the existing copy, silently, and open the app again
-          $p = Start-Process $setup -ArgumentList '/SILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER','/RELAUNCH=1' -Wait -PassThru
+          # not "-Wait": it would also wait for the program that Setup starts again, which keeps running
+          $p = Start-Process $setup -ArgumentList '/SILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER','/RELAUNCH=1' -PassThru
+          if (-not $p.WaitForExit(240000)) { throw 'The update install did not finish in 4 minutes' }
           if ($p.ExitCode -ne 0) { throw "The update install exited with code $($p.ExitCode)" }
           $ok = $false
           for ($i = 0; $i -lt 60; $i++) {
