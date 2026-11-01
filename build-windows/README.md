@@ -3,14 +3,14 @@
 *Part of [YT Grabber](../README.md). The ready-to-use installer is in the **`Windows\`** folder in the main folder (or
 on the GitHub Releases page); this folder contains what is needed to **rebuild** it.*
 
-**`YT-Grabber-Setup-1.0.0.exe`** installs YT Grabber like any other Windows program: nothing else needs to be installed
-first (Python is included).
+**`YT-Grabber-Setup-<version>.exe`** (or `winget install progliodario.YTGrabber`) installs YT Grabber like any other
+Windows program: nothing else needs to be installed first (Python is included).
 
 ## Install
 
-1. Run `YT-Grabber-Setup-1.0.0.exe` and follow the wizard. It installs for your user account, so **no administrator
+1. Run `YT-Grabber-Setup-<version>.exe` and follow the wizard. It installs for your user account, so **no administrator
    password is needed** (the wizard also offers "for all users").
-2. The setup is not digitally signed, so Windows SmartScreen may show "Windows protected your PC": click
+2. The setup has no paid code-signing certificate, so Windows SmartScreen may show "Windows protected your PC": click
    **More info → Run anyway**.
 3. Choose whether to add a desktop shortcut and whether YT Grabber should start when you sign in to Windows, and
    finish. YT Grabber is now in the **Start menu** and in **Settings → Apps → Installed apps**.
@@ -43,10 +43,18 @@ running, Setup asks you to quit it first (icon in the notification area → Quit
 *Settings → Apps → Installed apps → YT Grabber → Uninstall*. The uninstaller asks whether you also want to delete your
 settings and the downloaded tools (ffmpeg); the music and videos you downloaded are never deleted.
 
+## Languages
+
+The installer, the notification-area menu, the start-up window and the web interface follow the language of Windows
+(16 languages, listed in the main README). The language of the page can be changed with the selector at the top of the
+page. Where the installer wizard itself has no translation (Hindi, Indonesian, Chinese) it is shown in English; the app
+is fully translated.
+
 ## Windows warnings and antivirus
 
-The setup and the program are not digitally signed (a signing certificate is paid), so SmartScreen may warn at first
-run. Some antivirus programs wrongly flag programs created with PyInstaller: if that happens, add the installation
+The setup and the program have no paid code-signing certificate, so SmartScreen may warn at first run. The release is
+built on GitHub's machines with PyInstaller's launcher compiled from source (fewer false alarms), and it is covered by
+`SHA256SUMS` and a build attestation (see [SECURITY.md](../SECURITY.md)). Some antivirus programs wrongly flag programs created with PyInstaller: if that happens, add the installation
 folder to the exceptions. If you want to be sure of what it contains, you can rebuild it yourself from the sources
 (see below). At first run the Windows firewall may ask for network permission: allow **private networks**.
 
@@ -71,6 +79,7 @@ https://jrsoftware.org/isdl.php); PyInstaller and yt-dlp are fetched automatical
 | `installer.iss` | the installer description (Start menu, shortcuts, uninstaller, start with Windows) |
 | `exe_main.py` | entry point of the app: starts the server, the window and the tray icon |
 | `winapp.py` | the Windows shell: single instance, own window, tray icon, startup splash |
+| `winlang.py` | the texts of that shell in 16 languages |
 | `make_icon.py`, `icon.ico` | the app icon (the script regenerates it if missing) |
 | `version.txt` | version information shown by Windows in the file properties |
 

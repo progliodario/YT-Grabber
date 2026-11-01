@@ -83,7 +83,19 @@ def build_stage(stage):
         copy_text(os.path.join(HERE, name), os.path.join(stage, name))
     for name in ('README.md', 'LICENSE'):
         copy_text(os.path.join(ROOT, name), os.path.join(stage, name))
-    shutil.copy(os.path.join(HERE, 'nfpm.yaml'), os.path.join(stage, 'nfpm.yaml'))
+    # nfpm's "tree" entry would give the folders the file mode (no x bit): list folders and files one by one
+    entries = []
+    for folder, dirs, files in os.walk(os.path.join(stage, 'program')):
+        dirs.sort()
+        rel = os.path.relpath(folder, stage).replace(os.sep, '/')
+        entries.append('  - dst: /opt/yt-grabber/%s\n    type: dir\n    file_info:\n      mode: 0755' % rel)
+        for name in sorted(files):
+            entries.append('  - src: %s/%s\n    dst: /opt/yt-grabber/%s/%s\n    file_info:\n      mode: 0644' % (rel, name, rel, name))
+    with open(os.path.join(HERE, 'nfpm.yaml'), encoding='utf-8') as f:
+        config = f.read().replace('\r\n', '\n')
+    marker = next(line for line in config.split('\n') if '@PROGRAM_TREE@' in line)
+    with open(os.path.join(stage, 'nfpm.yaml'), 'w', encoding='utf-8', newline='\n') as f:
+        f.write(config.replace(marker, '\n'.join(entries)))
 
 
 def main():

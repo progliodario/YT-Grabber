@@ -8,9 +8,13 @@ contains what is needed to **rebuild** it.*
 
 ## Install and open
 
+**With Homebrew:** `brew install --cask progliodario/tap/yt-grabber` (it removes the quarantine flag for you, so step 2 below is not needed).
+
+**By hand:**
+
 1. Download `YT-Grabber-macOS.zip` and unzip it (a double click does it). Drag **YT-Grabber.app** to *Applications*
    (or anywhere you like).
-2. The app is **not signed or notarized by Apple** (that needs a paid developer account), so the first time macOS blocks
+2. The app is only signed "ad hoc" and **not notarized by Apple** (that needs a paid developer account), so the first time macOS blocks
    it. To open it:
    - **macOS 14 or older:** right-click (or Control-click) the app → **Open** → **Open**.
    - **macOS 15 or newer:** double-click the app, then open **System Settings → Privacy & Security**, scroll down to the
@@ -54,6 +58,7 @@ published with the release, and cached in `generated\macos-cache\`), assembles `
 
 ## Status
 
-The app was assembled and its contents checked (file permissions, symbolic links, the processor type of the bundled
-Python, `Info.plist`, icon), but it was **not run on a real Mac** because none was available when it was made. If
-something does not work, please open an issue on GitHub.
+Before every release, GitHub Actions builds the app, signs it ad hoc, and starts it on a real **Apple Silicon** Mac and
+a real **Intel** Mac: the server must answer and serve the page. What the maintainer could **not** try is the
+double-click experience on a Mac (Gatekeeper prompt, the Terminal window, opening the browser), because no Mac was
+available to them. If something does not work, please open an issue on GitHub.

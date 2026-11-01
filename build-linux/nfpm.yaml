@@ -25,11 +25,9 @@ recommends:
 contents:
   - dst: /opt/yt-grabber
     type: dir
-  - src: program
-    dst: /opt/yt-grabber/program
-    type: tree
     file_info:
-      mode: 0644
+      mode: 0755
+  # @PROGRAM_TREE@ (build_packages.py lists every folder with mode 0755 and every file with mode 0644 here)
   - src: yt-grabber
     dst: /usr/bin/yt-grabber
     file_info:
