@@ -11,6 +11,10 @@ All notable changes are listed here, newest first. Version numbers follow `MAJOR
 - **Arrow keys in the list of items** (Up, Down, Home, End, Page Up, Page Down), with a single Tab stop for the whole list.
 - **Settings → Text size** (100% to 200%).
 - The tick mark inside the selected option is no longer read by screen readers as part of its name.
+- **Automatic yt-dlp updates:** once a day the program checks the latest yt-dlp and, when nothing is downloading, installs it and
+  restarts by itself (*Settings → Download engine*, enabled by default). The same version is never installed twice in a day.
+- **Android build tools updated:** Android Gradle plugin 9.5 (built-in Kotlin), Gradle 9.6.0, compileSdk 37, androidx core-ktx 1.19.1
+  and appcompat 1.8.0. The application is also compiled by CI at every change.
 
 ## 1.4.0
 

@@ -530,6 +530,32 @@ class DownloadRetryTests(unittest.TestCase):
         self.assertEqual(self.calls, 2)
 
 
+class YtdlpAutoUpdateTests(unittest.TestCase):
+    """The automatic yt-dlp update: when it acts, and that it can never restart in a loop."""
+
+    def test_up_to_date_or_newer_does_nothing(self):
+        d = server.ytdlp_decision
+        self.assertEqual(d('2026.10.31', '2026.10.31', {}, 0), 'none')
+        self.assertEqual(d('2026.10.31', '2026.10.01', {}, 0), 'none')
+        self.assertEqual(d('2026.10.31.123456', '2026.10.31', {}, 0), 'none')   # a nightly of the same day is not older
+        self.assertEqual(d('2026.10.31', '', {}, 0), 'none')
+
+    def test_newer_version_is_installed(self):
+        self.assertEqual(server.ytdlp_decision('2026.10.31', '2026.11.02', {}, 1000), 'update')
+        self.assertEqual(server.ytdlp_decision('2026.10.31', '2026.10.31.1', {}, 1000), 'update')
+
+    def test_same_target_is_not_repeated_within_a_day(self):
+        tried = {'target': '2026.11.02', 'time': 1000}
+        self.assertEqual(server.ytdlp_decision('2026.10.31', '2026.11.02', tried, 1000 + 3600), 'wait')
+        self.assertEqual(server.ytdlp_decision('2026.10.31', '2026.11.02', tried, 1000 + 25 * 3600), 'update')
+        self.assertEqual(server.ytdlp_decision('2026.10.31', '2026.11.03', tried, 1000 + 3600), 'update')
+
+    def test_the_setting_is_on_by_default_and_can_be_switched_off(self):
+        self.assertTrue(server.DEFAULT_SETTINGS['auto_ytdlp'])
+        self.assertFalse(server.clean_opts({'auto_ytdlp': False}, server.DEFAULT_SETTINGS)['auto_ytdlp'])
+        self.assertTrue(server.clean_opts({}, server.DEFAULT_SETTINGS)['auto_ytdlp'])
+
+
 class BumpVersionTests(unittest.TestCase):
     """tools/bump_version.py, run on a scratch copy of the files that carry the version."""
     FILES = ('program/server.py', 'packaging/windows/version.txt',

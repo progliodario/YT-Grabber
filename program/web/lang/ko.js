@@ -263,6 +263,8 @@ window.I18N.ko = {
   'set.absent': '없음',
   'set.update': 'yt-dlp 업데이트 후 다시 시작',
   'set.updateHint': 'YouTube는 자주 바뀝니다. 갑자기 오류가 많이 나타나면 업데이트하세요. 진행 중인 다운로드는 중단되며 다시 이어서 받을 수 있습니다.',
+  'set.autoYtdlp': 'yt-dlp를 자동으로 최신 상태로 유지',
+  'set.autoYtdlpHint': 'YT Grabber는 하루에 한 번 GitHub에서 최신 yt-dlp를 확인합니다. 다운로드 중인 것이 없을 때 설치하고 스스로 다시 시작합니다.',
   'update.available': 'YT Grabber {v} 버전을 사용할 수 있습니다.',
   'update.link': '새로운 기능 보기 및 다운로드',
   'set.notifyTitle': '알림 및 업데이트',

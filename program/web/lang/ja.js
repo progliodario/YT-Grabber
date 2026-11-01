@@ -263,6 +263,8 @@ window.I18N.ja = {
   'set.absent': 'なし',
   'set.update': 'yt-dlp を更新して再起動',
   'set.updateHint': 'YouTube は頻繁に変わります。突然エラーが増えたら更新してください。実行中のダウンロードは中断されますが、再開できます。',
+  'set.autoYtdlp': 'yt-dlp を自動的に最新に保つ',
+  'set.autoYtdlpHint': 'YT Grabber は 1 日に 1 回、GitHub に最新の yt-dlp を問い合わせます。ダウンロード中のものがないときに、インストールして自動的に再起動します。',
   'update.available': 'YT Grabber のバージョン {v} が利用できます。',
   'update.link': '新機能を見てダウンロード',
   'set.notifyTitle': '通知とアップデート',

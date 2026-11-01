@@ -263,6 +263,8 @@ window.I18N.zh = {
   'set.absent': '无',
   'set.update': '更新 yt-dlp 并重启',
   'set.updateHint': 'YouTube 经常变化：如果突然出现大量错误，请更新。正在进行的下载会中断，之后可以继续。',
+  'set.autoYtdlp': '自动保持 yt-dlp 为最新版本',
+  'set.autoYtdlpHint': 'YT Grabber 每天向 GitHub 查询一次最新的 yt-dlp。当没有任何下载时，它会自动安装并自行重启。',
   'update.available': 'YT Grabber {v} 版已发布。',
   'update.link': '查看新功能并下载',
   'set.notifyTitle': '通知与更新',

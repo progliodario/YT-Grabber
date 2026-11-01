@@ -263,6 +263,8 @@ window.I18N.nl = {
   'set.absent': 'afwezig',
   'set.update': 'yt-dlp bijwerken en herstarten',
   'set.updateHint': 'YouTube verandert vaak: als er plotseling veel fouten verschijnen, werk dan bij. Lopende downloads worden onderbroken en kun je hervatten.',
+  'set.autoYtdlp': 'yt-dlp automatisch bijwerken',
+  'set.autoYtdlpHint': 'Eén keer per dag vraagt YT Grabber aan GitHub naar de nieuwste yt-dlp. Als er niets wordt gedownload, installeert het die en start het vanzelf opnieuw.',
   'update.available': 'Versie {v} van YT Grabber is beschikbaar.',
   'update.link': 'Bekijk wat er nieuw is en download',
   'set.notifyTitle': 'Meldingen en updates',

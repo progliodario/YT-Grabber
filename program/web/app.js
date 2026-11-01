@@ -1054,6 +1054,7 @@
     $('#setBrowse').hidden = !S.local || S.android; $('#btnUpdate').hidden = !S.local;
     $('#setMsg').hidden = true; $('#setCookiesFile').value = '';
     $('#setNotify').checked = s.notify_done !== false; $('#setCheckUpdates').checked = s.check_updates !== false;
+    $('#setAutoYtdlp').checked = s.auto_ytdlp !== false; $('#setAutoYtdlp').closest('.toggles').hidden = !S.local;
     var ts = '', zi, cur = getTextSize();
     for (zi = 0; zi < TEXT_SIZES.length; zi++) { ts += '<option value="' + TEXT_SIZES[zi] + '"' + (TEXT_SIZES[zi] === cur ? ' selected' : '') + '>' + esc(tr('text.' + TEXT_SIZES[zi])) + '</option>'; }
     $('#setTextSize').innerHTML = ts;
@@ -1097,7 +1098,7 @@
     for (k in S.settings) { if (Object.prototype.hasOwnProperty.call(S.settings, k)) { payload[k] = S.settings[k]; } }
     payload.download_dir = $('#setDir').value.trim();
     payload.cookies_browser = $('#setCookiesBrowser').value;
-    payload.notify_done = $('#setNotify').checked; payload.check_updates = $('#setCheckUpdates').checked;
+    payload.notify_done = $('#setNotify').checked; payload.check_updates = $('#setCheckUpdates').checked; payload.auto_ytdlp = $('#setAutoYtdlp').checked;
     api('POST', '/api/settings', payload).then(function (r) {
       S.settings = r.settings; form.fill(r.settings); closeSettings(); toast(tr('toast.saved'));
     }).catch(function (e) { setMsg(e.message); });

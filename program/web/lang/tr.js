@@ -263,6 +263,8 @@ window.I18N.tr = {
   'set.absent': 'yok',
   'set.update': 'yt-dlp\'yi güncelle ve yeniden başlat',
   'set.updateHint': 'YouTube sık değişir: aniden çok hata çıkarsa güncelleyin. Süren indirmeler kesilir ve devam ettirebilirsiniz.',
+  'set.autoYtdlp': 'yt-dlp\'yi otomatik olarak güncel tut',
+  'set.autoYtdlpHint': 'YT Grabber günde bir kez GitHub\'dan en son yt-dlp sürümünü sorar. Hiçbir şey indirilmiyorsa onu kurar ve kendiliğinden yeniden başlar.',
   'update.available': 'YT Grabber {v} sürümü yayımlandı.',
   'update.link': 'Yenilikleri gör ve indir',
   'set.notifyTitle': 'Bildirimler ve güncellemeler',

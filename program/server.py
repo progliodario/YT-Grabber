@@ -89,6 +89,7 @@ DEFAULT_SETTINGS = {
     'lang': '',                 # interface language chosen by the user ('' = detect it automatically)
     'check_updates': True,      # ask GitHub now and then whether a newer version of YT Grabber exists
     'notify_done': True,        # tell the user when a download has finished (browser notification, Windows tray)
+    'auto_ytdlp': True,         # install a newer yt-dlp by itself (when nothing is downloading) and restart
 }
 LANG_CODES = ('', 'en', 'it', 'es', 'fr', 'de', 'pt', 'nl', 'pl', 'ru', 'tr', 'ar', 'hi', 'id', 'zh', 'ja', 'ko')
 BROWSERS = ('', 'firefox', 'chrome', 'edge', 'brave', 'opera', 'vivaldi', 'chromium', 'whale', 'safari')
@@ -108,7 +109,7 @@ def clean_opts(o, base=None):
         r[k] = bool(o[k]) if k in o else bool(base[k])
     r['cookies_browser'] = o.get('cookies_browser') if o.get('cookies_browser') in BROWSERS else base['cookies_browser']
     r['lang'] = o.get('lang') if o.get('lang') in LANG_CODES else base.get('lang', '')
-    for k in ('check_updates', 'notify_done'):
+    for k in ('check_updates', 'notify_done', 'auto_ytdlp'):
         r[k] = bool(o[k]) if k in o else bool(base.get(k, True))
     return r
 
@@ -1676,7 +1677,7 @@ class Handler(BaseHTTPRequestHandler):
                 pass
 
     def do_POST(self):
-        LAST_ACTIVITY[0] = time.time()
+        LAST_ACTIVITY[0] = LAST_POST[0] = time.time()
         try:
             if not self.host_ok():
                 return self.err(403, 'Host not allowed')
@@ -1911,42 +1912,109 @@ class Handler(BaseHTTPRequestHandler):
     def update_ytdlp(self):
         if not self.is_local_client():
             return self.err(403, 'Only from the computer running the server')
-        if ANDROID_APP or FROZEN:
-            # Android app and exe: no pip, the latest yt-dlp (single file) is downloaded and takes precedence over the bundled one
-            try:
-                dst_dir = os.path.join(DATA, 'ytdlp-update')
-                os.makedirs(dst_dir, exist_ok=True)
-                tmp = os.path.join(dst_dir, 'yt-dlp.new')
-                req = urllib.request.Request('https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp',
-                                             headers={'User-Agent': 'YT-Grabber'})
-                with urllib.request.urlopen(req, timeout=90) as r, open(tmp, 'wb') as f:
-                    shutil.copyfileobj(r, f)
-                import zipfile
-                with zipfile.ZipFile(tmp) as z:
-                    if not any(n.startswith('yt_dlp/') for n in z.namelist()):
-                        raise ValueError('downloaded file is not valid')
-                os.replace(tmp, os.path.join(dst_dir, 'yt-dlp'))
-            except Exception as e:  # noqa: BLE001
-                return self.err(500, 'Update failed: ' + clean_msg(e))
-        else:
-            # setup_tools.py knows which packages are needed on this platform (on Android/Termux nothing is compiled)
-            cmd = [sys.executable, os.path.join(ROOT, 'setup_tools.py'), '--update']
-            try:
-                r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-            except Exception as e:  # noqa: BLE001
-                return self.err(500, clean_msg(e))
-            if r.returncode != 0:
-                return self.err(500, 'Update failed: ' + (r.stderr or r.stdout)[-400:])
+        try:
+            install_ytdlp()
+        except Exception as e:  # noqa: BLE001
+            return self.err(500, 'Update failed: ' + clean_msg(e))
         self.send_json({'ok': True, 'restart': True})
-        MGR.save_dirty()
+        restart_program()
 
-        def later():
-            time.sleep(1.0)
-            MGR.save_dirty()
-            if FROZEN:
-                restart_self()
-            os._exit(75)  # the launcher (Start.bat / Android app) restarts the server
-        threading.Thread(target=later, daemon=True).start()
+
+def install_ytdlp():
+    """Installs the latest yt-dlp for this kind of installation. Raises if it fails."""
+    if ANDROID_APP or FROZEN:
+        # Android app and exe: no pip, the latest yt-dlp (single file) is downloaded and takes precedence over the bundled one
+        dst_dir = os.path.join(DATA, 'ytdlp-update')
+        os.makedirs(dst_dir, exist_ok=True)
+        tmp = os.path.join(dst_dir, 'yt-dlp.new')
+        req = urllib.request.Request('https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp',
+                                     headers={'User-Agent': 'YT-Grabber'})
+        with urllib.request.urlopen(req, timeout=90) as r, open(tmp, 'wb') as f:
+            shutil.copyfileobj(r, f)
+        import zipfile
+        with zipfile.ZipFile(tmp) as z:
+            if not any(n.startswith('yt_dlp/') for n in z.namelist()):
+                raise ValueError('downloaded file is not valid')
+        os.replace(tmp, os.path.join(dst_dir, 'yt-dlp'))
+    else:
+        # setup_tools.py knows which packages are needed on this platform (on Android/Termux nothing is compiled)
+        r = subprocess.run([sys.executable, os.path.join(ROOT, 'setup_tools.py'), '--update'], capture_output=True, text=True, timeout=300)
+        if r.returncode != 0:
+            raise RuntimeError((r.stderr or r.stdout)[-400:])
+
+
+def restart_program():
+    """Saves the list and restarts the server after a short pause (the answer to the page gets out first)."""
+    MGR.save_dirty()
+
+    def later():
+        time.sleep(1.0)
+        MGR.save_dirty()
+        if FROZEN:
+            restart_self()
+        os._exit(75)  # the launcher (Start.bat / Android app) restarts the server
+    threading.Thread(target=later, daemon=True).start()
+
+
+# --------------------------------------------------------------------------- automatic yt-dlp updates
+
+YTDLP_API = os.environ.get('YTG_YTDLP_API') or 'https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest'
+YTDLP_AUTO = {'checked': 0, 'latest': '', 'error': ''}
+YTDLP_TRIES = os.path.join(DATA, 'ytdlp-auto.json')   # {"target": version, "time": when}: what was installed last, to never repeat it in a loop
+YTDLP_QUIET = 120     # seconds without a click in the page before the program may restart by itself
+LAST_POST = [0.0]     # last time somebody pressed something in the page (reading the state does not count)
+
+
+def ytdlp_decision(current, latest, tried, now):
+    """What the automatic update should do: 'none' (up to date), 'wait' (it already tried this version in the last 24 hours) or 'update'."""
+    if not latest or version_tuple(latest) <= version_tuple(current):
+        return 'none'
+    if tried and tried.get('target') == latest and now - float(tried.get('time') or 0) < 24 * 3600:
+        return 'wait'
+    return 'update'
+
+
+def ytdlp_latest():
+    """The version number of the latest yt-dlp release, from GitHub."""
+    req = urllib.request.Request(YTDLP_API, headers={'User-Agent': 'YTGrabber/' + APP_VERSION, 'Accept': 'application/vnd.github+json'})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        tag = str(json.loads(r.read().decode('utf-8')).get('tag_name') or '')
+    if not re.fullmatch(r'\d{4}\.\d{2}\.\d{2}(\.\d+)?', tag):
+        raise ValueError('unexpected answer from GitHub')
+    return tag
+
+
+def ytdlp_idle():
+    """True when nothing is downloading and nobody is using the page, so that restarting costs nothing."""
+    with LOCK:
+        busy = any(j.status in ('enumerating', 'running') and not j.paused for j in MANAGER_JOBS.values())
+    return not busy and time.time() - LAST_POST[0] > YTDLP_QUIET
+
+
+def ytdlp_auto_loop():
+    """Once a day: if there is a newer yt-dlp, installs it as soon as nothing is downloading, and restarts the program."""
+    time.sleep(90)
+    while not SHUTDOWN.is_set():
+        try:
+            if SETTINGS.get('auto_ytdlp', True):
+                if time.time() - YTDLP_AUTO['checked'] > (24 * 3600 if not YTDLP_AUTO['error'] else 3600):
+                    YTDLP_AUTO.update(latest=ytdlp_latest(), error='', checked=time.time())
+                try:
+                    with open(YTDLP_TRIES, 'r', encoding='utf-8') as f:
+                        tried = json.load(f)
+                except Exception:
+                    tried = {}
+                what = ytdlp_decision(yt_dlp.version.__version__, YTDLP_AUTO['latest'], tried, time.time())
+                if what == 'update' and ytdlp_idle():
+                    log('yt-dlp %s -> %s (automatic update)' % (yt_dlp.version.__version__, YTDLP_AUTO['latest']))
+                    atomic_write(YTDLP_TRIES, json.dumps({'target': YTDLP_AUTO['latest'], 'time': time.time()}))
+                    install_ytdlp()
+                    restart_program()
+                    return
+        except Exception as e:  # noqa: BLE001
+            YTDLP_AUTO.update(error=clean_msg(e), checked=time.time())
+            log('automatic yt-dlp update failed', e)
+        time.sleep(300)
 
 
 def open_folder(d):
@@ -2257,6 +2325,7 @@ def main():
     MGR.start()
     threading.Thread(target=subs_loop, daemon=True, name='subs').start()
     threading.Thread(target=update_loop, daemon=True, name='updates').start()
+    threading.Thread(target=ytdlp_auto_loop, daemon=True, name='ytdlp-auto').start()
     if a.idle_exit > 0:
         threading.Thread(target=idle_watch, args=(a.idle_exit * 60,), daemon=True, name='idle').start()
     atexit.register(MGR.save_dirty)

@@ -3,7 +3,6 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 // ---------------------------------------------------------------- program files (Python + web interface)
@@ -36,7 +35,7 @@ val prepareYtgAssets by tasks.registering {
 
 android {
     namespace = "it.ytgrabber.app"
-    compileSdk = 34
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "it.ytgrabber.app"
@@ -94,9 +93,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
-
-    sourceSets["main"].assets.srcDir(ytgAssetsDir)
+    sourceSets["main"].assets.srcDir(ytgAssetsDir.get().asFile)   // a File, not a Provider: AGP 9 refuses providers here (the tasks below add the dependency)
 
     lint { abortOnError = false }
 }
@@ -111,7 +108,7 @@ tasks.matching { it.name.startsWith("lintVitalAnalyze") || it.name.startsWith("g
 dependencies {
     implementation("io.github.junkfood02.youtubedl-android:library:0.18.1")
     implementation("io.github.junkfood02.youtubedl-android:ffmpeg:0.18.1")
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.core:core-ktx:1.19.1")
+    implementation("androidx.appcompat:appcompat:1.8.0")
     implementation("androidx.activity:activity-ktx:1.9.0")
 }

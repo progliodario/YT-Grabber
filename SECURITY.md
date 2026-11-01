@@ -60,7 +60,8 @@ requires a paid Apple developer account; the [installation guide](docs/install.m
   computer that runs the program.
 - It never sends cookies, settings or the download list anywhere. The only outgoing connections are to YouTube; to GitHub (yt-dlp
   updates and, twice a day, one request asking for the latest YT Grabber release, which carries only the program name and
-  version and can be disabled in *Settings → Notifications and updates*); and, at the first start, to the site that provides the
-  ffmpeg build for the system.
+  version and can be disabled in *Settings → Notifications and updates*), including, once a day, one request asking for the latest
+  yt-dlp release and, when there is one, the download of yt-dlp from the official yt-dlp releases (this can be disabled in
+  *Settings → Download engine*); and, at the first start, to the site that provides the ffmpeg build for the system.
 - Cookies supplied to the program (a `cookies.txt` file, or read from a browser) are used only to communicate with YouTube. They
   are stored in the program's data folder, never in the download folder.

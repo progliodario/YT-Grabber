@@ -1,6 +1,6 @@
 @echo off
 rem Builds the YT Grabber Android app and puts the APKs in dist\android\
-rem Needs: JDK 21, Android SDK (platform 34, build-tools 34.0.0) and Gradle 8.7. Default paths: C:\AndroidBuild\
+rem Needs: JDK 21, Android SDK (platform 37, build-tools 36.0.0) and Gradle 9.6.0. Default paths: C:\AndroidBuild\
 setlocal
 chcp 65001 >nul
 cd /d "%~dp0"
@@ -20,7 +20,7 @@ set "JAVA_TOOL_OPTIONS="
 set "GRADLE_OPTS=-Xmx1536m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
 
 if not exist "%JAVA_HOME%\bin\java.exe" ( echo JDK 21 not found in %ANDROID_BUILD_ROOT% & exit /b 1 )
-if not exist "%ANDROID_HOME%\platforms\android-34" ( echo Android SDK not found in %ANDROID_HOME% & exit /b 1 )
+if not exist "%ANDROID_HOME%\platforms\android-37.0" ( echo Android SDK not found in %ANDROID_HOME% & exit /b 1 )
 
 rem SDK path for Gradle
 powershell -NoProfile -Command "Set-Content -Encoding ascii -Path 'local.properties' -Value ('sdk.dir=' + ($env:ANDROID_HOME -replace '\\','/'))"
@@ -48,7 +48,7 @@ if not exist "keystore\keystore.properties" (
   echo Created a new signing key in keystore\ - keep it safe.
 )
 
-set "GRADLE=%ANDROID_BUILD_ROOT%\gradle-8.7\bin\gradle.bat"
+set "GRADLE=%ANDROID_BUILD_ROOT%\gradle-9.6.0\bin\gradle.bat"
 call "%GRADLE%" --no-daemon assembleRelease %* || ( echo Build failed & exit /b 1 )
 
 mkdir ..\..\dist\android 2>nul

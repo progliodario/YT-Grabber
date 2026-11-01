@@ -263,6 +263,8 @@ window.I18N.ar = {
   'set.absent': 'غير موجود',
   'set.update': 'تحديث yt-dlp وإعادة التشغيل',
   'set.updateHint': 'يتغير YouTube كثيرًا: إذا ظهرت أخطاء كثيرة فجأة فحدّث. تتوقف التنزيلات الجارية ويمكنك استئنافها.',
+  'set.autoYtdlp': 'إبقاء yt-dlp محدَّثًا تلقائيًا',
+  'set.autoYtdlpHint': 'مرة في اليوم يسأل YT Grabber موقع GitHub عن أحدث إصدار من yt-dlp. وعندما لا يكون هناك أي تنزيل جارٍ يثبّته ويعيد التشغيل من تلقاء نفسه.',
   'update.available': 'الإصدار {v} من YT Grabber متاح.',
   'update.link': 'اطّلع على الجديد ونزّله',
   'set.notifyTitle': 'الإشعارات والتحديثات',

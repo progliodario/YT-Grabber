@@ -120,7 +120,7 @@ For releases, everything is built by [GitHub Actions](#automatic-builds-github-a
 | Package | Command | Requirements | Result |
 |---|---|---|---|
 | Windows installer | `packaging\windows\build.bat` | Python, [Inno Setup 6](https://jrsoftware.org/isdl.php) (PyInstaller and yt-dlp are fetched) | `dist\windows\YT-Grabber-Setup-<version>.exe` |
-| Android APKs | `packaging\android\build.bat` | JDK 21, Android SDK (platform 34, build-tools 34.0.0), Gradle 8.7 in `C:\AndroidBuild\` | `dist\android\*.apk` |
+| Android APKs | `packaging\android\build.bat` | JDK 21, Android SDK (platform 37.0, build-tools 36.0.0), Gradle 9.6.0 in `C:\AndroidBuild\` | `dist\android\*.apk` |
 | `.deb` and `.rpm` | `packaging\linux\build.bat` (or `python3 packaging/linux/build_packages.py`) | Python (nfpm is downloaded and verified) | `dist/linux/*.deb`, `*.rpm` |
 | AppImage | `python3 packaging/linux/appimage/build_appimage.py` | Linux | `dist/linux/*.AppImage` |
 | Flatpak | `flatpak-builder` (see the header of `packaging/linux/flatpak/*.yml`) | Linux, flatpak-builder | a Flatpak repository, then `flatpak build-bundle` |
@@ -132,7 +132,7 @@ Each folder in `packaging/` has a README with the details of its package.
 
 | Workflow | When | What it does |
 |---|---|---|
-| `ci.yml` | every push and pull request | unit tests, JavaScript syntax check, and a smoke test (start the server and call it) on Ubuntu, Windows and macOS; and the accessibility audit (axe-core in Chrome) |
+| `ci.yml` | every push and pull request | unit tests, JavaScript syntax check, and a smoke test (start the server and call it) on Ubuntu, Windows and macOS; the accessibility audit (axe-core in Chrome); and a build of the Android application (unsigned), to catch compilation errors |
 | `release.yml` | a tag `v*` is pushed, or manually | builds every package and **installs and starts each one** to prove that it works (Windows: install, start, silent update over the existing installation, uninstall; Ubuntu: `.deb` and AppImage; Fedora: `.rpm`; Flatpak: build and run; Apple Silicon and Intel Macs), then attaches the files to the release |
 | `finalize.yml` | called by `release.yml`, or manually | signs the `.rpm`, writes `SHA256SUMS` and signs it with GPG, adds build attestations, builds the signed apt and dnf repositories, installs from them on Ubuntu and Fedora, and publishes them on GitHub Pages |
 

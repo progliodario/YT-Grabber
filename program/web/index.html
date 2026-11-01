@@ -184,6 +184,10 @@
         <p class="hint" id="verInfo"></p>
         <button class="btn" id="btnUpdate" type="button" data-i18n="set.update">Update yt-dlp and restart</button>
         <p class="hint" data-i18n="set.updateHint">YouTube changes often: if many errors suddenly appear, update. Downloads in progress are interrupted and you can resume them.</p>
+        <div class="toggles">
+          <label class="sw"><input type="checkbox" role="switch" id="setAutoYtdlp"><span class="knob"></span><span data-i18n="set.autoYtdlp">Keep yt-dlp up to date automatically</span></label>
+        </div>
+        <p class="hint" data-i18n="set.autoYtdlpHint">Once a day YT Grabber asks GitHub for the latest yt-dlp. When nothing is downloading it installs it and restarts by itself.</p>
       </div>
       <div class="grp">
         <span class="lbl" data-i18n="set.notifyTitle">Notifications and updates</span>

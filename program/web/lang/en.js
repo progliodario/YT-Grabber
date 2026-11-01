@@ -275,6 +275,8 @@ window.I18N.en = {
   'set.absent': 'absent',
   'set.update': 'Update yt-dlp and restart',
   'set.updateHint': 'YouTube changes often: if many errors suddenly appear, update. Downloads in progress are interrupted and you can resume them.',
+  'set.autoYtdlp': 'Keep yt-dlp up to date automatically',
+  'set.autoYtdlpHint': 'Once a day YT Grabber asks GitHub for the latest yt-dlp. When nothing is downloading it installs it and restarts by itself.',
   'update.available': 'Version {v} of YT Grabber is available.',
   'update.link': 'See what\'s new and download it',
   'set.notifyTitle': 'Notifications and updates',

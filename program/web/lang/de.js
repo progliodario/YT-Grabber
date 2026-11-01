@@ -263,6 +263,8 @@ window.I18N.de = {
   'set.absent': 'nicht vorhanden',
   'set.update': 'yt-dlp aktualisieren und neu starten',
   'set.updateHint': 'YouTube ändert sich oft: Wenn plötzlich viele Fehler auftreten, aktualisiere. Laufende Downloads werden unterbrochen und können fortgesetzt werden.',
+  'set.autoYtdlp': 'yt-dlp automatisch aktuell halten',
+  'set.autoYtdlpHint': 'Einmal am Tag fragt YT Grabber bei GitHub nach dem neuesten yt-dlp. Wenn nichts heruntergeladen wird, installiert es ihn und startet von selbst neu.',
   'update.available': 'Version {v} von YT Grabber ist verfügbar.',
   'update.link': 'Neuigkeiten ansehen und herunterladen',
   'set.notifyTitle': 'Benachrichtigungen und Updates',

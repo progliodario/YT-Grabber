@@ -263,6 +263,8 @@ window.I18N.id = {
   'set.absent': 'tidak ada',
   'set.update': 'Perbarui yt-dlp dan mulai ulang',
   'set.updateHint': 'YouTube sering berubah: jika tiba-tiba muncul banyak kesalahan, perbarui. Unduhan yang berjalan akan terhenti dan dapat dilanjutkan.',
+  'set.autoYtdlp': 'Perbarui yt-dlp secara otomatis',
+  'set.autoYtdlpHint': 'Sekali sehari YT Grabber menanyakan yt-dlp terbaru ke GitHub. Saat tidak ada yang sedang diunduh, aplikasi memasangnya dan memulai ulang sendiri.',
   'update.available': 'YT Grabber versi {v} tersedia.',
   'update.link': 'Lihat yang baru dan unduh',
   'set.notifyTitle': 'Notifikasi dan pembaruan',

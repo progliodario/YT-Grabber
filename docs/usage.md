@@ -137,7 +137,11 @@ language of the device. Arabic is shown right to left. The translations were wri
 
 - **Destination folder**: where the folders of the playlists are created.
 - **Cookies**: see above.
-- **Download engine**: the versions of yt-dlp, ffmpeg and the JavaScript runtime, and *Update yt-dlp and restart*.
+- **Download engine**: the versions of yt-dlp, ffmpeg and the JavaScript runtime, and *Update yt-dlp and restart*. The option
+  *Keep yt-dlp up to date automatically* (enabled by default) makes YT Grabber ask GitHub once a day for the latest yt-dlp release.
+  When a newer one exists, it is installed as soon as nothing is downloading and nobody has pressed anything in the page for two
+  minutes, and the program restarts by itself (queued and paused downloads are saved and can be resumed). The same version is never
+  installed more than once a day, so a failed update cannot cause repeated restarts.
 - **Text size**: 100%, 125%, 150% or 200%, in addition to the zoom of the browser. The choice is remembered on the device.
 - **Notifications and updates**: see above.
 
@@ -170,8 +174,9 @@ The logs of the download processes are in the `data/logs` folder of the first co
 
 ## If something stops working
 
-- **Many errors at once, or nothing downloads:** YouTube changes frequently. *Settings → Update yt-dlp and restart* resolves the
-  problem in most cases.
+- **Many errors at once, or nothing downloads:** YouTube changes frequently. yt-dlp is normally updated automatically (see
+  [Settings](#settings)); if the problem appears before that happens, *Settings → Update yt-dlp and restart* resolves it in most
+  cases.
 - **The same error on every video:** update yt-dlp first, then check the cookies.
 - **"ffmpeg not found" warning:** conversions require ffmpeg. The Internet connection should be checked and the program restarted,
   because ffmpeg is downloaded at start. On Linux it can also be installed with the package manager.
