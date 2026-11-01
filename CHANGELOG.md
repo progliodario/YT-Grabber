@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.0
 
 - **Only new videos** option for subscriptions: the videos that are already in the playlist, album or channel are not
   downloaded; only those published after you subscribed are. They are listed as *Skipped*.
