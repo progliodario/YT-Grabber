@@ -206,6 +206,13 @@ def _find_app_window():
     return found[0] if found else None
 
 
+def close_window():
+    """Closes the app window (the update closes the program and starts the new version with a window of its own)."""
+    hwnd = _find_app_window()
+    if hwnd:
+        user32.PostMessageW(hwnd, WM_CLOSE, 0, 0)
+
+
 def open_window(port, profile_dir):
     """Shows the app window: brings the existing one to the front, or opens a new one."""
     hwnd = _find_app_window()

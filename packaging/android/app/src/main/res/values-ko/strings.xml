@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notif_channel">진행 중인 다운로드</string>
+    <string name="notif_done_channel">완료된 다운로드</string>
+    <string name="notif_done_title">다운로드 완료</string>
+    <string name="notif_done_ok">%1$s: %2$d개 다운로드됨</string>
+    <string name="notif_done_err">%1$s: %2$d개 다운로드됨, %3$d개 실패</string>
     <string name="notif_starting">시작하는 중…</string>
     <string name="notif_stop">닫기</string>
     <string name="status_preparing">앱을 준비하는 중(처음 실행 시에만)…</string>

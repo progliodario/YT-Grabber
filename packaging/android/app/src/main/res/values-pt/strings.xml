@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notif_channel">Downloads em andamento</string>
+    <string name="notif_done_channel">Downloads concluídos</string>
+    <string name="notif_done_title">Download concluído</string>
+    <string name="notif_done_ok">%1$s: %2$d baixados</string>
+    <string name="notif_done_err">%1$s: %2$d baixados, %3$d com falha</string>
     <string name="notif_starting">Iniciando…</string>
     <string name="notif_stop">Fechar</string>
     <string name="status_preparing">Preparando o app (somente no primeiro início)…</string>

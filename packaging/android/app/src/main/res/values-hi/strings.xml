@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notif_channel">जारी डाउनलोड</string>
+    <string name="notif_done_channel">पूरे हुए डाउनलोड</string>
+    <string name="notif_done_title">डाउनलोड पूरा हुआ</string>
+    <string name="notif_done_ok">%1$s: %2$d डाउनलोड हुए</string>
+    <string name="notif_done_err">%1$s: %2$d डाउनलोड हुए, %3$d विफल</string>
     <string name="notif_starting">शुरू हो रहा है…</string>
     <string name="notif_stop">बंद करें</string>
     <string name="status_preparing">ऐप तैयार हो रहा है (केवल पहली बार)…</string>

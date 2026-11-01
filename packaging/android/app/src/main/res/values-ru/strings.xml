@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notif_channel">Текущие загрузки</string>
+    <string name="notif_done_channel">Завершённые загрузки</string>
+    <string name="notif_done_title">Загрузка завершена</string>
+    <string name="notif_done_ok">%1$s: загружено %2$d</string>
+    <string name="notif_done_err">%1$s: загружено %2$d, ошибок: %3$d</string>
     <string name="notif_starting">Запуск…</string>
     <string name="notif_stop">Закрыть</string>
     <string name="status_preparing">Подготовка приложения (только при первом запуске)…</string>

@@ -101,9 +101,14 @@ new leaves no card in the list.
 
 - When a download finishes you get a **system notification**: a bubble from the tray icon in the Windows app, a browser
   notification elsewhere (the browser asks for permission the first time; if it is blocked, allow it in the site settings).
-  Subscription checks that find nothing new stay silent. Not available in the Android app.
+  Subscription checks that find nothing new stay silent. In the Android app it is a normal notification of the app (Android
+  asks for the permission the first time; the progress notification stays as it is).
 - When a newer version of YT Grabber exists, a **notice** appears at the top of the page. For that, the program asks GitHub
   twice a day which is the latest release, sending only its name and version.
+- In the **Windows app** the notice has an **Update now** button: it asks for confirmation, downloads the installer from the
+  project's releases, checks its SHA-256 fingerprint against the one GitHub publishes, closes the app, installs the new version
+  and opens it again. Nothing is installed if the fingerprint does not match. Installs made with Scoop, winget or Chocolatey
+  are updated with their own tool, so the button is not shown there.
 
 ![The notice shown when a new version is available](screenshots/update-banner.png)
 
@@ -128,6 +133,7 @@ of the device. Arabic is shown right to left. The translations were written with
 - **Destination folder**: where the playlists' folders go.
 - **Cookies**: see above.
 - **Download engine**: the versions of yt-dlp, ffmpeg and the JavaScript runtime, and *Update yt-dlp and restart*.
+- **Text size**: 100%, 125%, 150% or 200%, on top of the zoom of the browser; it is remembered on this device.
 - **Notifications and updates**: see above.
 
 ## Command-line options

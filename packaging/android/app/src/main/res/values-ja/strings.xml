@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notif_channel">ダウンロード中</string>
+    <string name="notif_done_channel">完了したダウンロード</string>
+    <string name="notif_done_title">ダウンロード完了</string>
+    <string name="notif_done_ok">%1$s: %2$d 件ダウンロード済み</string>
+    <string name="notif_done_err">%1$s: %2$d 件ダウンロード済み、%3$d 件失敗</string>
     <string name="notif_starting">起動しています…</string>
     <string name="notif_stop">閉じる</string>
     <string name="status_preparing">アプリを準備しています（初回起動のみ）…</string>

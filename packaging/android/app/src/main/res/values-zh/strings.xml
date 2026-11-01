@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notif_channel">正在进行的下载</string>
+    <string name="notif_done_channel">已完成的下载</string>
+    <string name="notif_done_title">下载完成</string>
+    <string name="notif_done_ok">%1$s：已下载 %2$d 个</string>
+    <string name="notif_done_err">%1$s：已下载 %2$d 个，%3$d 个失败</string>
     <string name="notif_starting">正在启动…</string>
     <string name="notif_stop">关闭</string>
     <string name="status_preparing">正在准备应用（仅首次启动）…</string>

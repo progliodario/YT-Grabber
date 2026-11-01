@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notif_channel">Downloads bezig</string>
+    <string name="notif_done_channel">Voltooide downloads</string>
+    <string name="notif_done_title">Download voltooid</string>
+    <string name="notif_done_ok">%1$s: %2$d gedownload</string>
+    <string name="notif_done_err">%1$s: %2$d gedownload, %3$d mislukt</string>
     <string name="notif_starting">Starten…</string>
     <string name="notif_stop">Sluiten</string>
     <string name="status_preparing">App wordt voorbereid (alleen bij de eerste start)…</string>

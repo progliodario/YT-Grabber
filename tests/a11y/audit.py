@@ -116,7 +116,7 @@ class Browser:
         time.sleep(0.5)
 
     def key(self, name, shift=False):
-        codes = {'Tab': 9, 'Enter': 13, 'Escape': 27}
+        codes = {'Tab': 9, 'Enter': 13, 'Escape': 27, 'PageUp': 33, 'PageDown': 34, 'End': 35, 'Home': 36, 'ArrowUp': 38, 'ArrowDown': 40}
         for t in ('keyDown', 'keyUp'):
             self.call('Input.dispatchKeyEvent', type=t, key=name, code=name, windowsVirtualKeyCode=codes[name], modifiers=8 if shift else 0,
                       text='\r' if (name == 'Enter' and t == 'keyDown') else '')
@@ -207,11 +207,49 @@ def main():
         check(b.js("document.querySelector('.jtitle-btn').getAttribute('aria-expanded') === 'true'"), 'the title button of a download reports aria-expanded')
         check(b.js("(function(){var r=document.querySelector('.row'); return !!r && r.getAttribute('role')==='listitem' && +r.getAttribute('aria-setsize') > 0;})()"), 'the rows of a list have a position and a size')
 
-        print('text size')
-        b.js("document.documentElement.style.fontSize = '200%'")
-        time.sleep(0.8)
-        check(not b.js("document.documentElement.scrollWidth > document.documentElement.clientWidth + 1"), 'no horizontal scrolling with the text enlarged to 200%')
-        b.js("document.documentElement.style.fontSize = ''")
+        print('list: arrow keys')
+        b.js("(function(){var bs=[].slice.call(document.querySelectorAll('.jtitle-btn')).filter(function(e){return /Demo album/.test(e.textContent);}); bs[0].click();})()")
+        time.sleep(1.5)
+
+        def row():
+            return b.js("(function(){var e=document.activeElement; return e && e.classList.contains('row') ? +e.getAttribute('aria-posinset') : 0;})()")
+        b.js("document.querySelector('.vbox').focus()")
+        b.key('ArrowDown')
+        check(row() == 1, 'Arrow down from the list goes to the first item')
+        b.key('ArrowDown')
+        b.key('ArrowDown')
+        check(row() == 3, 'Arrow down goes to the next item')
+        b.key('ArrowUp')
+        check(row() == 2, 'Arrow up goes to the previous item')
+        b.key('End')
+        check(row() == 12, 'End goes to the last item')
+        b.key('Home')
+        check(row() == 1, 'Home goes to the first item')
+        b.key('PageDown')
+        check(row() > 1, 'Page down jumps')
+        b.key('Home')
+        for _ in range(8):
+            b.key('ArrowDown')
+        check(row() == 9, 'the item with an error is reachable by arrows')
+        b.key('Tab')
+        check(b.js("(function(){var e=document.activeElement; var r=e.closest('.row'); return e.tagName==='BUTTON' && !!r && +r.getAttribute('aria-posinset')===9;})()"), 'Tab from an item goes to its own buttons')
+        b.key('Tab')
+        b.key('Tab')
+        check(b.js("!document.activeElement.closest('.row')"), 'and the buttons of the other items are not in the Tab order')
+
+        print('text size setting')
+        b.js("document.getElementById('btnSettings').click()")
+        time.sleep(0.5)
+        b.js("(function(){var s=document.getElementById('setTextSize'); s.value='200'; s.dispatchEvent(new Event('change', {bubbles: true}));})()")
+        time.sleep(0.5)
+        check(b.js("document.documentElement.style.fontSize === '200%'"), 'the setting enlarges the text at once')
+        b.key('Escape')
+        check(not b.js("document.documentElement.scrollWidth > document.documentElement.clientWidth + 1"), 'no horizontal scrolling with the text at 200%')
+        b.call('Page.navigate', url=URL)
+        time.sleep(3)
+        check(b.js("document.documentElement.style.fontSize === '200%'"), 'the chosen size is remembered')
+        axe(b, axe_js, 'text size 200%')
+        b.js("localStorage.removeItem('ytg-textsize'); document.documentElement.style.fontSize = ''")
     finally:
         b.close()
     print()

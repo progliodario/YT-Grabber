@@ -26,7 +26,9 @@ class ServerService : Service() {
         const val ACTION_STOP = "it.ytgrabber.app.STOP"
         const val EXTRA_DIR = "dir"
         private const val CHANNEL = "ytg_service"
+        private const val CHANNEL_DONE = "ytg_done"
         private const val NOTIF_ID = 1
+        private const val NOTIF_DONE_BASE = 100
 
         @Volatile var status: String = ""
         @Volatile var failed: String? = null
@@ -173,6 +175,32 @@ class ServerService : Service() {
                 NotificationChannel(CHANNEL, getString(R.string.notif_channel), NotificationManager.IMPORTANCE_LOW)
             )
         }
+        if (nm.getNotificationChannel(CHANNEL_DONE) == null) {   // a separate one: this one makes a sound and can be silenced on its own
+            nm.createNotificationChannel(
+                NotificationChannel(CHANNEL_DONE, getString(R.string.notif_done_channel), NotificationManager.IMPORTANCE_DEFAULT)
+            )
+        }
+    }
+
+    /** "Title: 25 downloaded, 1 failed": tells that a download has finished, also with the screen off and the app closed. */
+    private fun notifyFinished(id: String, title: String, ok: Int, failed: Int) {
+        val open = PendingIntent.getActivity(
+            this, 2, Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val text = if (failed > 0) getString(R.string.notif_done_err, title, ok, failed) else getString(R.string.notif_done_ok, title, ok)
+        val n = NotificationCompat.Builder(this, CHANNEL_DONE)
+            .setSmallIcon(R.drawable.ic_stat)
+            .setContentTitle(getString(R.string.notif_done_title))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .build()
+        try {
+            NotificationManagerCompat.from(this).notify(NOTIF_DONE_BASE + (id.hashCode() and 0xFFFF), n)
+        } catch (_: SecurityException) { /* notification permission denied */ }
     }
 
     private fun buildNotification(text: String): Notification {
@@ -199,11 +227,15 @@ class ServerService : Service() {
     /** Every few seconds reads the state from the server and updates the notification text. */
     private fun notifLoop() {
         var last = ""
+        val seen = HashMap<String, String>()   // job id -> its status at the previous look
+        var first = true                       // the first look only records: jobs that finished earlier are not news
         while (!stopping) {
             try {
                 Thread.sleep(4000)
                 val json = Http.get("/api/state", 2500) ?: continue
-                val jobs = JSONObject(json).getJSONArray("jobs")
+                val state = JSONObject(json)
+                val jobs = state.getJSONArray("jobs")
+                val wantDone = state.optJSONObject("settings")?.optBoolean("notify_done", true) ?: true
                 var active = 0; var conv = 0; var queued = 0; var done = 0; var total = 0
                 for (i in 0 until jobs.length()) {
                     val j = jobs.getJSONObject(i)
@@ -213,7 +245,16 @@ class ServerService : Service() {
                     if ((st == "running" || st == "enumerating") && !j.optBoolean("paused")) {
                         done += j.optInt("processed"); total += j.optInt("total")
                     }
+                    val id = j.optString("id")
+                    val before = seen[id]
+                    // a job that appeared and finished between two looks (a single short video) has no earlier status
+                    if (!first && wantDone && st == "done" && (before == null || before == "running" || before == "enumerating")) {
+                        val ok = c.optInt("d"); val bad = c.optInt("e")
+                        if (ok > 0 || bad > 0) notifyFinished(id, j.optString("title"), ok, bad)
+                    }
+                    seen[id] = st
                 }
+                first = false
                 val text = if (active + conv + queued == 0) getString(R.string.notif_idle)
                 else getString(R.string.notif_progress, active, conv, queued) +
                     (if (total > 0) " · ${done * 100 / total}%" else "")

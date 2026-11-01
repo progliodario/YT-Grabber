@@ -16,6 +16,8 @@
 <script>
   // theme chosen by the user, applied immediately to avoid a color flash
   try { var t = localStorage.getItem('ytg-theme'); if (t === 'light' || t === 'dark') { document.documentElement.setAttribute('data-theme', t); } } catch (e) {}
+  // text size chosen by the user (a percentage of the size set in the browser), applied at once too
+  try { var z = parseInt(localStorage.getItem('ytg-textsize'), 10); if (z === 125 || z === 150 || z === 200) { document.documentElement.style.fontSize = z + '%'; } } catch (e) {}
 </script>
 </head>
 <body>
@@ -49,6 +51,7 @@
   <div class="banner info" id="updateBanner" role="status" hidden>
     <span id="updateText"></span>
     <a id="updateLink" href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener"><span data-i18n="update.link">See what's new and download it</span> <span class="sr-only" data-i18n="a11y.newTab">(opens in a new tab)</span></a>
+    <button class="btn sm" id="updateInstall" type="button" hidden data-i18n="update.install">Update now</button>
     <button class="banner-x" id="updateHide" type="button" aria-label="Close" data-i18n-attr="aria-label:close">&times;</button>
   </div>
 
@@ -194,6 +197,10 @@
         <p class="hint" data-i18n="set.updatesHint">Now and then YT Grabber asks GitHub whether a newer version exists. Nothing else is sent.</p>
         <button class="btn" id="btnCheckUpdate" type="button" data-i18n="set.checkNow">Check now</button>
         <p class="hint" id="updateInfo"></p>
+      </div>
+      <div class="grp">
+        <label class="lbl" for="setTextSize" data-i18n="set.textSize">Text size</label>
+        <select id="setTextSize"></select>
       </div>
       <div class="grp" id="grpAndroidHint">
         <span class="lbl" data-i18n="set.android">On an Android phone</span>

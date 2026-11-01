@@ -137,7 +137,7 @@ textarea:focus-visible, input[type=text]:focus-visible, select:focus-visible, in
 .pills label { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 10px; border: 1.5px solid var(--ctrl); background: var(--field); cursor: pointer; font-weight: 600; font-size: 0.8438rem; color: var(--fg2); user-select: none; transition: border-color .15s, background .15s, color .15s; }
 .pills label:hover { border-color: var(--muted); }
 .pills input:checked + label { border-color: var(--accent-ink); background: var(--accent-soft); color: var(--accent-ink); }
-.pills input:checked + label:before, .seg input:checked + label:before { content: "\2713"; font-weight: 800; }
+.pills input:checked + label:before, .seg input:checked + label:before { content: "\2713"; content: "\2713" / ""; font-weight: 800; }
 .tag { font-style: normal; font-size: 0.6562rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: 2px 6px; border-radius: 6px; background: var(--ok-soft); color: var(--ok); }
 
 .toggles { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 20px; padding-top: 18px; border-top: 1px dashed var(--line2); }
@@ -397,3 +397,4 @@ main:focus-visible, #jobsTitle:focus-visible, #setTitle:focus-visible { outline:
   .lang-select { max-width: 7rem; }
   .top-r { gap: 4px; }
 }
+.row:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; border-radius: 0; }

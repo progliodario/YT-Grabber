@@ -7,6 +7,7 @@ import argparse
 import atexit
 import ctypes
 import gzip
+import hashlib
 import heapq
 import json
 import mimetypes
@@ -18,6 +19,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import traceback
@@ -1763,18 +1765,18 @@ class Handler(BaseHTTPRequestHandler):
                 if not self.is_local_client():
                     return self.err(403, 'Only from the device running the server')
                 self.send_json({'ok': True})
-
-                def bye():
-                    time.sleep(0.4)
-                    MGR.save_dirty()
-                    for pr in list(PROCS):
-                        try:
-                            pr.kill()
-                        except Exception:
-                            pass
-                    os._exit(0)
-                threading.Thread(target=bye, daemon=True).start()
+                shutdown_now()
                 return
+            if path == '/api/appupdate/install':   # "Update now" (Windows app): download, check, install, restart
+                if not self.is_local_client():
+                    return self.err(403, 'Only from the computer running the server')
+                if not install_supported():
+                    return self.err(400, 'The one-click update is only available in the Windows app installed with its setup.')
+                if not update_state()['can_install']:
+                    return self.err(409, 'There is no update ready to install.')
+                if UPDATE_INSTALL['state'] not in ('downloading', 'installing'):
+                    threading.Thread(target=run_update_install, daemon=True, name='update-install').start()
+                return self.send_json({'ok': True})
             return self.err(404, 'Not found')
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             pass
@@ -1798,7 +1800,7 @@ class Handler(BaseHTTPRequestHandler):
             'has_cookies': os.path.exists(COOKIES_FILE), 'local': self.is_local_client(),
             'errmeta': {k: [v[0], v[3]] for k, v in ERR.items()}, 'android': IS_ANDROID,
             'browsers': [b for b in BROWSERS if b], 'subs': subs_state(), 'sub_intervals': list(SUB_INTERVALS),
-            'update': update_state(), 'native_notify': bool(FINISH_HOOKS),
+            'update': update_state(), 'native_notify': bool(FINISH_HOOKS) or ANDROID_APP,
         }
 
     def job_detail(self, jid, since):
@@ -2017,13 +2019,26 @@ class Server(ThreadingHTTPServer):
 
 RELEASES_PAGE = 'https://github.com/progliodario/YT-Grabber/releases/latest'
 UPDATE_API = os.environ.get('YTG_UPDATE_URL') or 'https://api.github.com/repos/progliodario/YT-Grabber/releases/latest'
-UPDATE = {'checked': 0, 'latest': '', 'url': '', 'error': ''}
+UPDATE = {'checked': 0, 'latest': '', 'url': '', 'error': '', 'setup_url': '', 'setup_sha': '', 'setup_size': 0}
+UPDATE_INSTALL = {'state': 'idle', 'pct': 0, 'error': ''}   # one-click update: idle | downloading | installing | error
+SETUP_PREFIX = 'https://github.com/progliodario/YT-Grabber/releases/download/'
 FINISH_HOOKS = []   # functions called with a dict when a download has finished (the Windows app adds its tray balloon)
 
 
 def version_tuple(text):
     parts = re.findall(r'\d+', str(text).split('-')[0].split('+')[0])[:4]
     return tuple(int(p) for p in parts) or (0,)
+
+
+def setup_url_ok(url):
+    if os.environ.get('YTG_UPDATE_URL'):   # tests: a small local server plays the part of GitHub
+        return url.startswith('http://127.0.0.1:')
+    return url.startswith(SETUP_PREFIX) and url.endswith('.exe')
+
+
+def install_supported():
+    """One-click update: only the Windows app installed with its setup (Scoop, the sources, Linux and the Mac update their own way)."""
+    return bool(FROZEN) and sys.platform == 'win32' and '\\scoop\\' not in sys.executable.lower()
 
 
 def check_update():
@@ -2038,8 +2053,13 @@ def check_update():
         if not re.fullmatch(r'v?\d+(\.\d+){1,3}', tag):
             raise ValueError('unexpected answer from the update server')
         url = str(d.get('html_url') or '')
-        UPDATE.update(latest=tag.lstrip('v'), error='',
+        latest = tag.lstrip('v')
+        UPDATE.update(latest=latest, error='', setup_url='', setup_sha='', setup_size=0,
                       url=url if url.startswith('https://github.com/progliodario/YT-Grabber/') else RELEASES_PAGE)
+        for a in d.get('assets') or []:   # the Windows installer of this release, with the SHA-256 GitHub computed for it
+            sha = str(a.get('digest') or '')
+            if a.get('name') == 'YT-Grabber-Setup-%s.exe' % latest and sha.startswith('sha256:') and setup_url_ok(str(a.get('browser_download_url') or '')):
+                UPDATE.update(setup_url=a['browser_download_url'], setup_sha=sha[7:].lower(), setup_size=int(a.get('size') or 0))
         ok = True
     except Exception as e:  # noqa: BLE001
         UPDATE['error'] = clean_msg(e)
@@ -2049,8 +2069,74 @@ def check_update():
 
 def update_state():
     newer = bool(UPDATE['latest']) and version_tuple(UPDATE['latest']) > version_tuple(APP_VERSION)
+    can_install = bool(newer and UPDATE['setup_url'] and UPDATE['setup_sha'] and install_supported())
     return {'latest': UPDATE['latest'], 'newer': newer, 'url': UPDATE['url'] if newer else '',
-            'checked': UPDATE['checked'], 'error': UPDATE['error']}
+            'checked': UPDATE['checked'], 'error': UPDATE['error'], 'can_install': can_install, 'install': dict(UPDATE_INSTALL)}
+
+
+def launch_installer(path):
+    """Starts the downloaded setup so that it installs silently and starts the new version. It waits a few seconds: this program
+    closes first (a running program cannot be replaced), and Setup is not a child of it, so it survives."""
+    exe = os.path.abspath(sys.executable).lower()
+    program_files = (os.environ.get('ProgramFiles') or '').lower()
+    mode = '/ALLUSERS' if program_files and exe.startswith(program_files) else '/CURRENTUSER'   # keep the kind of installation it already has
+    cmd = 'cmd /c ping -n 4 127.0.0.1 >nul & "%s" /SILENT /SUPPRESSMSGBOXES /NORESTART /RELAUNCH=1 %s' % (path, mode)
+    subprocess.Popen(cmd, shell=True, creationflags=0x00000008 | 0x00000200, close_fds=True)
+
+
+def run_update_install():
+    """Downloads the new setup, checks it against the SHA-256 that GitHub published for it, starts it and closes this program."""
+    st = UPDATE_INSTALL
+    st.update(state='downloading', pct=0, error='')
+    folder = None
+    try:
+        url, want, size = UPDATE['setup_url'], UPDATE['setup_sha'], UPDATE['setup_size']
+        if not (url and want and setup_url_ok(url)):
+            raise ValueError('There is no update to install.')
+        folder = tempfile.mkdtemp(prefix='ytgrab_update_')
+        path = os.path.join(folder, os.path.basename(url))
+        digest = hashlib.sha256()
+        got = 0
+        req = urllib.request.Request(url, headers={'User-Agent': 'YTGrabber/' + APP_VERSION})
+        with urllib.request.urlopen(req, timeout=60) as r, open(path, 'wb') as f:
+            total = int(r.headers.get('Content-Length') or size or 0)
+            while True:
+                chunk = r.read(256 * 1024)
+                if not chunk:
+                    break
+                f.write(chunk)
+                digest.update(chunk)
+                got += len(chunk)
+                st['pct'] = min(99, got * 100 // total) if total else 0
+        if digest.hexdigest() != want:
+            raise ValueError('The downloaded file does not match the checksum published for it: it was not installed.')
+        st.update(state='installing', pct=100)
+        launch_installer(path)
+        shutdown_now(1.0, close_window=True)
+    except Exception as e:  # noqa: BLE001
+        log('update failed', e)
+        st.update(state='error', error=clean_msg(e))
+        if folder:
+            shutil.rmtree(folder, ignore_errors=True)
+
+
+def shutdown_now(delay=0.4, close_window=False):
+    """Saves the list, stops the download processes and ends the program (after a short pause, so that the answer to the page gets out)."""
+    def bye():
+        time.sleep(delay)
+        if close_window:   # the window of the Windows app: the new version opens one of its own
+            try:
+                sys.modules['winapp'].close_window()
+            except Exception:
+                pass
+        MGR.save_dirty()
+        for pr in list(PROCS):
+            try:
+                pr.kill()
+            except Exception:
+                pass
+        os._exit(0)
+    threading.Thread(target=bye, daemon=True).start()
 
 
 def update_loop():

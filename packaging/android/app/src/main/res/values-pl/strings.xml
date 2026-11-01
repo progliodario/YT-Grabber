@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notif_channel">Trwające pobierania</string>
+    <string name="notif_done_channel">Zakończone pobierania</string>
+    <string name="notif_done_title">Pobieranie zakończone</string>
+    <string name="notif_done_ok">%1$s: pobrano %2$d</string>
+    <string name="notif_done_err">%1$s: pobrano %2$d, błędy: %3$d</string>
     <string name="notif_starting">Uruchamianie…</string>
     <string name="notif_stop">Zamknij</string>
     <string name="status_preparing">Przygotowywanie aplikacji (tylko przy pierwszym uruchomieniu)…</string>

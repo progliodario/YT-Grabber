@@ -52,6 +52,18 @@ jobs:
           Write-Host "version $($state.version), yt-dlp $($state.ytdlp), ffmpeg $($state.tools.ffmpeg)"
           Invoke-RestMethod -Method Post -Headers @{ 'X-YTG' = '1' } -ContentType 'application/json' -Body '{}' http://127.0.0.1:8795/api/quit | Out-Null
           Start-Sleep 5
+          # what "Update now" does: install over the existing copy, silently, and open the app again
+          $p = Start-Process $setup -ArgumentList '/SILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER','/RELAUNCH=1' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "The update install exited with code $($p.ExitCode)" }
+          $ok = $false
+          for ($i = 0; $i -lt 60; $i++) {
+            try { $r = Invoke-RestMethod http://127.0.0.1:8765/api/ping -TimeoutSec 3; if ($r.app -eq 'yt-grabber') { $ok = $true; break } } catch { }
+            Start-Sleep 2
+          }
+          if (-not $ok) { throw 'The app did not open again after the silent update' }
+          Invoke-RestMethod -Method Post -Headers @{ 'X-YTG' = '1' } -ContentType 'application/json' -Body '{}' http://127.0.0.1:8765/api/quit | Out-Null
+          Start-Sleep 5
+          Write-Host 'update over the existing install OK'
           $u = Join-Path $env:LOCALAPPDATA 'Programs\YT Grabber\unins000.exe'
           Start-Process $u -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
           Start-Sleep 3

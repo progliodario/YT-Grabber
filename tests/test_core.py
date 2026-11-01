@@ -296,7 +296,7 @@ class InterfaceTests(unittest.TestCase):
             js = f.read()
         with open(os.path.join(WEB, 'index.html'), encoding='utf-8') as f:
             html = f.read()
-        dynamic = ('ek.', 'eh.', 'tab.', 'every.', 'theme.', 'stage.')
+        dynamic = ('ek.', 'eh.', 'tab.', 'every.', 'theme.', 'stage.', 'text.')
         unused = [k for k in en if k not in js and k not in html and not k.startswith(dynamic) and k != 'lang.name']
         self.assertEqual(unused, [])
 
@@ -359,6 +359,94 @@ class UpdateCheckTests(unittest.TestCase):
         self.assertFalse(server.check_update())
         self.assertFalse(server.update_state()['newer'])
         self.assertTrue(server.update_state()['error'])
+
+
+class UpdateInstallTests(unittest.TestCase):
+    """The one-click update of the Windows app: what is offered, what is downloaded, what is checked, what is started."""
+    PAYLOAD = b'MZ this stands for the setup program'
+
+    def setUp(self):
+        import hashlib
+        import http.server
+        import threading
+        payload = self.PAYLOAD
+        self.digest = hashlib.sha256(payload).hexdigest()
+        outer = self
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                if self.path.startswith('/latest'):
+                    base = 'http://127.0.0.1:%d' % self.server.server_address[1]
+                    body = json.dumps({
+                        'tag_name': 'v99.0.0', 'html_url': 'https://github.com/progliodario/YT-Grabber/releases/tag/v99.0.0',
+                        'assets': [{'name': 'YT-Grabber-Setup-99.0.0.exe', 'digest': 'sha256:' + outer.served_digest, 'size': len(payload),
+                                    'browser_download_url': outer.served_url or base + '/YT-Grabber-Setup-99.0.0.exe'}]}).encode()
+                else:
+                    body = payload
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *args):
+                pass
+
+        self.served_digest, self.served_url = self.digest, None
+        srv = http.server.HTTPServer(('127.0.0.1', 0), H)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        self.addCleanup(srv.server_close)
+        self.addCleanup(srv.shutdown)
+        self.saved = (server.UPDATE_API, server.install_supported, server.launch_installer, server.shutdown_now, os.environ.get('YTG_UPDATE_URL'))
+        self.addCleanup(self.restore)
+        server.UPDATE_API = 'http://127.0.0.1:%d/latest' % srv.server_address[1]
+        os.environ['YTG_UPDATE_URL'] = server.UPDATE_API   # lets the program accept a download from the local server
+        server.install_supported = lambda: True
+        self.launched, self.closed = [], []
+
+        def fake_launch(path):
+            with open(path, 'rb') as f:
+                self.launched.append((path, f.read()))
+        server.launch_installer = fake_launch
+        server.shutdown_now = lambda *a, **k: self.closed.append(True)
+        server.UPDATE.update(checked=0, latest='', url='', error='', setup_url='', setup_sha='', setup_size=0)
+        server.UPDATE_INSTALL.update(state='idle', pct=0, error='')
+
+    def restore(self):
+        server.UPDATE_API, server.install_supported, server.launch_installer, server.shutdown_now, old = self.saved
+        if old is None:
+            os.environ.pop('YTG_UPDATE_URL', None)
+        else:
+            os.environ['YTG_UPDATE_URL'] = old
+
+    def test_it_is_offered_when_a_newer_setup_exists(self):
+        self.assertTrue(server.check_update())
+        s = server.update_state()
+        self.assertTrue(s['newer'] and s['can_install'])
+
+    def test_it_is_not_offered_outside_the_windows_app(self):
+        server.install_supported = self.saved[1]   # the real check: not frozen here
+        server.check_update()
+        self.assertFalse(server.update_state()['can_install'])
+
+    def test_download_check_start_close(self):
+        server.check_update()
+        server.run_update_install()
+        self.assertEqual(server.UPDATE_INSTALL['state'], 'installing')
+        self.assertEqual(self.launched[0][1], self.PAYLOAD)
+        self.assertEqual(self.closed, [True])
+
+    def test_a_file_that_does_not_match_its_checksum_is_never_run(self):
+        self.served_digest = '0' * 64
+        server.check_update()
+        server.run_update_install()
+        self.assertEqual(server.UPDATE_INSTALL['state'], 'error')
+        self.assertIn('checksum', server.UPDATE_INSTALL['error'])
+        self.assertEqual((self.launched, self.closed), ([], []))
+
+    def test_a_download_from_another_place_is_ignored(self):
+        self.served_url = 'https://evil.example/YT-Grabber-Setup-99.0.0.exe'
+        server.check_update()
+        self.assertFalse(server.update_state()['can_install'])
 
 
 class FinishNoticeTests(unittest.TestCase):

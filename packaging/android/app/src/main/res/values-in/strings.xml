@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notif_channel">Unduhan berjalan</string>
+    <string name="notif_done_channel">Unduhan yang selesai</string>
+    <string name="notif_done_title">Unduhan selesai</string>
+    <string name="notif_done_ok">%1$s: %2$d diunduh</string>
+    <string name="notif_done_err">%1$s: %2$d diunduh, %3$d gagal</string>
     <string name="notif_starting">Memulai…</string>
     <string name="notif_stop">Tutup</string>
     <string name="status_preparing">Menyiapkan aplikasi (hanya saat pertama kali)…</string>

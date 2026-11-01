@@ -2,6 +2,15 @@
 
 All notable changes, newest first. The version numbers follow `MAJOR.MINOR.PATCH`.
 
+## Unreleased
+
+- **Update now (Windows app):** the new-version notice has a button that downloads the installer from the releases, checks its
+  SHA-256, closes the app, installs and reopens it. Not shown for Scoop, winget or Chocolatey installs.
+- **Android:** a notification when a download finishes (switchable in the settings).
+- **Arrow keys in the list of items** (Up, Down, Home, End, Page Up, Page Down), with one Tab stop for the list.
+- **Settings → Text size** (100–200%).
+- The tick mark inside the chosen option is no longer read by screen readers as part of its name.
+
 ## 1.4.0
 
 - **Accessibility (WCAG 2.2 AA):** the whole interface was reworked and is now checked automatically at every change.

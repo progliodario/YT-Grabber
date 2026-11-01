@@ -82,6 +82,7 @@
           var inp = S.detail.box.parentNode.querySelector('.search');
           if (inp) { inp.placeholder = tr('detail.search'); inp.setAttribute('aria-label', tr('detail.searchLabel')); }
           S.detail.tabsEl.setAttribute('aria-label', tr('detail.filters')); S.detail.box.setAttribute('aria-label', tr('list.label'));
+          var lh = document.getElementById('lh-' + S.detail.id); if (lh) { lh.textContent = tr('list.help'); }
           renderDetail();
         }
       }
@@ -255,6 +256,20 @@
     return '<button type="button" class="btn sm ' + (cls || '') + '" data-act="' + act + '" data-id="' + id + '"' + (extra || '') + '>' + (icon || '') + label + '</button>';
   }
 
+  // ------------------------------------------------------------------ text size
+  // A percentage of the size set in the browser (everything on the page is sized in rem, so one value enlarges all of it).
+  var TEXT_SIZES = [100, 125, 150, 200];
+  function getTextSize() {
+    var z = 100;
+    try { z = parseInt(localStorage.getItem('ytg-textsize'), 10) || 100; } catch (e) { z = 100; }
+    return TEXT_SIZES.indexOf(z) < 0 ? 100 : z;
+  }
+  function applyTextSize(z) {
+    document.documentElement.style.fontSize = z === 100 ? '' : z + '%';
+    calcRow();
+    if (S.detail) { renderVList(); }
+  }
+
   // ------------------------------------------------------------------ theme
   var THEMES = ['auto', 'light', 'dark'];
   function getTheme() { var t = 'auto'; try { t = localStorage.getItem('ytg-theme') || 'auto'; } catch (e) { t = 'auto'; } return THEMES.indexOf(t) < 0 ? 'auto' : t; }
@@ -411,6 +426,7 @@
     $('#grpAndroidHint').hidden = S.android;
     S.concurrency = st.concurrency; S.browsers = st.browsers || []; S.hasCookies = !!st.has_cookies; S.ytdlp = st.ytdlp;
     S.serverOffset = st.now - Date.now() / 1000;
+    if (S.version && st.version && S.version !== st.version) { window.location.reload(); return; }   // the program was updated and restarted: load its new page
     S.update = st.update || {}; S.nativeNotify = !!st.native_notify; S.version = st.version;
     if (!S.formInit) { S.formInit = true; form.fill(st.settings); updateDetect(); }
     else { $('#destDir').textContent = st.settings.download_dir; $('#destDir').title = st.settings.download_dir; }
@@ -448,14 +464,24 @@
 
   // ------------------------------------------------------------------ new version banner, "download finished" notices
   function renderUpdate() {
-    var u = S.update || {}, hidden = null, show;
+    var u = S.update || {}, inst = u.install || {}, hidden = null, show, text;
+    var busy = inst.state === 'downloading' || inst.state === 'installing';
     try { hidden = localStorage.getItem('ytg-update-hidden'); } catch (e) { hidden = null; }
-    show = !!(u.newer && S.settings.check_updates !== false && hidden !== u.latest);
+    show = !!(u.newer && S.settings.check_updates !== false && (hidden !== u.latest || busy || inst.state === 'error'));
     $('#updateBanner').hidden = !show;
     if (show) {
-      $('#updateText').textContent = tr('update.available', { v: u.latest });
+      if (inst.state === 'downloading') { text = tr('update.downloading', { pct: Math.floor((inst.pct || 0) / 10) * 10 }); }   // in steps of 10: no chatter for screen readers
+      else if (inst.state === 'installing') { text = tr('update.installing'); }
+      else if (inst.state === 'error') { text = tr('update.failed', { msg: inst.error || '' }); }
+      else { text = tr('update.available', { v: u.latest }); }
+      $('#updateText').textContent = text;
       if (/^https:\/\//.test(u.url || '')) { $('#updateLink').href = u.url; }
+      $('#updateLink').hidden = busy;
+      $('#updateInstall').hidden = !u.can_install || busy;
+      $('#updateHide').hidden = busy;
+      if (inst.state !== S.updState && (inst.state === 'installing' || inst.state === 'error')) { announce(text); }
     }
+    S.updState = inst.state;
   }
 
   function notifyDone(j) {
@@ -678,7 +704,8 @@
       el.innerHTML =
         '<div class="errpanel" hidden></div>' +
         '<div class="tabs"><div class="tabbtns" role="group" aria-label="' + esc(tr('detail.filters')) + '"></div><input class="search" type="search" placeholder="' + esc(tr('detail.search')) + '" aria-label="' + esc(tr('detail.searchLabel')) + '"></div>' +
-        '<div class="vbox" role="region" tabindex="0" aria-label="' + esc(tr('list.label')) + '"><div class="vspacer" role="list"></div><div class="vempty" hidden></div></div>';
+        '<div class="vbox" role="region" tabindex="0" aria-label="' + esc(tr('list.label')) + '" aria-describedby="lh-' + id + '"><div class="vspacer" role="list"></div><div class="vempty" hidden></div></div>' +
+        '<p class="sr-only" id="lh-' + id + '">' + esc(tr('list.help')) + '</p>';
       S.detail = {
         id: id, items: [], seq: 0, tab: 'all', q: '', kind: '', view: [], summary: null, rowEls: {}, busy: false,
         panel: el.children[0], tabsEl: el.children[1].firstChild, box: el.children[2], spacer: el.children[2].children[0],
@@ -686,6 +713,7 @@
       };
       var raf = 0, d = S.detail, sInp = el.children[1].lastChild;
       sInp.addEventListener('input', function () { d.q = sInp.value; d.box.scrollTop = 0; rebuildView(d); renderVList(); });
+      d.box.addEventListener('keydown', function (ev) { listKey(d, ev); });
       d.box.addEventListener('scroll', function () {
         if (raf) { return; }
         raf = (window.requestAnimationFrame || window.setTimeout)(function () { raf = 0; renderVList(); });
@@ -695,6 +723,35 @@
     if (tab) { S.detail.tab = tab; S.detail.box.scrollTop = 0; }
     fetchDetail();
     if (S.cards[id] && S.cards[id].el.scrollIntoView) { S.cards[id].el.scrollIntoView({ block: 'nearest' }); }
+  }
+
+  // Arrow keys move between the items of the list (the list takes one Tab stop, like a list box); Tab then goes to the buttons of the
+  // current item. Home, End, Page Up and Page Down jump. Only the rows near the screen exist, so the list is scrolled first.
+  function focusItem(d, pos) {
+    var it = d.items[d.view[pos]], top = pos * ROW, h = d.box.clientHeight, r;
+    if (!it) { return; }
+    d.cur = it.i;
+    if (top < d.box.scrollTop) { d.box.scrollTop = top; }
+    else if (top + ROW > d.box.scrollTop + h) { d.box.scrollTop = top + ROW - h; }
+    renderVList();
+    r = d.rowEls[it.i];
+    if (r) { r.el.focus(); }
+  }
+  function listKey(d, ev) {
+    var k = ev.key, n = d.view.length, row, cur = -1, page, pos;
+    if (!n || ev.altKey || ev.ctrlKey || ev.metaKey) { return; }
+    if (k !== 'ArrowDown' && k !== 'ArrowUp' && k !== 'Home' && k !== 'End' && k !== 'PageDown' && k !== 'PageUp') { return; }
+    row = ev.target && ev.target.closest ? ev.target.closest('.row') : null;
+    if (row) { cur = d.view.indexOf(parseInt(row.getAttribute('aria-posinset'), 10) - 1); }
+    page = Math.max(1, Math.floor((d.box.clientHeight || ROW) / ROW) - 1);
+    if (k === 'ArrowDown') { pos = cur < 0 ? 0 : Math.min(n - 1, cur + 1); }
+    else if (k === 'ArrowUp') { pos = cur < 0 ? 0 : Math.max(0, cur - 1); }
+    else if (k === 'Home') { pos = 0; }
+    else if (k === 'End') { pos = n - 1; }
+    else if (k === 'PageDown') { pos = cur < 0 ? Math.min(n - 1, page) : Math.min(n - 1, cur + page); }
+    else { pos = cur < 0 ? 0 : Math.max(0, cur - page); }
+    ev.preventDefault();
+    focusItem(d, pos);
   }
 
   function fetchDetail() {
@@ -789,6 +846,7 @@
     var el = document.createElement('div');
     el.className = 'row';
     el.setAttribute('role', 'listitem');   // only the rows near the screen exist: the position and the size tell where this one is in the whole list
+    el.tabIndex = -1;                      // reached with the arrow keys, not with Tab
     el.innerHTML = '<div class="rthumb"><img alt="" referrerpolicy="no-referrer"></div><div class="rnum"></div>' +
       '<div class="rmain"><div class="rtitle" dir="auto"></div><div class="rsub"></div></div><div class="rside"></div><div class="ract"></div>';
     var r = { el: el, img: el.firstChild.firstChild, num: el.children[1], title: el.children[2].firstChild, sub: el.children[2].lastChild, side: el.children[3], act: el.children[4], k: {} };
@@ -797,7 +855,7 @@
     return r;
   }
 
-  function updateRow(r, it, pad, jid, top, total) {
+  function updateRow(r, it, pad, jid, top, total, cur) {
     var k = r.k, link = it.v ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(it.v) : '';
     var title = it.t || (it.v ? tr('row.video', { id: it.v }) : tr('row.reading'));
     var sub = '', side = '', act = '', tip = '';
@@ -852,9 +910,12 @@
     if (k.title !== title) { k.title = title; r.title.textContent = title; }
     if (k.sub !== sub) { k.sub = sub; r.sub.innerHTML = sub; }
     if (k.side !== side) { k.side = side; r.side.innerHTML = side; }
-    if (k.act !== act) { k.act = act; setHtmlKeepFocus(r.act, act); }
+    if (k.act !== act) { k.act = act; setHtmlKeepFocus(r.act, act); k.tab = null; }
     var pos = it.i + '/' + total;
     if (k.pos !== pos) { k.pos = pos; r.el.setAttribute('aria-posinset', it.i); r.el.setAttribute('aria-setsize', total); }
+    // only the buttons of the current item are in the Tab order (otherwise a long list would hold the keyboard for ever)
+    var want = cur === it.i ? 0 : -1;
+    if (k.tab !== want) { k.tab = want; var bs = r.act.querySelectorAll('a, button'), bi; for (bi = 0; bi < bs.length; bi++) { bs[bi].tabIndex = want; } }
     var tt = tip || title;
     if (k.tip !== tt) { k.tip = tt; r.el.title = tt; }
   }
@@ -872,7 +933,7 @@
     for (k = first; k < last; k++) {
       it = d.items[d.view[k]]; key = it.i; need[key] = true; r = d.rowEls[key];
       if (!r) { r = d.rowEls[key] = makeRow(); d.spacer.appendChild(r.el); }
-      updateRow(r, it, pad, d.id, k * ROW, s.total);
+      updateRow(r, it, pad, d.id, k * ROW, s.total, d.cur);
     }
     for (key in d.rowEls) {
       if (Object.prototype.hasOwnProperty.call(d.rowEls, key) && !need[key]) {
@@ -993,8 +1054,10 @@
     $('#setBrowse').hidden = !S.local || S.android; $('#btnUpdate').hidden = !S.local;
     $('#setMsg').hidden = true; $('#setCookiesFile').value = '';
     $('#setNotify').checked = s.notify_done !== false; $('#setCheckUpdates').checked = s.check_updates !== false;
-    $('#setNotify').parentNode.parentNode.hidden = S.android;   // the Android app cannot show them from the page
-    $('#notifyHint').hidden = S.android || S.nativeNotify;       // in the Windows app the tray icon does it: no browser permission needed
+    var ts = '', zi, cur = getTextSize();
+    for (zi = 0; zi < TEXT_SIZES.length; zi++) { ts += '<option value="' + TEXT_SIZES[zi] + '"' + (TEXT_SIZES[zi] === cur ? ' selected' : '') + '>' + esc(tr('text.' + TEXT_SIZES[zi])) + '</option>'; }
+    $('#setTextSize').innerHTML = ts;
+    $('#notifyHint').hidden = S.nativeNotify;   // the Windows app (tray icon) and the Android app (notification) do it themselves: no browser permission needed
     $('#notifyHint').textContent = (window.Notification && Notification.permission === 'denied') ? tr('set.notifyBlocked') : tr('set.notifyHint');
     showUpdateInfo();
     settingsOpener = document.activeElement;
@@ -1113,7 +1176,17 @@
       api('POST', '/api/cookies', { text: '' }).then(function () { S.hasCookies = false; $('#cookiesState').textContent = tr('set.cookiesNone'); setMsg(tr('set.cookiesRemovedMsg'), true); })
         .catch(function (e) { setMsg(e.message); });
     });
+    $('#setTextSize').addEventListener('change', function () {   // takes effect at once, so that the result can be seen before closing the window
+      var z = parseInt(this.value, 10);
+      try { localStorage.setItem('ytg-textsize', String(z)); } catch (e) { /* ignored */ }
+      applyTextSize(z);
+    });
     $('#setNotify').addEventListener('change', function () { if (this.checked) { S.settings.notify_done = true; askNotifyPermission(); } });
+    $('#updateInstall').addEventListener('click', function () {
+      if (!window.confirm(tr('update.confirm'))) { return; }
+      api('POST', '/api/appupdate/install', {}).then(function () { pollState(); })
+        .catch(function (e) { toast(tr('update.failed', { msg: e.message }), true); });
+    });
     $('#updateHide').addEventListener('click', function () {
       try { localStorage.setItem('ytg-update-hidden', (S.update || {}).latest || ''); } catch (e) { /* ignored */ }
       $('#updateBanner').hidden = true;

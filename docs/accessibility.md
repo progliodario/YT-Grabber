@@ -29,7 +29,7 @@ visible outline (3 pixels, at least 3:1 against what is around it).
 | Arrow keys | change the choice inside a group of options (audio or video, the format, the quality) |
 | Ctrl+Enter (⌘+Enter on a Mac) | start the download from the box with the links |
 | Escape | close the settings window; the focus goes back to the button that opened it |
-| Page Up, Page Down, Home, End, arrows | scroll the list of items (it is a region that takes the focus) |
+| Arrow Up / Down, Home, End, Page Up / Down | in the list of items: move from row to row (the list is one stop of the Tab key; the buttons of the current row are reached with Tab) |
 
 No shortcut uses a single letter, so nothing clashes with the shortcuts of a screen reader or of the speech recognition software.
 
@@ -59,7 +59,8 @@ unavailable (also to screen readers) until it closes.
 - **Themes:** light, dark, or automatic (the setting of your system). The **forced colours** mode of Windows ("contrast themes")
   and the "more contrast" preference are supported.
 - **Zoom and text size:** the page works up to 400% zoom (320 CSS pixels wide) without horizontal scrolling, and all text follows
-  the font size of your browser (it is sized in `rem`). The rows of the lists grow with the text. Text spacing set by the user
+  the font size of your browser (it is sized in `rem`). *Settings → Text size* makes everything 125%, 150% or 200% bigger on top
+  of that, and is checked by the automatic audit. The rows of the lists grow with the text. Text spacing set by the user
   (line height, letter and word spacing) does not cut anything off. In the Android app the page follows the font size of the system.
 - **Motion:** with "reduce motion" on, the animations (the moving progress bars, the pulsing dots, transitions) stop.
 - **Touch:** on a touch screen the controls are at least 44 by 44 pixels (24 by 24 with a mouse), and nothing needs a gesture
@@ -98,13 +99,17 @@ Automated tools find about a third of the possible problems, so this is **not** 
 
 ## What has not been tested
 
-The maintainer has **not** tried YT Grabber with NVDA, JAWS, Windows Narrator, VoiceOver, TalkBack or Orca, with voice control, or with a
-switch device, because none was available. If you use one, your report is the most valuable thing you can send.
+YT Grabber has **not** been heard with a real screen reader: NVDA, JAWS, Windows Narrator, VoiceOver, TalkBack or Orca, voice control
+and switch devices. An attempt with NVDA (portable, official download, signature checked) could not work in the automated session used for
+development, because that session gives no foreground window to the screen reader. What was checked instead is the
+**accessibility tree** of the page in Chromium (the data every screen reader on Windows reads): names, roles and states of the
+controls, headings and landmarks, with no control without a name. That found one real problem (a tick mark read as part of the name of
+the chosen option), now fixed. If you use a screen reader, your report is the most valuable thing you can send.
 
 ## Known limitations
 
 - The list of items is *virtual*: only the rows on the screen exist on the page, so that a playlist of thousands of items stays fast.
-  Screen reader users reach the other rows by scrolling (the list takes the focus and scrolls with the usual keys), and each row
+  Screen reader users reach the other rows with the arrow keys (the list scrolls to the row that gets the focus), and each row
   tells its position. The long titles of videos are cut with "…" on the screen when they do not fit; the whole text is in the page
   (and in the tooltip) and appears when you zoom or widen the window.
 - The thumbnails of videos have no text alternative on purpose: the title is next to each one.

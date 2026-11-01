@@ -207,7 +207,7 @@ Use it:
   restrictions** in *Developer options*.
 
 To **update**, install the new APK over the old one (it has the same signing key). The page shows a notice when a new
-version is out. The notification for a finished download is not available in the Android app (the page cannot show it there).
+version is out. When a download finishes the app posts a notification of its own (switch it off in the settings of the page).
 
 > Tested in an Android 14 emulator (x86_64): first start with all the permission requests, engine extraction, server start,
 > sharing a link from another app, a download of an 11-video playlist saved and numbered in `Download/YT-Grabber`, and the

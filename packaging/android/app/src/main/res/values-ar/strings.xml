@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notif_channel">التنزيلات الجارية</string>
+    <string name="notif_done_channel">التنزيلات المكتملة</string>
+    <string name="notif_done_title">اكتمل التنزيل</string>
+    <string name="notif_done_ok">%1$s: تم تنزيل %2$d</string>
+    <string name="notif_done_err">%1$s: تم تنزيل %2$d، وفشل %3$d</string>
     <string name="notif_starting">جارٍ التشغيل…</string>
     <string name="notif_stop">إغلاق</string>
     <string name="status_preparing">جارٍ تجهيز التطبيق (عند التشغيل الأول فقط)…</string>
