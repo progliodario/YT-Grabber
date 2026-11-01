@@ -102,6 +102,10 @@ code { font: 12.5px/1.4 ui-monospace, "Cascadia Code", Consolas, Menlo, monospac
 .banner { margin: 16px 0 0; padding: 11px 15px; border-radius: 12px; font-size: 14px; border: 1px solid transparent; }
 .banner.warn { background: var(--warn-soft); color: var(--warn); border-color: var(--warn-soft); }
 .banner.err { background: var(--err-soft); color: var(--err); border-color: var(--err-line); }
+.banner.info { background: var(--info-soft); color: var(--info); border-color: var(--info-soft); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.banner.info[hidden] { display: none; }
+.banner.info a { color: inherit; font-weight: 700; text-decoration: underline; }
+.banner-x { margin-inline-start: auto; background: none; border: 0; color: inherit; font-size: 20px; line-height: 1; cursor: pointer; padding: 0 4px; }
 
 /* ============ Card + form ============ */
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 26px; margin: 22px 0; box-shadow: var(--shadow-m); }
@@ -300,6 +304,9 @@ button.stat.err:hover { filter: brightness(1.05); transform: translateY(-1px); }
 .modal-f { padding: 14px 22px 20px; display: flex; justify-content: flex-end; gap: 10px; }
 .grp { margin: 16px 0 20px; }
 .grp .lbl { display: block; margin-bottom: 8px; }
+.grp .toggles { margin-top: 6px; padding-top: 0; border-top: 0; }
+.grp .hint + .toggles { margin-top: 16px; }
+#btnCheckUpdate { margin-top: 12px; }
 .row-in { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .row-in input[type=text] { flex: 1; min-width: 180px; width: auto; }
 .row-in input[type=file] { flex: 1; min-width: 160px; font-size: 13px; color: var(--muted); }

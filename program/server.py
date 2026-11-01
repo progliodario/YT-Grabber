@@ -46,7 +46,7 @@ import yt_dlp  # noqa: E402
 from yt_dlp.utils import sanitize_filename  # noqa: E402
 
 APP_NAME = 'yt-grabber'
-APP_VERSION = '1.1.0'
+APP_VERSION = '1.2.0'
 CONCURRENCY = 10  # simultaneous downloads: fixed by requirement
 
 LOCK = threading.RLock()
@@ -85,6 +85,8 @@ DEFAULT_SETTINGS = {
     'force': False,             # download again even if already present
     'cookies_browser': '',      # chrome | firefox | edge | ...
     'lang': '',                 # interface language chosen by the user ('' = detect it automatically)
+    'check_updates': True,      # ask GitHub now and then whether a newer version of YT Grabber exists
+    'notify_done': True,        # tell the user when a download has finished (browser notification, Windows tray)
 }
 LANG_CODES = ('', 'en', 'it', 'es', 'fr', 'de', 'pt', 'nl', 'pl', 'ru', 'tr', 'ar', 'hi', 'id', 'zh', 'ja', 'ko')
 BROWSERS = ('', 'firefox', 'chrome', 'edge', 'brave', 'opera', 'vivaldi', 'chromium', 'whale', 'safari')
@@ -104,6 +106,8 @@ def clean_opts(o, base=None):
         r[k] = bool(o[k]) if k in o else bool(base[k])
     r['cookies_browser'] = o.get('cookies_browser') if o.get('cookies_browser') in BROWSERS else base['cookies_browser']
     r['lang'] = o.get('lang') if o.get('lang') in LANG_CODES else base.get('lang', '')
+    for k in ('check_updates', 'notify_done'):
+        r[k] = bool(o[k]) if k in o else bool(base.get(k, True))
     return r
 
 
@@ -1252,6 +1256,7 @@ def post_finish(job):
         job.pp_done = False
     if job.sub_id:
         sub_run_finished(job)
+    notify_finished(job)
 
 
 def write_reports(job):
@@ -1723,6 +1728,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({'path': choose_dir(body.get('start') or SETTINGS['download_dir'])})
             if path == '/api/update':
                 return self.update_ytdlp()
+            if path == '/api/appupdate':   # "check now" for a new version of YT Grabber itself
+                if time.time() - UPDATE['checked'] > 30:
+                    check_update()
+                return self.send_json(update_state())
             if path == '/api/quit':   # clean shutdown (used by the Android app when "Close" is pressed)
                 if not self.is_local_client():
                     return self.err(403, 'Only from the device running the server')
@@ -1762,6 +1771,7 @@ class Handler(BaseHTTPRequestHandler):
             'has_cookies': os.path.exists(COOKIES_FILE), 'local': self.is_local_client(),
             'errmeta': {k: [v[0], v[3]] for k, v in ERR.items()}, 'android': IS_ANDROID,
             'browsers': [b for b in BROWSERS if b], 'subs': subs_state(), 'sub_intervals': list(SUB_INTERVALS),
+            'update': update_state(), 'native_notify': bool(FINISH_HOOKS),
         }
 
     def job_detail(self, jid, since):
@@ -1976,6 +1986,71 @@ class Server(ThreadingHTTPServer):
         super().handle_error(request, client_address)
 
 
+# --------------------------------------------------------------------------- new versions, "finished" notices
+
+RELEASES_PAGE = 'https://github.com/progliodario/YT-Grabber/releases/latest'
+UPDATE_API = os.environ.get('YTG_UPDATE_URL') or 'https://api.github.com/repos/progliodario/YT-Grabber/releases/latest'
+UPDATE = {'checked': 0, 'latest': '', 'url': '', 'error': ''}
+FINISH_HOOKS = []   # functions called with a dict when a download has finished (the Windows app adds its tray balloon)
+
+
+def version_tuple(text):
+    parts = re.findall(r'\d+', str(text).split('-')[0].split('+')[0])[:4]
+    return tuple(int(p) for p in parts) or (0,)
+
+
+def check_update():
+    """Asks GitHub for the latest release (the only thing sent is this program's name and version). True if it worked."""
+    req = urllib.request.Request(UPDATE_API, headers={'User-Agent': 'YTGrabber/' + APP_VERSION,
+                                                      'Accept': 'application/vnd.github+json'})
+    ok = False
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            d = json.loads(r.read().decode('utf-8'))
+        tag = str(d.get('tag_name') or '')
+        if not re.fullmatch(r'v?\d+(\.\d+){1,3}', tag):
+            raise ValueError('unexpected answer from the update server')
+        url = str(d.get('html_url') or '')
+        UPDATE.update(latest=tag.lstrip('v'), error='',
+                      url=url if url.startswith('https://github.com/progliodario/YT-Grabber/') else RELEASES_PAGE)
+        ok = True
+    except Exception as e:  # noqa: BLE001
+        UPDATE['error'] = clean_msg(e)
+    UPDATE['checked'] = time.time()
+    return ok
+
+
+def update_state():
+    newer = bool(UPDATE['latest']) and version_tuple(UPDATE['latest']) > version_tuple(APP_VERSION)
+    return {'latest': UPDATE['latest'], 'newer': newer, 'url': UPDATE['url'] if newer else '',
+            'checked': UPDATE['checked'], 'error': UPDATE['error']}
+
+
+def update_loop():
+    """Checks for a new version shortly after the start and then twice a day (once an hour after a failure)."""
+    time.sleep(45)
+    while not SHUTDOWN.is_set():
+        wait = 600
+        if SETTINGS.get('check_updates') and time.time() - UPDATE['checked'] > (12 * 3600 if not UPDATE['error'] else 3600):
+            check_update()
+        time.sleep(wait)
+
+
+def notify_finished(job):
+    if not SETTINGS.get('notify_done'):
+        return
+    with LOCK:
+        info = {'id': job.id, 'title': job.title or job.url, 'done': job.counts['d'], 'errors': job.counts['e'],
+                'sub': bool(job.sub_id)}
+    if not info['done'] and not info['errors']:
+        return   # nothing new was downloaded (for example a subscription check without news)
+    for hook in list(FINISH_HOOKS):
+        try:
+            hook(info)
+        except Exception as e:  # noqa: BLE001
+            log('notification hook failed', e)
+
+
 LAST_ACTIVITY = [time.time()]   # last time somebody used the web page
 
 
@@ -2068,6 +2143,7 @@ def main():
     MGR.load_jobs()
     MGR.start()
     threading.Thread(target=subs_loop, daemon=True, name='subs').start()
+    threading.Thread(target=update_loop, daemon=True, name='updates').start()
     if a.idle_exit > 0:
         threading.Thread(target=idle_watch, args=(a.idle_exit * 60,), daemon=True, name='idle').start()
     atexit.register(MGR.save_dirty)

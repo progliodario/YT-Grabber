@@ -45,6 +45,11 @@
   <div class="banner warn" id="throttle" role="status" hidden></div>
   <div class="banner err" id="offline" role="alert" hidden data-i18n="offline">Server not reachable. Check that YT Grabber is still running on the computer.</div>
   <div class="banner warn" id="toolsWarn" role="alert" hidden></div>
+  <div class="banner info" id="updateBanner" role="status" hidden>
+    <span id="updateText"></span>
+    <a id="updateLink" href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener" data-i18n="update.link">See what's new and download it</a>
+    <button class="banner-x" id="updateHide" type="button" aria-label="Close" data-i18n-attr="aria-label:close">&times;</button>
+  </div>
 
   <section class="card compose" aria-labelledby="newTitle">
     <div class="compose-head">
@@ -173,6 +178,19 @@
         <p class="hint" id="verInfo"></p>
         <button class="btn" id="btnUpdate" type="button" data-i18n="set.update">Update yt-dlp and restart</button>
         <p class="hint" data-i18n="set.updateHint">YouTube changes often: if many errors suddenly appear, update. Downloads in progress are interrupted and you can resume them.</p>
+      </div>
+      <div class="grp">
+        <span class="lbl" data-i18n="set.notifyTitle">Notifications and updates</span>
+        <div class="toggles">
+          <label class="sw"><input type="checkbox" id="setNotify"><span class="knob"></span><span data-i18n="set.notify">Tell me when a download has finished</span></label>
+        </div>
+        <p class="hint" id="notifyHint" data-i18n="set.notifyHint">Shows a system notification. The browser asks for permission the first time.</p>
+        <div class="toggles">
+          <label class="sw"><input type="checkbox" id="setCheckUpdates"><span class="knob"></span><span data-i18n="set.updates">Look for new versions of YT Grabber</span></label>
+        </div>
+        <p class="hint" data-i18n="set.updatesHint">Now and then YT Grabber asks GitHub whether a newer version exists. Nothing else is sent.</p>
+        <button class="btn" id="btnCheckUpdate" type="button" data-i18n="set.checkNow">Check now</button>
+        <p class="hint" id="updateInfo"></p>
       </div>
       <div class="grp" id="grpAndroidHint">
         <span class="lbl" data-i18n="set.android">On an Android phone</span>

@@ -321,6 +321,7 @@
       var self = form, urls = self.el('urls').value.trim();
       if (!urls) { self.msg(tr('form.pasteOne')); self.el('urls').focus(); return; }
       self.msg('');
+      askNotifyPermission();
       var opts = self.collect();
       var btnGo = self.el('btnGo'); btnGo.disabled = true;
       var payload = {}, k;
@@ -374,6 +375,7 @@
     $('#grpAndroidHint').hidden = S.android;
     S.concurrency = st.concurrency; S.browsers = st.browsers || []; S.hasCookies = !!st.has_cookies; S.ytdlp = st.ytdlp;
     S.serverOffset = st.now - Date.now() / 1000;
+    S.update = st.update || {}; S.nativeNotify = !!st.native_notify; S.version = st.version;
     if (!S.formInit) { S.formInit = true; form.fill(st.settings); updateDetect(); }
     else { $('#destDir').textContent = st.settings.download_dir; $('#destDir').title = st.settings.download_dir; }
     var warn = [];
@@ -399,11 +401,62 @@
     renderMeter(a, p, speed);
     renderJobs();
     renderSubs();
+    renderUpdate();
+    trackFinished();
     var pct = tot ? Math.floor(done / tot * 100) : 0;
     document.title = running && tot ? '(' + pct + '%) YT Grabber' : 'YT Grabber';
     $('#jobsCount').textContent = S.jobs.length ? tr('items.count', { n: S.jobs.length }) : '';
     $('#btnClearDone').hidden = finishedJobs === 0;
     $('#empty').hidden = S.jobs.length > 0;
+  }
+
+  // ------------------------------------------------------------------ new version banner, "download finished" notices
+  function renderUpdate() {
+    var u = S.update || {}, hidden = null, show;
+    try { hidden = localStorage.getItem('ytg-update-hidden'); } catch (e) { hidden = null; }
+    show = !!(u.newer && S.settings.check_updates !== false && hidden !== u.latest);
+    $('#updateBanner').hidden = !show;
+    if (show) {
+      $('#updateText').textContent = tr('update.available', { v: u.latest });
+      if (/^https:\/\//.test(u.url || '')) { $('#updateLink').href = u.url; }
+    }
+  }
+
+  function notifyDone(j) {
+    if (S.nativeNotify || S.settings.notify_done === false || !j.counts || (!j.counts.d && !j.counts.e)) { return; }
+    if (!window.Notification || Notification.permission !== 'granted') { return; }
+    if (!document.hidden && document.hasFocus()) { return; }   // the page is in front: the card already shows it
+    try {
+      var n = new Notification(tr('notify.title'), {
+        body: tr(j.counts.e ? 'notify.err' : 'notify.ok', { title: j.title, n: j.counts.d, e: j.counts.e }),
+        icon: 'icons/icon-192.png', tag: 'ytg-' + j.id
+      });
+      n.onclick = function () { window.focus(); openJob(j.id); n.close(); };
+    } catch (e) { /* notifications not available here */ }
+  }
+
+  function trackFinished() {
+    var seen = S.seen || {}, first = !S.seen, i, j, now = {};
+    for (i = 0; i < S.jobs.length; i++) {
+      j = S.jobs[i]; now[j.id] = j.status;
+      if (!first && j.status === 'done' && (seen[j.id] === 'running' || seen[j.id] === 'enumerating')) { notifyDone(j); }
+    }
+    S.seen = now;
+  }
+
+  function askNotifyPermission() {
+    if (S.android || S.nativeNotify || S.settings.notify_done === false) { return; }
+    if (window.Notification && Notification.permission === 'default') {
+      try { Notification.requestPermission(); } catch (e) { /* ignored */ }
+    }
+  }
+
+  function showUpdateInfo() {
+    var u = S.update || {}, el = $('#updateInfo');
+    if (u.error && !u.latest) { el.textContent = tr('set.updateFail', { msg: u.error }); }
+    else if (u.newer) { el.textContent = tr('set.updateNewer', { v: u.latest }); }
+    else if (u.latest) { el.textContent = tr('set.upToDate', { v: S.version }); }
+    else { el.textContent = ''; }
   }
 
   function renderMeter(a, p, speed) {
@@ -883,6 +936,11 @@
     $('#verInfo').textContent = tr('set.ver', { v: S.ytdlp, ff: S.tools.ffmpeg ? tr('set.ok') : tr('set.missing'), js: S.tools.deno ? tr('set.ok') : tr('set.absent'), c: S.concurrency });
     $('#setBrowse').hidden = !S.local || S.android; $('#btnUpdate').hidden = !S.local;
     $('#setMsg').hidden = true; $('#setCookiesFile').value = '';
+    $('#setNotify').checked = s.notify_done !== false; $('#setCheckUpdates').checked = s.check_updates !== false;
+    $('#setNotify').parentNode.parentNode.hidden = S.android;   // the Android app cannot show them from the page
+    $('#notifyHint').hidden = S.android || S.nativeNotify;       // in the Windows app the tray icon does it: no browser permission needed
+    $('#notifyHint').textContent = (window.Notification && Notification.permission === 'denied') ? tr('set.notifyBlocked') : tr('set.notifyHint');
+    showUpdateInfo();
     $('#settingsOv').hidden = false;
   }
   function closeSettings() { $('#settingsOv').hidden = true; }
@@ -893,6 +951,7 @@
     for (k in S.settings) { if (Object.prototype.hasOwnProperty.call(S.settings, k)) { payload[k] = S.settings[k]; } }
     payload.download_dir = $('#setDir').value.trim();
     payload.cookies_browser = $('#setCookiesBrowser').value;
+    payload.notify_done = $('#setNotify').checked; payload.check_updates = $('#setCheckUpdates').checked;
     api('POST', '/api/settings', payload).then(function (r) {
       S.settings = r.settings; form.fill(r.settings); closeSettings(); toast(tr('toast.saved'));
     }).catch(function (e) { setMsg(e.message); });
@@ -968,6 +1027,17 @@
     $('#setCookiesClear').addEventListener('click', function () {
       api('POST', '/api/cookies', { text: '' }).then(function () { S.hasCookies = false; $('#cookiesState').textContent = tr('set.cookiesNone'); setMsg(tr('set.cookiesRemovedMsg'), true); })
         .catch(function (e) { setMsg(e.message); });
+    });
+    $('#setNotify').addEventListener('change', function () { if (this.checked) { S.settings.notify_done = true; askNotifyPermission(); } });
+    $('#updateHide').addEventListener('click', function () {
+      try { localStorage.setItem('ytg-update-hidden', (S.update || {}).latest || ''); } catch (e) { /* ignored */ }
+      $('#updateBanner').hidden = true;
+    });
+    $('#btnCheckUpdate').addEventListener('click', function () {
+      var b = this; b.disabled = true; $('#updateInfo').textContent = tr('subs.checking');
+      api('POST', '/api/appupdate', {}).then(function (u) { S.update = u; showUpdateInfo(); renderUpdate(); })
+        .catch(function (e) { $('#updateInfo').textContent = tr('set.updateFail', { msg: e.message }); })
+        .then(function () { b.disabled = false; });
     });
     $('#btnUpdate').addEventListener('click', function () {
       if (!window.confirm(tr('confirm.update'))) { return; }

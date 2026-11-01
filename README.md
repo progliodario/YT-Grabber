@@ -12,13 +12,38 @@ from a local web page that works in any browser (Chrome, Edge, Firefox, Safari, 
   Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©, à¤¹à¤¿à¤¨à¥à¤¦à¥€, Bahasa Indonesia, ä¸­æ–‡, æ—¥æœ¬èªž, í•œêµ­ì–´): the interface, the Windows app and installer and the Android app
   follow the language of your device and can be changed from the selector at the top of the page.
 
+- **Notifications**: a system notification when a download has finished (a bubble from the tray icon in the Windows app,
+  a browser notification elsewhere) and a notice when a new version of YT Grabber is out. Both can be switched off in *Settings*.
+
+## Screenshots
+
+*(Playlist shown: the public videos of the [Blender](https://www.youtube.com/@BlenderOfficial) channel, 1216 items, downloaded as M4A.)*
+
+![The main page: paste links, choose the format, press Download](docs/screenshots/main-light.png)
+
+![A playlist being downloaded: 10 at a time, with speed and time left](docs/screenshots/downloads-light.png)
+
+| Open list, dark theme | On a phone |
+|---|---|
+| ![The numbered list of a playlist, in the dark theme](docs/screenshots/list-dark.png) | ![The page on a phone](docs/screenshots/phone.png) |
+
+![Subscriptions: channels and playlists that are checked automatically](docs/screenshots/subscriptions.png)
+
+![Settings: folder, cookies, notifications and updates](docs/screenshots/settings.png)
+
+| Italiano | 日本語 | العربية |
+|---|---|---|
+| ![Italian](docs/screenshots/lang-it.png) | ![Japanese](docs/screenshots/lang-ja.png) | ![Arabic, right to left](docs/screenshots/lang-ar.png) |
+
+![The notice shown when a new version is available](docs/screenshots/update-banner.png)
+
 ## Start here: which one do I use?
 
 Ready-made files are on the [releases page](https://github.com/progliodario/YT-Grabber/releases/latest).
 
 | You have | Use | Details |
 |---|---|---|
-| **Windows PC** | run **`YT-Grabber-Setup-<version>.exe`** (it installs YT Grabber like any other program), or `winget install progliodario.YTGrabber` | [build-windows/README.md](build-windows/README.md) |
+| **Windows PC** | run **`YT-Grabber-Setup-<version>.exe`** (it installs YT Grabber like any other program), or `winget install progliodario.YTGrabber`, or with Scoop: `scoop bucket add progliodario https://github.com/progliodario/scoop-bucket` then `scoop install yt-grabber` | [build-windows/README.md](build-windows/README.md) |
 | Windows with **Python** installed | double-click **`Start.bat`** | below |
 | **Linux**: Debian, Ubuntu, Mint... | the **apt repository** (updates by themselves) or `sudo apt install ./yt-grabber_<version>_all.deb` | [build-linux/README.md](build-linux/README.md) |
 | **Linux**: Fedora, RHEL, openSUSE... | the **dnf repository** (updates by themselves) or `sudo dnf install ./yt-grabber-<version>-1.noarch.rpm` | [build-linux/README.md](build-linux/README.md) |

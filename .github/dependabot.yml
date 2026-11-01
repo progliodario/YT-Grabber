@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # the actions used by the workflows (checkout, setup-python, upload-artifact, ...)
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # the Android app: Gradle plugin, Kotlin and the libraries it uses
+  - package-ecosystem: gradle
+    directory: /build-apk
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "android"
+    open-pull-requests-limit: 5

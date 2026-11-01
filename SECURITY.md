@@ -47,4 +47,6 @@ can be submitted to it once it is established enough to be accepted.
 - It listens on `127.0.0.1` only, unless you start it with `--host 0.0.0.0` to use it from a phone on your network.
 - Every request that changes something must carry a custom header, so other web pages cannot make your browser start downloads.
 - It never sends your cookies, settings or download list anywhere. The only outside connections are to YouTube, to
-  GitHub (yt-dlp updates) and, on first start, to the site that provides the ffmpeg build for your system.
+  GitHub (yt-dlp updates and, twice a day, one request asking which is the latest YT Grabber release: it sends only the
+  program name and version, and can be switched off in *Settings → Notifications and updates*) and, on first start, to the
+  site that provides the ffmpeg build for your system.

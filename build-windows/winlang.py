@@ -21,6 +21,8 @@ TEXTS = {
         'err.start': 'YT Grabber could not start. Details are in the log file in\n{log}',
         'warn.ffmpeg': 'YT Grabber could not download ffmpeg, which it needs to convert audio and video.\n\nCheck your Internet connection. The program works, but conversions will fail until ffmpeg is installed: quit it from the tray icon and open it again to retry.',
         'err.fatal': 'YT Grabber hit an error and has to close.',
+        'done.title': 'Download finished', 'done.ok': '{title}: {n} downloaded',
+        'done.err': '{title}: {n} downloaded, {e} failed',
     },
     'it': {
         'tray.open': 'Apri YT Grabber', 'tray.folder': 'Apri la cartella dei download', 'tray.quit': 'Esci',
@@ -33,6 +35,8 @@ TEXTS = {
         'err.start': 'YT Grabber non è riuscito ad avviarsi. I dettagli sono nel file di log in\n{log}',
         'warn.ffmpeg': 'YT Grabber non è riuscito a scaricare ffmpeg, che serve per convertire audio e video.\n\nControlla la connessione a Internet. Il programma funziona, ma le conversioni falliranno finché ffmpeg non è installato: chiudilo dall\'icona nell\'area di notifica e riaprilo per riprovare.',
         'err.fatal': 'YT Grabber ha incontrato un errore e deve chiudersi.',
+        'done.title': 'Download completato', 'done.ok': '{title}: {n} scaricati',
+        'done.err': '{title}: {n} scaricati, {e} con errori',
     },
     'es': {
         'tray.open': 'Abrir YT Grabber', 'tray.folder': 'Abrir la carpeta de descargas', 'tray.quit': 'Salir',
@@ -45,6 +49,8 @@ TEXTS = {
         'err.start': 'YT Grabber no pudo iniciarse. Los detalles están en el archivo de registro en\n{log}',
         'warn.ffmpeg': 'YT Grabber no pudo descargar ffmpeg, que necesita para convertir audio y vídeo.\n\nComprueba tu conexión a Internet. El programa funciona, pero las conversiones fallarán hasta que ffmpeg esté instalado: ciérralo desde el icono del área de notificación y ábrelo de nuevo para reintentar.',
         'err.fatal': 'YT Grabber encontró un error y debe cerrarse.',
+        'done.title': 'Descarga terminada', 'done.ok': '{title}: {n} descargados',
+        'done.err': '{title}: {n} descargados, {e} con error',
     },
     'fr': {
         'tray.open': 'Ouvrir YT Grabber', 'tray.folder': 'Ouvrir le dossier des téléchargements', 'tray.quit': 'Quitter',
@@ -57,6 +63,8 @@ TEXTS = {
         'err.start': 'YT Grabber n\'a pas pu démarrer. Les détails sont dans le fichier journal dans\n{log}',
         'warn.ffmpeg': 'YT Grabber n\'a pas pu télécharger ffmpeg, dont il a besoin pour convertir l\'audio et la vidéo.\n\nVérifiez votre connexion Internet. Le programme fonctionne, mais les conversions échoueront tant que ffmpeg n\'est pas installé : quittez-le depuis l\'icône de la zone de notification puis rouvrez-le pour réessayer.',
         'err.fatal': 'YT Grabber a rencontré une erreur et doit se fermer.',
+        'done.title': 'Téléchargement terminé', 'done.ok': '{title} : {n} téléchargés',
+        'done.err': '{title} : {n} téléchargés, {e} en échec',
     },
     'de': {
         'tray.open': 'YT Grabber öffnen', 'tray.folder': 'Download-Ordner öffnen', 'tray.quit': 'Beenden',
@@ -69,6 +77,8 @@ TEXTS = {
         'err.start': 'YT Grabber konnte nicht starten. Details stehen in der Protokolldatei in\n{log}',
         'warn.ffmpeg': 'YT Grabber konnte ffmpeg nicht herunterladen, das zum Konvertieren von Audio und Video nötig ist.\n\nPrüfe deine Internetverbindung. Das Programm funktioniert, aber Konvertierungen schlagen fehl, bis ffmpeg installiert ist: Beende es über das Symbol im Infobereich und öffne es erneut, um es noch einmal zu versuchen.',
         'err.fatal': 'In YT Grabber ist ein Fehler aufgetreten und das Programm muss geschlossen werden.',
+        'done.title': 'Download abgeschlossen', 'done.ok': '{title}: {n} heruntergeladen',
+        'done.err': '{title}: {n} heruntergeladen, {e} fehlgeschlagen',
     },
     'pt': {
         'tray.open': 'Abrir o YT Grabber', 'tray.folder': 'Abrir a pasta de downloads', 'tray.quit': 'Sair',
@@ -81,6 +91,8 @@ TEXTS = {
         'err.start': 'O YT Grabber não conseguiu iniciar. Os detalhes estão no arquivo de registro em\n{log}',
         'warn.ffmpeg': 'O YT Grabber não conseguiu baixar o ffmpeg, de que precisa para converter áudio e vídeo.\n\nVerifique sua conexão com a Internet. O programa funciona, mas as conversões vão falhar até o ffmpeg ser instalado: feche-o pelo ícone na área de notificação e abra de novo para tentar outra vez.',
         'err.fatal': 'O YT Grabber encontrou um erro e precisa ser fechado.',
+        'done.title': 'Download concluído', 'done.ok': '{title}: {n} baixados',
+        'done.err': '{title}: {n} baixados, {e} com falha',
     },
     'nl': {
         'tray.open': 'YT Grabber openen', 'tray.folder': 'Downloadmap openen', 'tray.quit': 'Afsluiten',
@@ -93,6 +105,8 @@ TEXTS = {
         'err.start': 'YT Grabber kon niet starten. Details staan in het logbestand in\n{log}',
         'warn.ffmpeg': 'YT Grabber kon ffmpeg niet downloaden, dat nodig is om audio en video te converteren.\n\nControleer je internetverbinding. Het programma werkt, maar conversies mislukken totdat ffmpeg is geïnstalleerd: sluit het af via het pictogram in het systeemvak en open het opnieuw om het nog eens te proberen.',
         'err.fatal': 'YT Grabber heeft een fout aangetroffen en moet worden gesloten.',
+        'done.title': 'Download voltooid', 'done.ok': '{title}: {n} gedownload',
+        'done.err': '{title}: {n} gedownload, {e} mislukt',
     },
     'pl': {
         'tray.open': 'Otwórz YT Grabber', 'tray.folder': 'Otwórz folder pobranych plików', 'tray.quit': 'Zakończ',
@@ -105,6 +119,8 @@ TEXTS = {
         'err.start': 'YT Grabber nie mógł się uruchomić. Szczegóły są w pliku dziennika w\n{log}',
         'warn.ffmpeg': 'YT Grabber nie mógł pobrać ffmpeg, którego potrzebuje do konwersji dźwięku i wideo.\n\nSprawdź połączenie z Internetem. Program działa, ale konwersje będą zawodzić, dopóki ffmpeg nie zostanie zainstalowany: zamknij program z ikony w obszarze powiadomień i otwórz go ponownie, aby spróbować jeszcze raz.',
         'err.fatal': 'W YT Grabber wystąpił błąd i program musi zostać zamknięty.',
+        'done.title': 'Pobieranie zakończone', 'done.ok': '{title}: pobrano {n}',
+        'done.err': '{title}: pobrano {n}, błędy: {e}',
     },
     'ru': {
         'tray.open': 'Открыть YT Grabber', 'tray.folder': 'Открыть папку загрузок', 'tray.quit': 'Выход',
@@ -117,6 +133,8 @@ TEXTS = {
         'err.start': 'YT Grabber не удалось запустить. Подробности в файле журнала в\n{log}',
         'warn.ffmpeg': 'YT Grabber не удалось скачать ffmpeg, который нужен для конвертации аудио и видео.\n\nПроверьте подключение к Интернету. Программа работает, но конвертация не будет выполняться, пока ffmpeg не установлен: закройте её через значок в области уведомлений и откройте снова, чтобы повторить.',
         'err.fatal': 'В YT Grabber произошла ошибка, и программа будет закрыта.',
+        'done.title': 'Загрузка завершена', 'done.ok': '{title}: загружено {n}',
+        'done.err': '{title}: загружено {n}, ошибок: {e}',
     },
     'tr': {
         'tray.open': 'YT Grabber\'ı aç', 'tray.folder': 'İndirme klasörünü aç', 'tray.quit': 'Çık',
@@ -129,6 +147,8 @@ TEXTS = {
         'err.start': 'YT Grabber başlatılamadı. Ayrıntılar şu konumdaki günlük dosyasındadır:\n{log}',
         'warn.ffmpeg': 'YT Grabber, ses ve videoyu dönüştürmek için gereken ffmpeg\'i indiremedi.\n\nİnternet bağlantınızı kontrol edin. Program çalışır, ancak ffmpeg kurulana kadar dönüştürmeler başarısız olur: bildirim alanındaki simgeden çıkın ve yeniden denemek için tekrar açın.',
         'err.fatal': 'YT Grabber bir hatayla karşılaştı ve kapanmak zorunda.',
+        'done.title': 'İndirme tamamlandı', 'done.ok': '{title}: {n} indirildi',
+        'done.err': '{title}: {n} indirildi, {e} başarısız',
     },
     'ar': {
         'tray.open': 'فتح YT Grabber', 'tray.folder': 'فتح مجلد التنزيلات', 'tray.quit': 'خروج',
@@ -141,6 +161,8 @@ TEXTS = {
         'err.start': 'تعذّر تشغيل YT Grabber. التفاصيل في ملف السجل في\n{log}',
         'warn.ffmpeg': 'تعذّر على YT Grabber تنزيل ffmpeg الذي يحتاجه لتحويل الصوت والفيديو.\n\nتحقق من اتصالك بالإنترنت. البرنامج يعمل لكن التحويلات ستفشل حتى يُثبَّت ffmpeg: أغلقه من الأيقونة في منطقة الإشعارات ثم افتحه مجددًا لإعادة المحاولة.',
         'err.fatal': 'واجه YT Grabber خطأً ويجب أن يُغلق.',
+        'done.title': 'اكتمل التنزيل', 'done.ok': '{title}: تم تنزيل {n}',
+        'done.err': '{title}: تم تنزيل {n}، وفشل {e}',
     },
     'hi': {
         'tray.open': 'YT Grabber खोलें', 'tray.folder': 'डाउनलोड फ़ोल्डर खोलें', 'tray.quit': 'बाहर निकलें',
@@ -153,6 +175,8 @@ TEXTS = {
         'err.start': 'YT Grabber शुरू नहीं हो सका। विवरण इस लॉग फ़ाइल में है:\n{log}',
         'warn.ffmpeg': 'YT Grabber ffmpeg डाउनलोड नहीं कर सका, जो ऑडियो और वीडियो बदलने के लिए ज़रूरी है।\n\nअपना इंटरनेट कनेक्शन जाँचें। प्रोग्राम चलता है, पर ffmpeg इंस्टॉल होने तक रूपांतरण विफल रहेंगे: इसे नोटिफ़िकेशन क्षेत्र के आइकन से बंद करें और दोबारा कोशिश के लिए फिर खोलें।',
         'err.fatal': 'YT Grabber में त्रुटि आई है और उसे बंद होना होगा।',
+        'done.title': 'डाउनलोड पूरा हुआ', 'done.ok': '{title}: {n} डाउनलोड हुए',
+        'done.err': '{title}: {n} डाउनलोड हुए, {e} विफल',
     },
     'id': {
         'tray.open': 'Buka YT Grabber', 'tray.folder': 'Buka folder unduhan', 'tray.quit': 'Keluar',
@@ -165,6 +189,8 @@ TEXTS = {
         'err.start': 'YT Grabber tidak dapat dimulai. Detailnya ada di file log di\n{log}',
         'warn.ffmpeg': 'YT Grabber tidak dapat mengunduh ffmpeg, yang diperlukan untuk mengonversi audio dan video.\n\nPeriksa koneksi Internet Anda. Program tetap berfungsi, tetapi konversi akan gagal sampai ffmpeg terpasang: keluar dari ikon di area notifikasi lalu buka lagi untuk mencoba kembali.',
         'err.fatal': 'YT Grabber mengalami kesalahan dan harus ditutup.',
+        'done.title': 'Unduhan selesai', 'done.ok': '{title}: {n} diunduh',
+        'done.err': '{title}: {n} diunduh, {e} gagal',
     },
     'zh': {
         'tray.open': '打开 YT Grabber', 'tray.folder': '打开下载文件夹', 'tray.quit': '退出',
@@ -177,6 +203,8 @@ TEXTS = {
         'err.start': 'YT Grabber 无法启动。详细信息见日志文件：\n{log}',
         'warn.ffmpeg': 'YT Grabber 无法下载 ffmpeg，而转换音频和视频需要它。\n\n请检查网络连接。程序仍可使用，但在安装 ffmpeg 之前转换会失败：请从通知区域图标退出程序，然后重新打开再试。',
         'err.fatal': 'YT Grabber 遇到错误，必须关闭。',
+        'done.title': '下载完成', 'done.ok': '{title}：已下载 {n} 个',
+        'done.err': '{title}：已下载 {n} 个，{e} 个失败',
     },
     'ja': {
         'tray.open': 'YT Grabber を開く', 'tray.folder': 'ダウンロードフォルダーを開く', 'tray.quit': '終了',
@@ -189,6 +217,8 @@ TEXTS = {
         'err.start': 'YT Grabber を起動できませんでした。詳細は次のログファイルにあります：\n{log}',
         'warn.ffmpeg': 'YT Grabber は、音声と動画の変換に必要な ffmpeg をダウンロードできませんでした。\n\nインターネット接続を確認してください。プログラムは動作しますが、ffmpeg をインストールするまで変換は失敗します。通知領域のアイコンから終了し、もう一度開いて再試行してください。',
         'err.fatal': 'YT Grabber でエラーが発生したため、終了する必要があります。',
+        'done.title': 'ダウンロード完了', 'done.ok': '{title}: {n} 件ダウンロード済み',
+        'done.err': '{title}: {n} 件ダウンロード済み、{e} 件失敗',
     },
     'ko': {
         'tray.open': 'YT Grabber 열기', 'tray.folder': '다운로드 폴더 열기', 'tray.quit': '종료',
@@ -201,6 +231,8 @@ TEXTS = {
         'err.start': 'YT Grabber를 시작할 수 없습니다. 자세한 내용은 다음 로그 파일에 있습니다:\n{log}',
         'warn.ffmpeg': 'YT Grabber가 오디오와 동영상 변환에 필요한 ffmpeg를 다운로드하지 못했습니다.\n\n인터넷 연결을 확인하세요. 프로그램은 동작하지만 ffmpeg를 설치하기 전까지 변환은 실패합니다. 알림 영역 아이콘에서 종료한 뒤 다시 열어 재시도하세요.',
         'err.fatal': 'YT Grabber에 오류가 발생하여 종료해야 합니다.',
+        'done.title': '다운로드 완료', 'done.ok': '{title}: {n}개 다운로드됨',
+        'done.err': '{title}: {n}개 다운로드됨, {e}개 실패',
     },
 }
 

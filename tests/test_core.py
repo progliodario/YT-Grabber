@@ -221,6 +221,112 @@ class InterfaceTests(unittest.TestCase):
         self.assertEqual(unused, [])
 
 
+class UpdateCheckTests(unittest.TestCase):
+    """The check for a new version, against a small local server that plays the part of GitHub."""
+
+    def serve(self, payload, status=200):
+        import http.server
+        import threading
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                body = json.dumps(payload).encode()
+                self.send_response(status)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *args):
+                pass
+
+        srv = http.server.HTTPServer(('127.0.0.1', 0), H)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        self.addCleanup(srv.server_close)
+        self.addCleanup(srv.shutdown)
+        server.UPDATE_API = 'http://127.0.0.1:%d/latest' % srv.server_address[1]
+
+    def setUp(self):
+        self.old_api = server.UPDATE_API
+        self.addCleanup(setattr, server, 'UPDATE_API', self.old_api)
+        server.UPDATE.update(checked=0, latest='', url='', error='')
+
+    def test_version_order(self):
+        self.assertGreater(server.version_tuple('v1.10.0'), server.version_tuple('1.9.3'))
+        self.assertGreater(server.version_tuple('1.2.0'), server.version_tuple('1.1.9'))
+        self.assertEqual(server.version_tuple('1.2.0'), server.version_tuple('v1.2.0'))
+
+    def test_newer_version_is_reported(self):
+        self.serve({'tag_name': 'v99.0.0', 'html_url': 'https://github.com/progliodario/YT-Grabber/releases/tag/v99.0.0'})
+        self.assertTrue(server.check_update())
+        s = server.update_state()
+        self.assertTrue(s['newer'])
+        self.assertEqual(s['latest'], '99.0.0')
+        self.assertTrue(s['url'].startswith('https://github.com/progliodario/YT-Grabber/'))
+
+    def test_same_version_is_not_news(self):
+        self.serve({'tag_name': 'v' + server.APP_VERSION, 'html_url': 'https://github.com/progliodario/YT-Grabber/releases/tag/x'})
+        self.assertTrue(server.check_update())
+        self.assertFalse(server.update_state()['newer'])
+
+    def test_foreign_link_is_replaced(self):
+        self.serve({'tag_name': 'v99.0.0', 'html_url': 'https://evil.example/download'})
+        server.check_update()
+        self.assertEqual(server.update_state()['url'], server.RELEASES_PAGE)
+
+    def test_bad_answers_are_ignored(self):
+        self.serve({'tag_name': 'nightly'})
+        self.assertFalse(server.check_update())
+        self.assertFalse(server.update_state()['newer'])
+        self.assertTrue(server.update_state()['error'])
+
+
+class FinishNoticeTests(unittest.TestCase):
+    def setUp(self):
+        self.seen = []
+        server.FINISH_HOOKS.append(self.seen.append)
+        self.addCleanup(server.FINISH_HOOKS.remove, self.seen.append)
+        self.old = server.SETTINGS.get('notify_done')
+        self.addCleanup(server.SETTINGS.__setitem__, 'notify_done', self.old)
+
+    def job(self, done, errors):
+        job = server.Job('n1', 'https://www.youtube.com/playlist?list=PLabcdefghijk', dict(server.DEFAULT_SETTINGS))
+        job.title = 'My list'
+        job.counts['d'], job.counts['e'] = done, errors
+        return job
+
+    def test_hook_gets_the_numbers(self):
+        server.SETTINGS['notify_done'] = True
+        server.notify_finished(self.job(5, 1))
+        self.assertEqual(self.seen[0]['title'], 'My list')
+        self.assertEqual((self.seen[0]['done'], self.seen[0]['errors']), (5, 1))
+
+    def test_nothing_new_is_silent(self):
+        server.SETTINGS['notify_done'] = True
+        server.notify_finished(self.job(0, 0))
+        self.assertEqual(self.seen, [])
+
+    def test_can_be_switched_off(self):
+        server.SETTINGS['notify_done'] = False
+        server.notify_finished(self.job(5, 0))
+        self.assertEqual(self.seen, [])
+
+
+class WindowsTextTests(unittest.TestCase):
+    def test_every_language_has_every_text(self):
+        sys.path.insert(0, os.path.join(ROOT, 'build-windows'))
+        try:
+            import winlang
+        finally:
+            sys.path.pop(0)
+        en = winlang.TEXTS['en']
+        for code in winlang.CODES:
+            self.assertEqual(sorted(set(en) - set(winlang.TEXTS[code])), [], code)
+            for key, value in en.items():
+                self.assertEqual(sorted(re.findall(r'\{(\w+)\}', value)),
+                                 sorted(re.findall(r'\{(\w+)\}', winlang.TEXTS[code][key])), '%s %s' % (code, key))
+
+
 class VersionTests(unittest.TestCase):
     def test_versions_agree(self):
         version = server.APP_VERSION
@@ -230,6 +336,8 @@ class VersionTests(unittest.TestCase):
         self.assertIn('(%s, 0)' % version.replace('.', ', '), text)
         with open(os.path.join(ROOT, 'build-linux', 'flatpak', 'io.github.progliodario.YTGrabber.metainfo.xml'), encoding='utf-8') as f:
             self.assertIn('version="%s"' % version, f.read())
+        with open(os.path.join(ROOT, 'build-apk', 'app', 'build.gradle.kts'), encoding='utf-8') as f:
+            self.assertIn('versionName = "%s"' % version, f.read())
 
 
 if __name__ == '__main__':

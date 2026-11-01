@@ -37,7 +37,8 @@ WM_DESTROY, WM_CLOSE, WM_NULL, WM_USER = 0x0002, 0x0010, 0x0000, 0x0400
 WM_LBUTTONUP, WM_LBUTTONDBLCLK, WM_RBUTTONUP = 0x0202, 0x0203, 0x0205
 WM_TRAY = WM_USER + 1
 NIM_ADD, NIM_MODIFY, NIM_DELETE = 0, 1, 2
-NIF_MESSAGE, NIF_ICON, NIF_TIP = 0x1, 0x2, 0x4
+NIF_MESSAGE, NIF_ICON, NIF_TIP, NIF_INFO = 0x1, 0x2, 0x4, 0x10
+NIIF_INFO, NIN_BALLOONUSERCLICK = 0x1, 0x405
 MF_STRING, MF_SEPARATOR = 0x0, 0x800
 TPM_RIGHTBUTTON, TPM_RETURNCMD = 0x2, 0x100
 MB_YESNO, MB_ICONQUESTION, MB_ICONERROR, MB_ICONWARNING, IDYES = 0x4, 0x20, 0x10, 0x30, 6
@@ -241,7 +242,7 @@ class Tray:
     # --- window and icon
     def _proc(self, hwnd, msg, wparam, lparam):
         if msg == WM_TRAY:
-            if lparam in (WM_LBUTTONUP, WM_LBUTTONDBLCLK):
+            if lparam in (WM_LBUTTONUP, WM_LBUTTONDBLCLK, NIN_BALLOONUSERCLICK):
                 self.open()
             elif lparam == WM_RBUTTONUP:
                 self._menu()
@@ -267,6 +268,23 @@ class Tray:
         nid.hIcon = self.hicon
         nid.szTip = (self.tip or 'YT Grabber')[:127]
         return shell32.Shell_NotifyIconW(action, ctypes.byref(nid))
+
+    def balloon(self, title, text):
+        """A notification bubble from the tray icon (clicking it opens the window)."""
+        nid = NOTIFYICONDATAW()
+        nid.cbSize = ctypes.sizeof(NOTIFYICONDATAW)
+        nid.hWnd = self.hwnd
+        nid.uID = 1
+        nid.uFlags = NIF_INFO
+        nid.szInfoTitle = title[:63]
+        nid.szInfo = text[:255]
+        nid.dwInfoFlags = NIIF_INFO
+        shell32.Shell_NotifyIconW(NIM_MODIFY, ctypes.byref(nid))
+
+    def on_finished(self, info):
+        """Called by the server when a download has finished: tells the user even if the window is closed."""
+        key = 'done.err' if info.get('errors') else 'done.ok'
+        self.balloon(_t('done.title'), _t(key, title=info.get('title') or 'YT Grabber', n=info.get('done', 0), e=info.get('errors', 0)))
 
     def _menu(self):
         menu = user32.CreatePopupMenu()
@@ -359,6 +377,9 @@ class Tray:
         if not self._notify(NIM_ADD, 'YT Grabber'):
             print('warning: the tray icon could not be added')
         threading.Thread(target=self._watch, daemon=True, name='tray-watch').start()
+        srv = sys.modules.get('server')
+        if srv is not None and hasattr(srv, 'FINISH_HOOKS'):
+            srv.FINISH_HOOKS.append(self.on_finished)   # the web page then leaves the notifications to the tray icon
         msg = wt.MSG()
         while user32.GetMessageW(ctypes.byref(msg), None, 0, 0) > 0:
             user32.TranslateMessage(ctypes.byref(msg))
