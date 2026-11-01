@@ -279,7 +279,7 @@ class Tray:
         nid.szInfoTitle = title[:63]
         nid.szInfo = text[:255]
         nid.dwInfoFlags = NIIF_INFO
-        shell32.Shell_NotifyIconW(NIM_MODIFY, ctypes.byref(nid))
+        return bool(shell32.Shell_NotifyIconW(NIM_MODIFY, ctypes.byref(nid)))
 
     def on_finished(self, info):
         """Called by the server when a download has finished: tells the user even if the window is closed."""
