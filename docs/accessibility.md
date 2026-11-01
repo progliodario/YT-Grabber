@@ -5,10 +5,10 @@ large text, in high contrast, with a touch screen, with reduced motion, and in t
 been done, how it was checked, what has **not** been checked, and what is known to be imperfect.
 
 **Target:** the [Web Content Accessibility Guidelines (WCAG) 2.2](https://www.w3.org/TR/WCAG22/), level **AA**. This is a
-self-assessment: the interface has not been audited by an independent body, and the maintainer has not tried it with real screen
-readers (see [What has not been tested](#what-has-not-been-tested)).
+self-assessment: the interface has not been audited by an independent body, and it has been tried with one real screen reader (NVDA)
+only (see [What has not been tested](#what-has-not-been-tested)).
 
-*Last reviewed: November 2026, for version 1.3.0 and the changes that follow it.*
+*Last reviewed: November 2026, for version 1.5.0.*
 
 ## Scope
 
@@ -97,18 +97,23 @@ them, and can be closed. The same elements are always in the same places.
 - **Unit tests** (`tests/test_accessibility.py`): the markup (names, labels, landmarks, headings, unique identifiers, references), the
   colour contrast of every colour pair of the design, and the CSS that supports the preferences of the user (reduced motion, forced
   colours, increased contrast, touch, `rem`).
-- **Manually**, by the maintainer: keyboard walk-through, 200% text, text spacing, forced colours, and reflow at 320 pixels.
+- **Manually**, by the maintainer: keyboard walk-through, 200% text, text spacing, forced colours, reflow at 320 pixels, and use with
+  the NVDA screen reader.
 
 Automated tools find only about a third of the possible problems, so this is **not** a guarantee of conformance.
 
 ## What has not been tested
 
-YT Grabber has **not** been tested with a real screen reader (NVDA, JAWS, Windows Narrator, VoiceOver, TalkBack or Orca), nor with
-voice control or switch devices. An attempt was made with NVDA (portable version, official download, signature verified), but it
-could not work in the automated session used for development, because that session provides no foreground window to the screen
-reader. The **accessibility tree** of the page in Chromium was checked instead; this is the data that every screen reader on Windows
-reads. It covers the names, roles and states of the controls, the headings and the landmarks, and no control without a name was
-found. The check revealed one real problem (a tick mark was read as part of the name of the chosen option), which has been fixed.
+**Tested with a screen reader:** the maintainer tried YT Grabber with **NVDA** on Windows in November 2026 and reported that
+everything worked correctly, with no problem found. The version of NVDA and the browser were not recorded, and the test was not a
+formal protocol, so it does not replace tests by regular screen reader users.
+
+**Not tested:** JAWS, Windows Narrator, VoiceOver, TalkBack and Orca, voice control, and switch devices.
+
+Before that test, the **accessibility tree** of the page in Chromium was checked automatically (it is the data that every screen
+reader on Windows reads): the names, roles and states of the controls, the headings and the landmarks. No control without a name was
+found. That check revealed one real problem (a tick mark was read as part of the name of the chosen option), which has been fixed.
+
 Reports from screen reader users are the most valuable contribution that can be made.
 
 ## Known limitations

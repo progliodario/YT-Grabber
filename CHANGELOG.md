@@ -2,6 +2,10 @@
 
 All notable changes are listed here, newest first. Version numbers follow `MAJOR.MINOR.PATCH`.
 
+## Unreleased
+
+- Documentation: the accessibility statement now records the test with the NVDA screen reader (no problems found).
+
 ## 1.5.0
 
 - **Update now (Windows application):** the new-version notice offers a button that downloads the installer from the releases,
