@@ -2,7 +2,7 @@
 
 All notable changes are listed here, newest first. Version numbers follow `MAJOR.MINOR.PATCH`.
 
-## Unreleased
+## 1.5.0
 
 - **Update now (Windows application):** the new-version notice offers a button that downloads the installer from the releases,
   verifies its SHA-256 fingerprint, closes the application, installs the new version and reopens it. The button is not shown for

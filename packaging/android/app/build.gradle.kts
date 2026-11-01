@@ -41,8 +41,8 @@ android {
         applicationId = "it.ytgrabber.app"
         minSdk = 26
         targetSdk = 34          // 34: "dataSync" foreground services do not have the 6-hour limit introduced with 35
-        versionCode = 10400   // 1.4.0: must grow with every release, or Android refuses to update the installed app
-        versionName = "1.4.0"
+        versionCode = 10500   // 1.5.0: must grow with every release, or Android refuses to update the installed app
+        versionName = "1.5.0"
     }
 
     // The signing key and its data live in packaging/android/keystore/ (excluded from git). If it is missing, the APK is signed with the
