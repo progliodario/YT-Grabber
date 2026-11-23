@@ -70,12 +70,13 @@ UPDATE_API = os.environ.get('YTG_UPDATE_URL') or 'https://api.github.com/repos/p
 UPDATE = {'checked': 0, 'latest': '', 'url': '', 'error': '', 'setup_url': '', 'setup_sha': '', 'setup_size': 0}
 UPDATE_INSTALL = {'state': 'idle', 'pct': 0, 'error': ''}   # one-click update: idle | downloading | installing | error
 SETUP_PREFIX = 'https://github.com/progliodario/YT-Grabber/releases/download/'
+SETUP_NAME = re.compile(r'YT-Grabber-Setup-\d+(\.\d+){1,3}\.exe')
 
 
 def setup_url_ok(url):
     if os.environ.get('YTG_UPDATE_URL'):   # tests: a small local server plays the part of GitHub
         return url.startswith('http://127.0.0.1:')
-    return url.startswith(SETUP_PREFIX) and url.endswith('.exe')
+    return url.startswith(SETUP_PREFIX) and bool(SETUP_NAME.fullmatch(url.rsplit('/', 1)[-1]))
 
 
 def install_supported():
@@ -119,6 +120,8 @@ def update_state():
 def launch_installer(path):
     """Starts the downloaded setup so that it installs silently and starts the new version. It waits a few seconds: this program
     closes first (a running program cannot be replaced), and Setup is not a child of it, so it survives."""
+    if re.search(r'["%^&|<>!]', path):   # the command goes through cmd.exe: a path with these characters could run something else
+        raise ValueError('The temporary folder has a name that cannot be used safely: install the new version by hand from the releases page.')
     exe = os.path.abspath(sys.executable).lower()
     program_files = (os.environ.get('ProgramFiles') or '').lower()
     mode = '/ALLUSERS' if program_files and exe.startswith(program_files) else '/CURRENTUSER'   # keep the kind of installation it already has

@@ -239,9 +239,16 @@ def base_ydl_params():
     return p
 
 
-def atomic_write(path, text):
+def atomic_write(path, text, private=False):
+    """Writes the file through a temporary copy. private=True: readable by the owner only (cookies); no effect on Windows."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp = path + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f:
+    if private and os.name != 'nt':
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        os.chmod(tmp, 0o600)
+        f = os.fdopen(fd, 'w', encoding='utf-8')
+    else:
+        f = open(tmp, 'w', encoding='utf-8')
+    with f:
         f.write(text)
     os.replace(tmp, path)

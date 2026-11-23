@@ -115,6 +115,8 @@ def get_ydl(opts, wid):
         cp = os.path.join(C.DATA, 'cookies_w%s.txt' % wid)
         try:
             shutil.copyfile(opts['cookies_file'], cp)
+            if os.name != 'nt':
+                os.chmod(cp, 0o600)
             p['cookiefile'] = cp
         except Exception:
             pass

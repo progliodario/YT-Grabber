@@ -993,7 +993,7 @@
     return api('POST', '/api/jobs/' + id + '/action', body).then(function () {
       if (okMsg) { toast(okMsg); }
       pollState();
-      if (S.detail && S.detail.id === id) { S.detail.seq = 0; fetchDetail(); }
+      if (S.detail && S.detail.id === id) { fetchDetail(); }   // only the items that changed come back (their version went up)
     }).catch(function (e) { toast(e.message, true); });
   }
 

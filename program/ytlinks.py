@@ -72,12 +72,18 @@ def hide_path(p):
             pass
 
 
+# Windows cannot create a file or folder with one of these names (with any extension): the data would be lost
+RESERVED_NAMES = {'CON', 'PRN', 'AUX', 'NUL'} | {'COM%d' % i for i in range(1, 10)} | {'LPT%d' % i for i in range(1, 10)}
+
+
 def safe_name(s, maxlen=150):
     s = sanitize_filename(s or '', restricted=False)
     s = re.sub(r'[\x00-\x1f]', '', s)
     s = re.sub(r'\s+', ' ', s).strip(' .')
     if len(s) > maxlen:
         s = s[:maxlen].rstrip(' .')
+    if s.split('.')[0].strip().upper() in RESERVED_NAMES:
+        s = '_' + s
     return s or 'untitled'
 
 

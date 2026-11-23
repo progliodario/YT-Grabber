@@ -1,7 +1,10 @@
-"""Settings: the defaults and the validation of what the page sends."""
+"""Settings: the defaults and the validation of what the page sends; and how private files are written."""
+import os
+import stat
+import tempfile
 import unittest
 
-from support import server  # noqa: E402
+from support import server, ytcommon  # noqa: E402
 
 
 class SettingsTests(unittest.TestCase):
@@ -23,6 +26,21 @@ class SettingsTests(unittest.TestCase):
         self.assertNotIn('/', server.safe_name('a/b'))
         self.assertEqual(server.safe_name(''), 'untitled')
         self.assertLessEqual(len(server.safe_name('x' * 500)), 150)
+
+    def test_private_files_are_for_the_owner_only(self):
+        if os.name == 'nt':
+            self.skipTest('Windows has no such mode bits')
+        path = os.path.join(tempfile.mkdtemp(prefix='ytg_priv_'), 'cookies.txt')
+        ytcommon.atomic_write(path, 'secret', private=True)
+        self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o600)
+        ytcommon.atomic_write(path, 'secret again', private=True)   # a second write keeps the mode
+        self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o600)
+
+    def test_a_normal_write_still_works(self):
+        path = os.path.join(tempfile.mkdtemp(prefix='ytg_plain_'), 'sub', 'a.json')
+        ytcommon.atomic_write(path, '{}')
+        with open(path, encoding='utf-8') as f:
+            self.assertEqual(f.read(), '{}')
 
     def test_numbering(self):
         job = server.Job('t1', 'u', dict(server.DEFAULT_SETTINGS))

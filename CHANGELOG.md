@@ -2,6 +2,29 @@
 
 All notable changes are listed here, newest first. Version numbers follow `MAJOR.MINOR.PATCH`.
 
+## 1.6.1
+
+A review of the whole program found these problems; none was reported by a user.
+
+- **Fix: two different videos with the same title overwrote each other** (in the *Singles* folder, where the files have no
+  number): the first file was lost and both showed as completed. The second one now gets ` (2)`.
+- **Fix: a video called exactly `CON`, `NUL`, `AUX`, `PRN`, `COM1`…`COM9` or `LPT1`…`LPT9`** produced a file that Windows cannot
+  create. These names now get a `_` in front.
+- **Fix: a request with a wrong `Content-Length`** gave an internal error; it is now refused with a clear one.
+- **Fix: with a long list, every tick in *choosing the videos* downloaded the whole list again**; now only what changed.
+- **Security:**
+  - Other devices on the network (`--host 0.0.0.0`) can no longer choose another destination folder or upload cookies.
+  - The page is served with a Content-Security-Policy, `X-Frame-Options: DENY` and `Referrer-Policy: no-referrer`; for that, the
+    two small scripts of `index.html` moved to `boot.js` and `langload.js`. The files that were downloaded are served with a
+    sandbox policy.
+  - The server no longer tells its name and version, and closes connections that stay idle for two minutes.
+  - The cookies file and its copies, and the data folder, are readable only by the owner (Linux and macOS).
+  - The one-click update only accepts an installer with the expected name and refuses a temporary folder whose name contains
+    characters that `cmd.exe` would interpret.
+- **Windows:** the file properties of `YT-Grabber.exe` (description, language) were in Italian; they are now in English.
+- The settings picture and the README sentence about what the program connects to were brought up to date.
+- Tests: 20 new ones, among them the first tests of the HTTP server (headers, refusals, what only the local computer may do).
+
 ## 1.6.0
 
 - **Choose the videos of a playlist:** *Let me choose the videos first* reads the list and waits; untick what is not wanted (all or

@@ -15,6 +15,7 @@ the network and they write only in a temporary folder.
 | `test_settings.py` | the defaults and the validation of what the page sends |
 | `test_subscriptions.py` | subscriptions, including "only new videos" |
 | `test_jobs.py` | retrying items, choosing the videos of a playlist, the notice when a download has finished |
+| `test_http.py` | the HTTP server: what it refuses, the security headers, and what only the computer running it may do |
 | `test_updates.py` | the check for new versions, the one-click install on Windows, the automatic update of yt-dlp |
 | `test_interface.py` | the language files (every language has every key and the same placeholders; no key is unused) and the texts the page uses |
 | `test_packaging.py` | the texts of the Windows app, the version numbers and `tools/bump_version.py` |

@@ -26,8 +26,8 @@ and YouTube Music. It runs on the user's own computer or phone and is operated t
 - **Accessible**: usable entirely with the keyboard and with screen readers, with high-contrast and forced-colours modes, zoom up
   to 400%, adjustable text size, reduced motion and touch screens. The project aims at WCAG 2.2 level AA, and conformance is checked
   automatically at every change (see the [accessibility statement](docs/accessibility.md)).
-- Free and open source ([MIT licence](LICENSE)). No data is sent anywhere except to YouTube and GitHub
-  (see [SECURITY.md](SECURITY.md)).
+- Free and open source ([MIT licence](LICENSE)). Downloads go to YouTube and the tools are fetched from GitHub and the sites of
+  their makers on the first start; nothing about the user or the downloads is sent anywhere else (see [SECURITY.md](SECURITY.md)).
 
 | The list of a playlist, dark theme | On a phone |
 |---|---|

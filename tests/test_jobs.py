@@ -1,4 +1,7 @@
-"""Jobs: retrying, choosing the videos, and the notice when a download has finished."""
+"""Jobs: retrying, the names of the files, choosing the videos, and the notice when a download has finished."""
+import os
+import shutil
+import tempfile
 import unittest
 
 from support import server  # noqa: E402
@@ -37,6 +40,54 @@ class DownloadRetryTests(unittest.TestCase):
         with self.assertRaises(OSError):
             self.tool.download('http://x/y', 'z', tries=2)
         self.assertEqual(self.calls, 2)
+
+
+class SameTitleTests(unittest.TestCase):
+    """Two different videos with the same title (in a folder without numbers) must both be kept."""
+
+    def finish(self, job, idx, vid, content):
+        it = server.Item(idx, vid, 'https://www.youtube.com/watch?v=' + vid, 'Intro')
+        job.add_item(it)
+        tmp = os.path.join(job.dir, '.tmp', str(idx))
+        os.makedirs(tmp)
+        fp = os.path.join(tmp, vid + '.m4a')
+        with open(fp, 'wb') as f:
+            f.write(content)
+        server.finalize_item(job, it, {'fp': fp, 'info': {'id': vid, 'title': 'Intro'}}, tmp, server.MANIFESTS.get(job.dir), it.key())
+        return it
+
+    def make_job(self):
+        job = server.Job('same', '2 videos', dict(server.DEFAULT_SETTINGS), ['u1', 'u2'])
+        job.kind, job.pad, job.status = 'single', 0, 'running'
+        job.dir = tempfile.mkdtemp(prefix='ytg_same_')
+        self.addCleanup(shutil.rmtree, job.dir, True)
+        return job
+
+    def read(self, job, name):
+        with open(os.path.join(job.dir, name), 'rb') as f:
+            return f.read()
+
+    def test_the_second_video_does_not_overwrite_the_first(self):
+        job = self.make_job()
+        a = self.finish(job, 1, 'AAAAAAAAAAA', b'first video')
+        b = self.finish(job, 2, 'BBBBBBBBBBB', b'second video')
+        self.assertNotEqual(a.file, b.file)
+        self.assertEqual(self.read(job, a.file), b'first video')
+        self.assertEqual(self.read(job, b.file), b'second video')
+
+    def test_a_video_downloaded_again_replaces_its_own_file(self):
+        job = self.make_job()
+        a = self.finish(job, 1, 'AAAAAAAAAAA', b'old')
+        name = a.file
+        tmp = os.path.join(job.dir, '.tmp', '1')
+        os.makedirs(tmp)
+        fp = os.path.join(tmp, 'AAAAAAAAAAA.m4a')
+        with open(fp, 'wb') as f:
+            f.write(b'new')
+        server.finalize_item(job, a, {'fp': fp, 'info': {'id': 'AAAAAAAAAAA', 'title': 'Intro'}}, tmp, server.MANIFESTS.get(job.dir), a.key())
+        self.assertEqual(a.file, name)
+        self.assertEqual(self.read(job, name), b'new')
+        self.assertEqual([f for f in os.listdir(job.dir) if not f.startswith('.')], [name])
 
 
 class ChooseVideosTests(unittest.TestCase):

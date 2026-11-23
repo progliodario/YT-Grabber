@@ -148,6 +148,26 @@ class UpdateInstallTests(unittest.TestCase):
         self.assertIn('checksum', updates.UPDATE_INSTALL['error'])
         self.assertEqual((self.launched, self.closed), ([], []))
 
+    def test_only_the_expected_name_of_the_installer_is_accepted(self):
+        os.environ.pop('YTG_UPDATE_URL', None)   # the real rule (setUp had set it for the local test server)
+        base = 'https://github.com/progliodario/YT-Grabber/releases/download/v1.7.0/'
+        self.assertTrue(updates.setup_url_ok(base + 'YT-Grabber-Setup-1.7.0.exe'))
+        for bad in ('evil.exe', 'YT-Grabber-Setup-1.7.0.exe&calc', 'YT-Grabber-Setup-1.7.0.exe.exe', 'YT-Grabber-Setup-x.exe',
+                    'YT-Grabber-Setup-1.7.0%22.exe'):
+            self.assertFalse(updates.setup_url_ok(base + bad), bad)
+        self.assertFalse(updates.setup_url_ok('https://evil.example/YT-Grabber-Setup-1.7.0.exe'))
+
+    def test_a_path_with_shell_characters_is_never_started(self):
+        launched = []
+        real_popen = updates.subprocess.Popen
+        updates.subprocess.Popen = lambda *a, **k: launched.append(a)
+        self.addCleanup(setattr, updates.subprocess, 'Popen', real_popen)
+        real_launch = self.saved[2]   # the real function (setUp replaced updates.launch_installer)
+        for bad in ('C:\\Users\\a&calc\\setup.exe', 'C:\\Users\\%PATH%\\setup.exe', 'C:\\a"b\\setup.exe', 'C:\\a^b\\setup.exe'):
+            with self.assertRaises(ValueError):
+                real_launch(bad)
+        self.assertEqual(launched, [])
+
     def test_a_download_from_another_place_is_ignored(self):
         self.served_url = 'https://evil.example/YT-Grabber-Setup-99.0.0.exe'
         updates.check_update()

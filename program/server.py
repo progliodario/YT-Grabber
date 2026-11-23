@@ -54,7 +54,7 @@ except Exception:
 import yt_dlp  # noqa: E402
 
 APP_NAME = 'yt-grabber'
-APP_VERSION = '1.6.0'
+APP_VERSION = '1.6.1'
 CONCURRENCY = 10  # simultaneous downloads: fixed by requirement
 
 LOCK = threading.RLock()
@@ -592,13 +592,25 @@ def run_item(proc, job, it):
             raise ItemFailure(ev.get('kind') or classify_text(msg, ev.get('errno')), msg)
 
 
+def free_name(job, it, title, ext, manifest, key):
+    """The file name for this item. When another video already has that name (the same title, in a folder without numbers), a
+    number is added: the file of the first video must never be overwritten. A file of this very item (downloaded again) may be."""
+    name = build_filename(job, it, title, ext)
+    own = (manifest.get(key) or {}).get('file')
+    n = 1
+    while name != own and n < 999 and os.path.exists(os.path.join(job.dir, name)):
+        n += 1
+        name = build_filename(job, it, '%s (%d)' % (title, n), ext)
+    return name
+
+
 def finalize_item(job, it, ev, tmpd, manifest, key):
     o = job.opts
     fp = ev['fp']
     info = ev.get('info') or {}
     title = human_title(info, o['mode'], it.title)
     ext = os.path.splitext(fp)[1]
-    name = build_filename(job, it, title, ext)
+    name = free_name(job, it, title, ext, manifest, key)
     dst = os.path.join(job.dir, name)
     for n in range(1, 30):
         try:
@@ -1286,9 +1298,19 @@ def inside(base, path):
         return False
 
 
+# What the browser may load: only this server (and the thumbnails of YouTube). No inline script: the page has none.
+CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com; "
+       "connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
+SECURITY_HEADERS = {'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer',
+                    'Cross-Origin-Resource-Policy': 'same-origin'}
+
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
-    server_version = 'YTGrabber/' + APP_VERSION
+    timeout = 120   # a connection that sends nothing must not keep a thread for ever
+
+    def version_string(self):
+        return 'YTGrabber'   # no version numbers: they only help someone who looks for a flaw
 
     def log_message(self, fmt, *args):
         pass
@@ -1307,7 +1329,8 @@ class Handler(BaseHTTPRequestHandler):
     def send_bytes(self, code, body, ctype, extra=None, gz=True):
         if isinstance(body, str):
             body = body.encode('utf-8')
-        headers = {'Content-Type': ctype, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'}
+        headers = {'Content-Type': ctype, 'Cache-Control': 'no-store', 'Content-Security-Policy': CSP}
+        headers.update(SECURITY_HEADERS)
         if extra:
             headers.update(extra)
         if gz and len(body) > 1024 and 'gzip' in (self.headers.get('Accept-Encoding') or ''):
@@ -1327,16 +1350,25 @@ class Handler(BaseHTTPRequestHandler):
     def err(self, code, msg):
         self.send_json({'error': msg}, code)
 
+    def body_length(self):
+        """The size of the body, or None if the header is not a sensible number."""
+        try:
+            n = int(self.headers.get('Content-Length') or 0)
+        except ValueError:
+            return None
+        return n if 0 <= n <= 8 * 1024 * 1024 else None
+
     def read_json(self):
-        n = int(self.headers.get('Content-Length') or 0)
-        if n > 8 * 1024 * 1024:
-            raise ValueError('request too large')
+        n = self.body_length() or 0
         raw = self.rfile.read(n) if n else b''
         return json.loads(raw.decode('utf-8')) if raw else {}
 
     def check_post(self):
         if self.headers.get('X-YTG') != '1':
             self.err(403, 'Invalid request')
+            return False
+        if self.body_length() is None:
+            self.err(400, 'Invalid or too large request body')
             return False
         org = self.headers.get('Origin')
         if org:
@@ -1455,11 +1487,13 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/settings':
                 return self.save_settings_req(body)
             if path == '/api/cookies':
+                if not self.is_local_client():   # the cookies are the user's sign-in to YouTube: not for other devices on the network
+                    return self.err(403, 'Only from the computer running the server')
                 txt = body.get('text', '')
                 if txt.strip():
                     if '# Netscape' not in txt[:200] and '\t' not in txt:
                         return self.err(400, 'Invalid format: a cookies.txt file in Netscape format is required')
-                    atomic_write(COOKIES_FILE, txt.replace('\r\n', '\n'))
+                    atomic_write(COOKIES_FILE, txt.replace('\r\n', '\n'), private=True)
                 else:
                     if os.path.exists(COOKIES_FILE):
                         os.remove(COOKIES_FILE)
@@ -1567,6 +1601,9 @@ class Handler(BaseHTTPRequestHandler):
         if code == 206:
             self.send_header('Content-Range', 'bytes %d-%d/%d' % (start, end, size))
         self.send_header('Content-Disposition', "inline; filename*=UTF-8''" + urllib.parse.quote(it.file))
+        self.send_header('Content-Security-Policy', 'sandbox')   # a downloaded file is data, never a page of this server
+        for k, v in SECURITY_HEADERS.items():
+            self.send_header(k, v)
         self.end_headers()
         if self.command == 'HEAD':
             return
@@ -1601,6 +1638,8 @@ class Handler(BaseHTTPRequestHandler):
         dd = body.get('download_dir')
         if isinstance(dd, str) and dd.strip():
             dd = os.path.abspath(os.path.expanduser(dd.strip()))
+            if dd != SETTINGS['download_dir'] and not self.is_local_client():   # choosing a folder of the computer: only from the computer
+                return self.err(403, 'Only from the computer running the server')
             try:
                 os.makedirs(dd, exist_ok=True)
                 probe = os.path.join(dd, '.ytgrab_probe')
@@ -1805,6 +1844,13 @@ def main():
     a = ap.parse_args()
 
     os.makedirs(DATA, exist_ok=True)
+    if os.name != 'nt' and not ANDROID_APP:   # the data folder holds the YouTube cookies: only for this user (older versions left them readable)
+        for p, mode in ((DATA, 0o700), (COOKIES_FILE, 0o600)):
+            try:
+                if os.path.exists(p):
+                    os.chmod(p, mode)
+            except OSError:
+                pass
     load_settings()
     load_subs()
     if a.dir:
