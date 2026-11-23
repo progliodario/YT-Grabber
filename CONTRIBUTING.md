@@ -90,7 +90,8 @@ The audit requires `pip install websockets` and Chrome, Chromium or Edge. It als
   **English** that explain *why*. The page uses plain JavaScript (in the style of the existing code, without a framework or a build
   step) and CSS.
 - Run the tests before submitting a change: `python -m unittest discover -s tests`. Add a test for each fix or new feature, in the file of its subject (see [tests/README.md](tests/README.md)).
-  When possible, also run `python -m pyflakes program packaging tests`.
+  Better still, run `python tools/check.py` (tests, pyflakes, links of the documents, JavaScript syntax; `--audit` adds the accessibility audit),
+  which needs `python -m pip install -r requirements-dev.txt`.
 - When the texts of the page are changed, update them in `en.js` and in the other languages (a machine translation is acceptable as
   a first version; the pull request should say so).
 - A pull request should address one subject only and should describe what changed and how it was tested. The version number must not

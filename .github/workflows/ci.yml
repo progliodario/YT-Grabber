@@ -34,8 +34,11 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Check the JavaScript syntax
         run: |
-          for f in program/web/app.js program/web/lang/*.js; do node --check "$f" || exit 1; done
+          for f in program/web/*.js program/web/lang/*.js; do node --check "$f" || exit 1; done
           echo "JavaScript syntax OK"
+      - name: Check the links of the documents
+        if: runner.os == 'Linux'
+        run: python tools/check.py docs
       - name: Start the server and call it
         env:
           YTG_DATA_ROOT: ${{ runner.temp }}/ytg-data

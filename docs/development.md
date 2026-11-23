@@ -149,15 +149,23 @@ builds and tests; nothing is published.
 
 1. Set the version everywhere: `python tools/bump_version.py 1.6.0`. The script changes `program/server.py`, the Windows version file,
    the Flatpak metadata and the Android `versionName` and `versionCode`, and reports if `CHANGELOG.md` has no section for the version.
-2. Write the section of `CHANGELOG.md` and run the tests. Commit and push, then wait for the **CI** to pass.
+2. Write the section of `CHANGELOG.md` and run `python tools/check.py --audit` (tests, pyflakes, links of the documents, JavaScript syntax
+   and the accessibility audit). Commit and push, then wait for the **CI** to pass.
 3. Push the tag: `git tag -a v1.6.0 -m "YT Grabber 1.6.0" && git push origin v1.6.0`. `release.yml` builds and tests everything and
    creates the GitHub release; `finalize.yml` adds the checksums, the signature and the repositories.
 4. Build the APKs on the maintainer's computer (`packaging\android\build.bat`; the signing key exists only there), upload them to the
    release (`gh release upload v1.6.0 dist\android\*.apk`), and run **Finalize** again manually
    (`gh workflow run finalize.yml -f tag=v1.6.0`) so that `SHA256SUMS` includes them.
-5. Update the [distribution channels](#distribution-channels) with the new file hashes.
-6. Verify the release from outside: the signature (`gpg --verify SHA256SUMS.asc SHA256SUMS`), an attestation
-   (`gh attestation verify`), and the apt and dnf repositories.
+5. Update the [distribution channels](#distribution-channels): `python tools/update_channels.py 1.6.0 --apply` changes the Homebrew cask and
+   the Scoop manifest with the checksums of the release (without `--apply` it only shows what it would do). winget is not updated
+   for every release: see the [roadmap](ROADMAP.md#distribution).
+6. Verify the release from outside: `python tools/verify_release.py 1.6.0` checks that it is published with its 12 files, the GPG
+   signature of `SHA256SUMS`, the checksums of the installer and of an APK, the build attestation of the installer and the version offered
+   by the apt repository.
+7. A rehearsal that publishes nothing is `gh workflow run release.yml --ref main`: it builds and tests every package. It is worth doing
+   after any change to the packaging.
+
+[`CLAUDE.md`](../CLAUDE.md) in the root keeps the same procedure in short, with the mistakes that were made before.
 
 **Secrets and keys.** The repository secret `GPG_PRIVATE_KEY` is the release signing key. Its public half is
 [`docs/release-key.asc`](release-key.asc), and the fingerprint is given in [SECURITY.md](../SECURITY.md). A backup of the private key

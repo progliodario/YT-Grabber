@@ -83,13 +83,13 @@ Every release includes `SHA256SUMS` and a GPG signature (`SHA256SUMS.asc`). The 
 
 ```
 YT-Grabber/
-├─ README.md  CHANGELOG.md  SECURITY.md  CONTRIBUTING.md  LICENSE
+├─ README.md  CHANGELOG.md  SECURITY.md  CONTRIBUTING.md  CLAUDE.md  LICENSE
 ├─ Start.bat  Start.sh      run from the sources (requires Python 3)
 ├─ program/                 the program: server.py, the yt*.py modules, setup_tools.py, web/ (the interface); see program/README.md
 ├─ packaging/               everything needed to build each package: windows/ android/ linux/ macos/ termux/
-├─ tools/                   helper scripts for the maintainer (bump_version.py)
+├─ tools/                   scripts for the maintainer: check.py, bump_version.py, update_channels.py, verify_release.py
 ├─ tests/                   automated tests, one file per subject (tests/README.md)
-├─ docs/                    guides, the release signing key and the screenshots
+├─ docs/                    guides, the roadmap, the release signing key and the screenshots
 ├─ .github/                 automated tests and release builds (GitHub Actions), issue templates
 ├─ dist/                    (not in git) packages built locally
 └─ generated/               (not in git) data created when running from the sources: tools, settings, logs

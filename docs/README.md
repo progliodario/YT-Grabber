@@ -6,10 +6,12 @@
 | [usage.md](usage.md) | everyone | downloading, choosing the videos, numbered files, errors, resuming, cookies, subscriptions (including "only new videos"), notifications, languages, settings, command-line options, where data is stored, troubleshooting |
 | [accessibility.md](accessibility.md) | everyone, and anyone who changes the page | keyboard shortcuts, screen readers, contrast, zoom, what is checked and how, what has not been tested, known limitations |
 | [development.md](development.md) | developers and the maintainer | architecture, layout, tests, building each package, the automated builds, making a release, distribution channels |
+| [ROADMAP.md](ROADMAP.md) | the maintainer | what could be improved or added, in order, with what is done and what is not verified yet |
 
-Also in the repository: [README](../README.md) · [CONTRIBUTING](../CONTRIBUTING.md) · [SECURITY](../SECURITY.md) ·
+Also in the repository: [README](../README.md) · [CONTRIBUTING](../CONTRIBUTING.md) · [SECURITY](../SECURITY.md) · [CLAUDE.md](../CLAUDE.md) (notes for whoever continues the work) ·
 [CHANGELOG](../CHANGELOG.md) · [program/README.md](../program/README.md) (the modules of the program) ·
-[tests/README.md](../tests/README.md) (the tests) · [packaging/README.md](../packaging/README.md) (building each package).
+[tests/README.md](../tests/README.md) (the tests) · [tools/README.md](../tools/README.md) (the maintainer's scripts) ·
+[packaging/README.md](../packaging/README.md) (building each package).
 
 Other files in this folder:
 

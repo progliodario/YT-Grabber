@@ -2,6 +2,12 @@
 
 All notable changes are listed here, newest first. Version numbers follow `MAJOR.MINOR.PATCH`.
 
+## Unreleased
+
+- Maintenance, nothing changes for users: `CLAUDE.md` (notes for whoever continues the work), `docs/ROADMAP.md` (what to do next),
+  `tools/check.py` (all the checks in one command), `tools/verify_release.py` and `tools/update_channels.py` (the end of a release),
+  `requirements-dev.txt`, `.editorconfig`, a documents-links step in CI, and the description and topics of the GitHub repository.
+
 ## 1.6.1
 
 A review of the whole program found these problems; none was reported by a user.

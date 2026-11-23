@@ -1,0 +1,8 @@
+# What is needed to work on YT Grabber (the program itself needs only yt-dlp, which setup_tools.py installs).
+# Install with:  python -m pip install -r requirements-dev.txt
+yt-dlp[default]    # the tests and the server import it (or run `python program/setup_tools.py` once)
+pyflakes           # tools/check.py: unused names and errors
+websockets         # tests/a11y/audit.py drives the browser through the DevTools protocol (and needs Chrome, Chromium or Edge)
+coverage           # optional: python -m coverage run -m unittest discover -s tests
+bandit             # optional: python -m bandit -r program -ll (security scan)
+radon              # optional: python -m radon cc program -s -n C (complexity)
