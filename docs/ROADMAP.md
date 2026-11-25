@@ -13,7 +13,7 @@ videos no longer refetches the whole list; other devices cannot choose the folde
 Content-Security-Policy; no server version; idle timeout; private cookie files; checks of the installer name and path; the file
 properties of the exe in English; the first HTTP tests.
 
-## Done after 1.6.1 (waiting for the release of 1.7.0)
+## Done in 1.7.0 (2026-11-25)
 
 An access token for the page (on by itself with `--host 0.0.0.0`, also in the Android app); the SHA-256 of ffmpeg, deno and yt-dlp checked
 against what their makers publish, and of the zip that the Termux installer receives; the download pipeline, the HTTP API and the
@@ -22,7 +22,7 @@ naming race tested without the network (the fake worker in `tests/fake_worker.py
 bandit and CodeQL in CI, actions pinned by commit, Dependabot alerts and security updates; speed limit, allowed hours, proxy, pause all, invert
 selection, range selection, and saving and restoring the subscriptions and links.
 
-## Next: 1.7 (what is left of it)
+## Next: 1.8 (what is left)
 
 | What | Why | Effort |
 |---|---|---|

@@ -82,6 +82,10 @@ The full procedure with the reasons is in [docs/development.md](docs/development
   opened through `explorer.exe`, read what it says from the log, then delete the log (it holds everything that was read aloud).
 - The Android emulator (`ytg_test`, Android 14) needs a tap on "Wait" and "Not now" at the first start of the app on a slow machine.
 - Leftover servers and `ytworker` processes after a test: stop them (`Get-CimInstance Win32_Process` by command line).
+- The Linux packages job of `release.yml` can fail with `HTTP Error 403: rate limit exceeded` (the unauthenticated GitHub API call of
+  `build_appimage.py`): `gh run rerun <id> --failed` is enough. The macOS job may stay "queued" for a long time (no runner): wait.
+- Check a new download-verification rule against the real files before releasing (Deno publishes its checksum in the PowerShell
+  `Get-FileHash` format, not the `sha256sum` one): see `find_checksum` in `ytcommon.py`.
 - Do not open a new winget pull request per release (it resets the review queue); see the roadmap.
 - `git status` on a clean tree must be empty: keep scratch files out of the repository (`tests/.coverage`, `*.bak`).
 
