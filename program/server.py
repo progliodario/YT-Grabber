@@ -55,7 +55,7 @@ except Exception:
 import yt_dlp  # noqa: E402
 
 APP_NAME = 'yt-grabber'
-APP_VERSION = '1.6.1'
+APP_VERSION = '1.7.0'
 CONCURRENCY = 10  # simultaneous downloads: fixed by requirement
 
 LOCK = threading.RLock()

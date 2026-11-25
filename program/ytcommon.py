@@ -312,7 +312,15 @@ def find_checksum(text, name):
         if len(parts) == 2 and re.fullmatch(r'[0-9a-fA-F]{64}', parts[0]) and parts[1].lstrip('*').strip() == name:
             return parts[0].lower()
     m = re.fullmatch(r'\s*([0-9a-fA-F]{64})\s*', text)
-    return m.group(1).lower() if m else None
+    if m:
+        return m.group(1).lower()
+    # the .sha256sum files of Deno are the output of PowerShell's Get-FileHash: "Hash : <hex>" and "Path : C:\...\<name>"
+    m = re.search(r'^\s*Hash\s*:\s*([0-9a-fA-F]{64})\s*$', text, re.M)
+    if m:
+        p = re.search(r'^\s*Path\s*:\s*(.+?)\s*$', text, re.M)
+        if not p or re.split(r'[\\/]', p.group(1))[-1] == name:
+            return m.group(1).lower()
+    return None
 
 
 def verify_checksum(path, expected):

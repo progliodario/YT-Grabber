@@ -24,6 +24,11 @@ class ParseTests(unittest.TestCase):
     def test_a_file_with_only_the_hash(self):
         self.assertEqual(ytcommon.find_checksum(GOOD.upper() + '\n', 'anything.zip'), GOOD)
 
+    def test_the_powershell_format_of_deno(self):
+        text = 'Algorithm : SHA256\r\nHash      : %s\r\nPath      : C:\\agent\\target\\release\\deno-x86_64-pc-windows-msvc.zip\r\n' % GOOD.upper()
+        self.assertEqual(ytcommon.find_checksum(text, 'deno-x86_64-pc-windows-msvc.zip'), GOOD)
+        self.assertIsNone(ytcommon.find_checksum(text, 'deno-aarch64-pc-windows-msvc.zip'))   # the hash of another file is not used
+
     def test_nonsense_gives_nothing(self):
         for text in ('', 'not a hash  yt-dlp', '1234  yt-dlp', '<html>404</html>'):
             self.assertIsNone(ytcommon.find_checksum(text, 'yt-dlp'), text)
