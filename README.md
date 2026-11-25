@@ -15,14 +15,19 @@ and YouTube Music. It runs on the user's own computer or phone and is operated t
 - Files are **numbered in playlist order** (`001 - Title.mp3`, `002 - ...`).
 - Each video that fails is **listed with its number and the exact reason**, and can be retried with one click.
 - Downloads can be **stopped and resumed** at any time: files that are already complete are recognised and skipped.
-- **Choose the videos**: any video of a playlist can be left out, before the download starts or while it runs.
+- **Choose the videos**: any video of a playlist can be left out, before the download starts or while it runs; select a range
+  (`1-20, 25`) or invert the choice.
+- **Control**: speed limit, allowed hours (for example only at night), proxy, pause everything, move a list to the top, and do not
+  download a video twice when it is already in another folder.
 - **Subscriptions**: a channel or playlist can be followed, and its new videos are downloaded automatically. Optionally, only the
   **new videos** are downloaded, leaving out what was published before the subscription.
 - **Notifications** when a download finishes and when a new version of YT Grabber is available (both can be disabled).
 - **16 languages**: English, Italiano, Español, Français, Deutsch, Português, Nederlands, Polski, Русский, Türkçe,
   العربية, हिन्दी, Bahasa Indonesia, 中文, 日本語, 한국어. The interface follows the language of the device and can be changed
   from the page.
-- Audio (MP3, M4A, Opus) or video (up to 4K), with cover art and tags.
+- Audio (MP3, M4A, Opus, FLAC, WAV, OGG) or video (up to 4K), with cover art and tags, subtitles inside the video and optional cutting of
+  the sponsor segments (SponsorBlock).
+- **Backup** of the subscriptions and links to a small file, and an **access token** when the page is used from other devices.
 - **Accessible**: usable entirely with the keyboard and with screen readers, with high-contrast and forced-colours modes, zoom up
   to 400%, adjustable text size, reduced motion and touch screens. The project aims at WCAG 2.2 level AA, and conformance is checked
   automatically at every change (see the [accessibility statement](docs/accessibility.md)).
