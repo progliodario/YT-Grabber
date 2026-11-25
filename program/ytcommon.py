@@ -192,13 +192,36 @@ def classify_exception(e):
     return None
 
 
+SPONSOR_CATEGORIES = ('sponsor', 'selfpromo', 'interaction')   # what the option "cut out the sponsor segments" removes
+LOSSLESS_OR_OTHER = {'flac': 'flac', 'wav': 'wav', 'ogg': 'vorbis'}   # audio formats that are always re-encoded
+SUB_LANG_RE = re.compile(r'[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})?')
+
+
+def subtitle_langs(text):
+    """'en, it' -> ['en', 'it'] (at most 8 language codes; what is not a code is dropped)."""
+    out = []
+    for part in re.split(r'[,\s;]+', str(text or '')):
+        if SUB_LANG_RE.fullmatch(part) and part.lower() not in [x.lower() for x in out]:
+            out.append(part)
+    return out[:8]
+
+
 def build_format(opts):
     """-> (format, format_sort, fallback_format, postprocessors, extra_params)"""
     pps = []
     extra = {}
+    if opts.get('sponsorblock'):   # the segments are looked up first and cut out after the conversion (the order yt-dlp itself uses)
+        pps.append({'key': 'SponsorBlock', 'categories': list(SPONSOR_CATEGORIES), 'when': 'after_filter'})
     if opts['mode'] == 'audio':
         af = opts['audio_format']
-        if af == 'mp3':
+        if af in LOSSLESS_OR_OTHER:
+            fmt = 'bestaudio/best'
+            codec = LOSSLESS_OR_OTHER[af]
+            pp = {'key': 'FFmpegExtractAudio', 'preferredcodec': codec}
+            if codec == 'vorbis':
+                pp['preferredquality'] = '192'
+            pps.append(pp)
+        elif af == 'mp3':
             fmt = 'bestaudio/best'
             pps.append({'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': opts['mp3_bitrate']})
             # lame -q 7: encodes 2x faster, difference not audible at >=128 kbps on already compressed sources
@@ -217,12 +240,21 @@ def build_format(opts):
         fallback = 'b'
         sort = None if h == 'best' else ['res:' + h, 'vcodec:h264', 'acodec:aac']
         extra['merge_output_format'] = 'mp4'
+        langs = subtitle_langs(opts.get('sub_langs')) if opts.get('subtitles') else []
+        if langs:   # subtitles are put inside the MP4 (as text): a separate file would be lost when the video is moved
+            extra.update(writesubtitles=True, writeautomaticsub=True, subtitleslangs=langs, subtitlesformat='srt/best')
+            pps.append({'key': 'FFmpegSubtitlesConvertor', 'format': 'srt', 'when': 'before_dl'})
+            pps.append({'key': 'FFmpegEmbedSubtitle', 'already_have_subtitle': False})
+    if opts.get('sponsorblock'):
+        pps.append({'key': 'ModifyChapters', 'remove_chapters_patterns': [], 'remove_sponsor_segments': set(SPONSOR_CATEGORIES),
+                    'remove_ranges': [], 'sponsorblock_chapter_title': '[SponsorBlock]: %(category_names)l', 'force_keyframes': False})
     if opts['embed']:
         pps.append({'key': 'FFmpegMetadata', 'add_metadata': True, 'add_chapters': opts['mode'] == 'video',
                     'add_infojson': None})
-        extra['writethumbnail'] = True
-        pps.append({'key': 'FFmpegThumbnailsConvertor', 'format': 'jpg', 'when': 'before_dl'})
-        pps.append({'key': 'EmbedThumbnail', 'already_have_thumbnail': False})
+        if opts['mode'] != 'audio' or opts['audio_format'] != 'wav':   # WAV cannot carry a cover picture
+            extra['writethumbnail'] = True
+            pps.append({'key': 'FFmpegThumbnailsConvertor', 'format': 'jpg', 'when': 'before_dl'})
+            pps.append({'key': 'EmbedThumbnail', 'already_have_thumbnail': False})
     return fmt, sort, fallback, pps, extra
 
 

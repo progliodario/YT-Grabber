@@ -332,6 +332,8 @@ button.stat.err:hover { filter: brightness(1.05); transform: translateY(-1px); }
 .lang-select { width: auto; max-width: 9.5rem; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--ctrl); background: var(--card); color: var(--fg); font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
 .mini-select { width: auto; padding: 6px 10px; border-radius: 10px; border: 1.5px solid var(--ctrl); background: var(--field); color: var(--fg); font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
 .toggles .mini-select[hidden] { display: none; }
+.toggles .mini-input { width: 11rem; padding: 6px 10px; border-radius: 10px; }
+.mini-input[hidden] { display: none; }
 .subs { margin: 28px 0 8px; }
 .subs > .hint { margin: 0 0 12px; color: var(--muted); font-size: 0.8438rem; max-width: 70ch; }
 .sub { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 18px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 18px; margin-bottom: 10px; box-shadow: var(--shadow-m); }

@@ -335,5 +335,14 @@ window.I18N.pt = {
   'set.import': 'Restaurar a partir de um ficheiro de cópia',
   'set.importHint': 'As subscrições do ficheiro são adicionadas (as que já existem ficam como estão). Os links são colocados na caixa da página, prontos a descarregar.',
   'set.importBad': 'Não é possível ler este ficheiro: não é uma cópia feita pelo YT Grabber.',
-  'set.importedMsg': 'Subscrições adicionadas: {n}. Links colocados na caixa: {m}.'
+  'set.importedMsg': 'Subscrições adicionadas: {n}. Links colocados na caixa: {m}.',
+  'hint.reencode': 'FLAC, WAV e OGG são sempre recodificados (mais lento). FLAC e WAV não perdem qualidade, mas o áudio do YouTube já está comprimido: os ficheiros ficam muito maiores sem soar melhor.',
+  'toggle.subtitles': 'Legendas dentro do vídeo',
+  'opt.subLangs': 'Idiomas das legendas (códigos como en, it)',
+  'toggle.sponsor': 'Cortar os segmentos de patrocínio (SponsorBlock)',
+  'act.top': 'Mover para o topo',
+  'toast.movedTop': 'Esta lista será servida primeiro',
+  'set.libraryTitle': 'Biblioteca',
+  'set.skipKnown': 'Não descarregar um vídeo duas vezes',
+  'set.skipKnownHint': 'Quando um vídeo já está noutra pasta, no mesmo formato, o seu ficheiro é ligado na nova pasta (ou copiado) em vez de ser descarregado outra vez. Só se conhecem os vídeos descarregados desde que esta opção existe.'
 };

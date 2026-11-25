@@ -242,6 +242,51 @@ class ProgramWideSettingsTests(unittest.TestCase):
             s.update(saved)
 
 
+class LibraryTests(unittest.TestCase):
+    """The same video in two lists, and the order of the lists."""
+
+    def test_a_video_that_is_in_another_folder_is_not_downloaded_again(self):
+        server.SETTINGS['skip_known'] = True
+        self.addCleanup(server.SETTINGS.__setitem__, 'skip_known', False)
+        a = start(playlist('PLpipe00000017', ['OKA00000017', 'OKB00000017']))
+        self.assertTrue(finished(a))
+        b = start(playlist('PLpipe00000018', ['OKB00000017', 'OKC00000017']))
+        self.assertTrue(finished(b))
+        known, new = b.items
+        self.assertEqual((known.state, known.attempts, known.stage), ('s', 0, 'Already present'))   # no download was started for it
+        self.assertEqual((new.state, new.attempts), ('d', 1))
+        self.assertEqual(read(b, known.file), 'content of OKB00000017')
+        self.assertTrue(known.file.startswith('01 - '))   # it has the number of its place in this list
+
+    def test_without_the_setting_it_is_downloaded_again(self):
+        a = start(playlist('PLpipe00000019', ['OKA00000019']))
+        self.assertTrue(finished(a))
+        b = start(playlist('PLpipe00000020', ['OKA00000019']))
+        self.assertTrue(finished(b))
+        self.assertEqual((b.items[0].state, b.items[0].attempts), ('d', 1))
+
+    def test_the_archive_survives_a_restart(self):
+        a = start(playlist('PLpipe00000021', ['OKA00000021']))
+        self.assertTrue(finished(a))
+        server.MGR.save_dirty()
+        before = dict(server.ARCHIVE)
+        server.ARCHIVE.clear()
+        server.load_archive()
+        self.assertEqual(server.ARCHIVE, before)
+        self.assertIn('OKA00000021|' + server.DEFAULT_SETTINGS['audio_format'], server.ARCHIVE)
+
+    def test_a_list_can_be_moved_to_the_top(self):
+        a = start(playlist('PLpipe00000022', ['SLOW0000022', 'SLOW0000023']), choose=True)
+        b = start(playlist('PLpipe00000023', ['SLOW0000024']), choose=True)
+        self.assertLess(server.JOB_ORDER.index(a.id), server.JOB_ORDER.index(b.id))
+        server.job_action(b, 'top')
+        self.assertEqual(server.JOB_ORDER[0], b.id)
+        server.job_action(a, 'cancel')
+        server.job_action(b, 'cancel')
+        finished(a)
+        finished(b)
+
+
 class ApiTests(unittest.TestCase):
     """The same thing through HTTP, the way the page does it."""
 

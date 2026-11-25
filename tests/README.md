@@ -13,6 +13,7 @@ the network and they write only in a temporary folder.
 | `test_links.py` | what a pasted link is |
 | `test_errors_and_formats.py` | error messages and their causes; the choice of the format |
 | `test_settings.py` | the defaults and the validation of what the page sends, including the speed limit, the proxy and the allowed hours |
+| `test_options.py` | FLAC, WAV and OGG, subtitles and SponsorBlock: the options of the page become the right yt-dlp parameters, and yt-dlp accepts every combination |
 | `test_backup.py` | saving the subscriptions and links to a file and restoring them (what is kept, what is skipped, nothing private in the file) |
 | `test_checksums.py` | the SHA-256 checks of what is downloaded (parsing the published lists, a mismatch refused, a missing list only warns) and the checksum put into the Termux installer |
 | `test_notices.py` | `tools/gen_notices.py`, which writes `THIRD_PARTY_NOTICES.md` |

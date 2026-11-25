@@ -335,5 +335,14 @@ window.I18N.ja = {
   'set.import': 'バックアップファイルから復元',
   'set.importHint': 'ファイル内の購読が追加されます（すでにあるものはそのままです）。リンクはページの入力欄に入り、すぐにダウンロードできます。',
   'set.importBad': 'このファイルは読み込めません：YT Grabber で作成したバックアップではありません。',
-  'set.importedMsg': '追加した購読：{n}。入力欄に入れたリンク：{m}。'
+  'set.importedMsg': '追加した購読：{n}。入力欄に入れたリンク：{m}。',
+  'hint.reencode': 'FLAC、WAV、OGG は常に再エンコードされます（遅くなります）。FLAC と WAV は可逆ですが、YouTube の音声はすでに圧縮されているため、ファイルは大きくなるだけで音質は良くなりません。',
+  'toggle.subtitles': '動画に字幕を埋め込む',
+  'opt.subLangs': '字幕の言語（en, it のようなコード）',
+  'toggle.sponsor': 'スポンサー部分をカット（SponsorBlock）',
+  'act.top': '先頭に移動',
+  'toast.movedTop': 'このリストを最優先で処理します',
+  'set.libraryTitle': 'ライブラリ',
+  'set.skipKnown': '同じ動画を二度ダウンロードしない',
+  'set.skipKnownHint': '動画がすでに別のフォルダーに同じ形式であるときは、再ダウンロードせずに、そのファイルを新しいフォルダーにリンク（またはコピー）します。このオプションができてからダウンロードした動画だけが対象です。'
 };

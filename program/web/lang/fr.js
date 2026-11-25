@@ -335,5 +335,14 @@ window.I18N.fr = {
   'set.import': 'Restaurer depuis un fichier de sauvegarde',
   'set.importHint': 'Les abonnements du fichier sont ajoutés (ceux qui existent déjà restent tels quels). Les liens sont placés dans la zone de la page, prêts à être téléchargés.',
   'set.importBad': 'Ce fichier est illisible : ce n\'est pas une sauvegarde faite par YT Grabber.',
-  'set.importedMsg': 'Abonnements ajoutés : {n}. Liens placés dans la zone : {m}.'
+  'set.importedMsg': 'Abonnements ajoutés : {n}. Liens placés dans la zone : {m}.',
+  'hint.reencode': 'Le FLAC, le WAV et l\'OGG sont toujours réencodés (plus lent). Le FLAC et le WAV sont sans perte, mais l\'audio de YouTube est déjà compressé : les fichiers sont bien plus gros sans sonner mieux.',
+  'toggle.subtitles': 'Sous-titres dans la vidéo',
+  'opt.subLangs': 'Langues des sous-titres (codes comme en, it)',
+  'toggle.sponsor': 'Couper les segments sponsorisés (SponsorBlock)',
+  'act.top': 'Placer en haut',
+  'toast.movedTop': 'Cette liste sera servie en premier',
+  'set.libraryTitle': 'Bibliothèque',
+  'set.skipKnown': 'Ne pas télécharger deux fois une vidéo',
+  'set.skipKnownHint': 'Quand une vidéo est déjà dans un autre dossier, dans le même format, son fichier est lié dans le nouveau dossier (ou copié) au lieu d\'être téléchargé à nouveau. Seules les vidéos téléchargées depuis l\'existence de cette option sont connues.'
 };

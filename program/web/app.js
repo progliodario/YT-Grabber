@@ -347,17 +347,21 @@
       this.el('gAudio').hidden = video;
       this.el('gBitrate').hidden = video || this.radio('audioFormat') !== 'mp3';
       this.el('gHeight').hidden = !video;
+      this.el('subsRow').hidden = !video;
+      this.el('subLangs').hidden = !video || !this.el('subtitles').checked;
       var af = this.radio('audioFormat');
       this.el('fmtHint').textContent = video
         ? tr('hint.video')
         : (af === 'mp3'
           ? tr('hint.mp3')
-          : tr('hint.fast'));
+          : (af === 'flac' || af === 'wav' || af === 'ogg' ? tr('hint.reencode') : tr('hint.fast')));
     },
     fill: function (s) {
       this.setRadio('mode', s.mode); this.setRadio('audioFormat', s.audio_format);
       this.setRadio('mp3Bitrate', s.mp3_bitrate); this.setRadio('videoHeight', s.video_height);
       this.el('embed').checked = !!s.embed;
+      this.el('sponsorblock').checked = !!s.sponsorblock; this.el('subtitles').checked = !!s.subtitles;
+      this.el('subLangs').value = s.sub_langs || 'en';
       this.el('singleOnly').checked = !!s.single_only;
       this.el('force').checked = !!s.force;
       this.el('destDir').textContent = s.download_dir; this.el('destDir').title = s.download_dir;
@@ -367,6 +371,7 @@
       return {
         mode: this.mode(), audio_format: this.radio('audioFormat'), mp3_bitrate: this.radio('mp3Bitrate'),
         video_height: this.radio('videoHeight'), embed: this.el('embed').checked,
+        sponsorblock: this.el('sponsorblock').checked, subtitles: this.el('subtitles').checked, sub_langs: this.el('subLangs').value,
         single_only: this.el('singleOnly').checked, force: this.el('force').checked,
         cookies_browser: S.settings.cookies_browser || ''
       };
@@ -642,6 +647,7 @@
     if (j.status === 'cancelled' || j.status === 'error') { h += btn('resume', id, esc(tr('act.resume')), IC.play, 'solid'); }
     if (c.e && !live) { h += btn('retry_failed', id, esc(tr('act.retryErrors', { n: c.e })), IC.retry, 'solid'); }
     h += btn('toggle', id, esc(S.openId === id ? tr('act.closeList') : tr('act.openList')), IC.list, '', ' aria-expanded="' + (S.openId === id) + '" aria-controls="jd-' + id + '"');
+    if (live && S.jobs.length > 1 && S.jobs[0].id !== id) { h += btn('top', id, esc(tr('act.top')), '', ''); }
     if (live) { h += btn('cancel', id, esc(tr('act.cancel')), IC.stop, 'danger'); }
     if (S.local && !S.android && j.dir) { h += btn('open_folder', id, esc(tr('act.folder')), IC.folder); }
     if (c.d + c.s > 0 && j.kind !== 'single') { h += '<a class="btn sm" href="/api/jobs/' + id + '/playlist.m3u8" download>' + IC.m3u + esc(tr('act.m3u')) + '</a>'; }
@@ -1071,6 +1077,7 @@
     switch (act) {
       case 'toggle': openJob(id); break;
       case 'goerr': openJob(id, 'e'); break;
+      case 'top': jobAction(id, 'top', null, tr('toast.movedTop')); break;
       case 'pause': jobAction(id, 'pause'); break;
       case 'resume': jobAction(id, 'resume'); break;
       case 'cancel': if (window.confirm(tr('confirm.cancel'))) { jobAction(id, 'cancel'); } break;
@@ -1163,7 +1170,7 @@
     $('#setAutoYtdlp').checked = s.auto_ytdlp !== false;
     $('#setSpeed').value = s.speed_limit || 0; $('#setProxy').value = s.proxy || '';
     $('#setHours').checked = !!s.hours_on; $('#setHoursFrom').value = s.hours_from || '00:00'; $('#setHoursTo').value = s.hours_to || '06:00';
-    $('#hoursRow').hidden = !s.hours_on;
+    $('#hoursRow').hidden = !s.hours_on; $('#setSkipKnown').checked = !!s.skip_known;
     var ts = '', zi, cur = getTextSize();
     for (zi = 0; zi < TEXT_SIZES.length; zi++) { ts += '<option value="' + TEXT_SIZES[zi] + '"' + (TEXT_SIZES[zi] === cur ? ' selected' : '') + '>' + esc(tr('text.' + TEXT_SIZES[zi])) + '</option>'; }
     $('#setTextSize').innerHTML = ts;
@@ -1212,6 +1219,7 @@
     payload.speed_limit = Math.max(0, parseInt($('#setSpeed').value, 10) || 0);
     payload.proxy = $('#setProxy').value.trim();
     if (payload.proxy && !PROXY_RE.test(payload.proxy)) { setMsg(tr('set.proxyBad')); $('#setProxy').focus(); return; }
+    payload.skip_known = $('#setSkipKnown').checked;
     payload.hours_on = $('#setHours').checked; payload.hours_from = $('#setHoursFrom').value || '00:00'; payload.hours_to = $('#setHoursTo').value || '06:00';
     api('POST', '/api/settings', payload).then(function (r) {
       S.settings = r.settings; form.fill(r.settings); closeSettings(); toast(tr('toast.saved'));
@@ -1247,7 +1255,7 @@
     $('#form').addEventListener('submit', form.submit);
     $('#form').addEventListener('change', function (ev) {
       var n = ev.target && ev.target.name;
-      if (n === 'mode' || n === 'audioFormat') { form.reflect(); }
+      if (n === 'mode' || n === 'audioFormat' || (ev.target && ev.target.id === 'subtitles')) { form.reflect(); }
       if (ev.target && ev.target.id === 'singleOnly') { updateDetect(); }
     });
     $('#urls').addEventListener('input', updateDetect);

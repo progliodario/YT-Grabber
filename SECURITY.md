@@ -73,7 +73,9 @@ requires a paid Apple developer account; the [installation guide](docs/install.m
   updates and, twice a day, one request asking for the latest YT Grabber release, which carries only the program name and
   version and can be disabled in *Settings → Notifications and updates*), including, once a day, one request asking for the latest
   yt-dlp release and, when there is one, the download of yt-dlp from the official yt-dlp releases (this can be disabled in
-  *Settings → Download engine*); and, at the first start, to the site that provides the ffmpeg build for the system.
+  *Settings → Download engine*); and, at the first start, to the site that provides the ffmpeg build for the system. If a proxy is set
+  in the settings, the downloads go through it. Only when *Cut out sponsor segments* is selected, the identifier of each video is
+  also sent to the SponsorBlock service (`sponsor.ajay.app`) to ask for its marks.
 - What is downloaded at the first start is **verified**: ffmpeg and deno against the SHA-256 that their makers publish next to
   each build, and yt-dlp (the single-file version used by the exe and the APK) against the `SHA2-256SUMS` of its release. A file that
   does not match is deleted and not used; if the list of checksums cannot be read the program says so and goes on (set the

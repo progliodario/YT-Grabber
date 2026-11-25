@@ -22,9 +22,16 @@ further details are given in the [accessibility statement](accessibility.md).
 2. Choose **what to download**:
    - **Audio**: **MP3** (re-encoded, therefore the slowest), **M4A** or **Opus** (not re-encoded: two to three times faster, with
      no loss of quality, and the best choice for very large playlists). For MP3, the quality is also selected (128, 192, 256 or
-     320 kbps).
-   - **Video**: the best available quality up to the chosen height (360p to 4K), saved as MP4.
+     320 kbps). **FLAC**, **WAV** and **OGG** (Vorbis) are also offered; they are always re-encoded. FLAC and WAV are
+     lossless, but the audio of YouTube is already compressed, so the files are much bigger without sounding better (WAV also cannot
+     carry a cover picture).
+   - **Video**: the best available quality up to the chosen height (360p to 4K), saved as MP4. *Subtitles inside the video* (with
+     the language codes to look for, for example `en, it`) puts the subtitles in the MP4, from the ones the author wrote or, when
+     there are none, the automatic ones.
    - *Cover art and metadata* adds the thumbnail and the tags to the files.
+   - *Cut out sponsor segments (SponsorBlock)* removes the parts that the SponsorBlock community has marked as sponsorship,
+     self-promotion or a reminder to like and subscribe, in audio and in video. It asks the SponsorBlock service
+     (`sponsor.ajay.app`) for the marks of each video, which sends it the video identifier; videos without marks are left as they are.
    - *Video+playlist links: only the video*: a link to a video that belongs to a playlist downloads only that video.
    - *Download again even if already present*: ignores the files that are already in the folder.
    - *Let me choose the videos first*: nothing is downloaded until the unwanted videos have been unticked (see [Choosing the videos](#choosing-the-videos)).
@@ -92,6 +99,10 @@ and so on). The folder also contains `_playlist.m3u8` and, if errors occurred, `
 When several downloads are on the list, **Pause all** and **Resume all** (next to *Clear completed*) act on all of them at once. They
 appear only when there is something to pause or resume; lists that are waiting for the choice of the videos are left as they are. A
 pause does not stop the videos that are already downloading: they finish, and nothing new starts.
+
+The button **Move to top** on a list that is downloading makes the scheduler serve it before the others (the 10 downloads in
+progress are not interrupted: the next free slots go to that list). After a restart the lists return to the order in which they were
+added.
 
 ## Resuming after a stop
 
@@ -176,6 +187,10 @@ language of the device. Arabic is shown right to left. The translations were wri
   start goes through midnight (22:00 to 06:00). *Proxy* is the address of a proxy server used by all the downloads and by the reading
   of the lists: `http://host:port`, `https://host:port`, `socks4://host:port` or `socks5://host:port`, with `user:password@` before
   the host if the proxy asks for one. The address is kept in the settings file of the data folder.
+- **Library**: *Do not download a video twice* looks, before downloading, for the same video (same format) in another folder where
+  YT Grabber already saved it: if the file is still there it is linked into the new folder (a hard link, so it takes no more space
+  on the same drive; a copy otherwise) with the number of its place in the new list. Only videos downloaded since the option exists
+  are known (the list is kept in `archive.json` in the data folder).
 - **Backup**: *Save subscriptions and links* downloads `yt-grabber-backup.json`, a small file with the subscriptions (link, interval,
   format, *only new videos*) and the links of the lists that are on the page. It holds no cookies, settings, folders or files.
   *Restore from a backup file* adds the subscriptions of such a file (the ones that already exist stay as they are; a restored

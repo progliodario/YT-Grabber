@@ -335,5 +335,14 @@ window.I18N.de = {
   'set.import': 'Aus einer Sicherungsdatei wiederherstellen',
   'set.importHint': 'Die Abos aus der Datei werden hinzugefügt (bereits vorhandene bleiben unverändert). Die Links kommen in das Feld der Seite, bereit zum Herunterladen.',
   'set.importBad': 'Diese Datei kann nicht gelesen werden: Sie ist keine Sicherung von YT Grabber.',
-  'set.importedMsg': 'Hinzugefügte Abos: {n}. In das Feld gesetzte Links: {m}.'
+  'set.importedMsg': 'Hinzugefügte Abos: {n}. In das Feld gesetzte Links: {m}.',
+  'hint.reencode': 'FLAC, WAV und OGG werden immer neu kodiert (langsamer). FLAC und WAV sind verlustfrei, aber der YouTube-Ton ist schon komprimiert: Die Dateien sind viel größer, ohne besser zu klingen.',
+  'toggle.subtitles': 'Untertitel im Video',
+  'opt.subLangs': 'Sprachen der Untertitel (Codes wie en, it)',
+  'toggle.sponsor': 'Sponsorensegmente herausschneiden (SponsorBlock)',
+  'act.top': 'Nach oben',
+  'toast.movedTop': 'Diese Liste wird zuerst bedient',
+  'set.libraryTitle': 'Bibliothek',
+  'set.skipKnown': 'Ein Video nicht zweimal herunterladen',
+  'set.skipKnownHint': 'Ist ein Video schon in einem anderen Ordner, im selben Format, wird seine Datei in den neuen Ordner verknüpft (oder kopiert), statt erneut geladen zu werden. Bekannt sind nur Videos, die seit dieser Option geladen wurden.'
 };

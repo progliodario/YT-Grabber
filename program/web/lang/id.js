@@ -335,5 +335,14 @@ window.I18N.id = {
   'set.import': 'Pulihkan dari berkas cadangan',
   'set.importHint': 'Langganan dalam berkas ditambahkan (yang sudah ada tetap seperti semula). Tautan dimasukkan ke kotak di halaman, siap diunduh.',
   'set.importBad': 'Berkas ini tidak dapat dibaca: bukan cadangan buatan YT Grabber.',
-  'set.importedMsg': 'Langganan ditambahkan: {n}. Tautan dimasukkan ke kotak: {m}.'
+  'set.importedMsg': 'Langganan ditambahkan: {n}. Tautan dimasukkan ke kotak: {m}.',
+  'hint.reencode': 'FLAC, WAV, dan OGG selalu dikodekan ulang (lebih lambat). FLAC dan WAV tanpa kehilangan, tetapi audio YouTube sudah terkompresi: berkasnya jauh lebih besar tanpa terdengar lebih baik.',
+  'toggle.subtitles': 'Subtitel di dalam video',
+  'opt.subLangs': 'Bahasa subtitel (kode seperti en, it)',
+  'toggle.sponsor': 'Potong segmen sponsor (SponsorBlock)',
+  'act.top': 'Pindah ke atas',
+  'toast.movedTop': 'Daftar ini akan dilayani lebih dulu',
+  'set.libraryTitle': 'Pustaka',
+  'set.skipKnown': 'Jangan unduh video dua kali',
+  'set.skipKnownHint': 'Jika sebuah video sudah ada di folder lain dengan format yang sama, berkasnya ditautkan ke folder baru (atau disalin) alih-alih diunduh lagi. Hanya video yang diunduh sejak opsi ini ada yang dikenali.'
 };

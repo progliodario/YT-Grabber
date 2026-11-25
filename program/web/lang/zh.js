@@ -335,5 +335,14 @@ window.I18N.zh = {
   'set.import': '从备份文件恢复',
   'set.importHint': '文件中的订阅会被添加（已存在的保持不变）。链接会放入页面上的输入框，可直接下载。',
   'set.importBad': '无法读取此文件：它不是 YT Grabber 生成的备份。',
-  'set.importedMsg': '已添加订阅：{n}。已放入输入框的链接：{m}。'
+  'set.importedMsg': '已添加订阅：{n}。已放入输入框的链接：{m}。',
+  'hint.reencode': 'FLAC、WAV 和 OGG 总是会重新编码（较慢）。FLAC 和 WAV 是无损的，但 YouTube 的音频本身已经压缩过：文件会大很多，听起来并不更好。',
+  'toggle.subtitles': '视频内嵌字幕',
+  'opt.subLangs': '字幕语言（代码，如 en, it）',
+  'toggle.sponsor': '剪掉赞助片段（SponsorBlock）',
+  'act.top': '移到最前',
+  'toast.movedTop': '这个列表将优先处理',
+  'set.libraryTitle': '资料库',
+  'set.skipKnown': '不重复下载同一个视频',
+  'set.skipKnownHint': '如果视频已在另一个文件夹中且格式相同，则会把它的文件链接到新文件夹（或复制），而不是重新下载。只有在此选项出现之后下载的视频才会被识别。'
 };

@@ -335,5 +335,14 @@ window.I18N.es = {
   'set.import': 'Restaurar desde un archivo de copia',
   'set.importHint': 'Se añaden las suscripciones del archivo (las que ya existen se quedan como están). Los enlaces se ponen en el cuadro de la página, listos para descargar.',
   'set.importBad': 'No se puede leer este archivo: no es una copia hecha por YT Grabber.',
-  'set.importedMsg': 'Suscripciones añadidas: {n}. Enlaces puestos en el cuadro: {m}.'
+  'set.importedMsg': 'Suscripciones añadidas: {n}. Enlaces puestos en el cuadro: {m}.',
+  'hint.reencode': 'FLAC, WAV y OGG siempre se recodifican (más lento). FLAC y WAV no pierden calidad, pero el audio de YouTube ya está comprimido: los archivos son mucho más grandes sin sonar mejor.',
+  'toggle.subtitles': 'Subtítulos dentro del vídeo',
+  'opt.subLangs': 'Idiomas de los subtítulos (códigos como en, it)',
+  'toggle.sponsor': 'Cortar los segmentos de patrocinio (SponsorBlock)',
+  'act.top': 'Mover arriba',
+  'toast.movedTop': 'Esta lista se atenderá primero',
+  'set.libraryTitle': 'Biblioteca',
+  'set.skipKnown': 'No descargar un vídeo dos veces',
+  'set.skipKnownHint': 'Cuando un vídeo ya está en otra carpeta, en el mismo formato, su archivo se enlaza en la carpeta nueva (o se copia) en lugar de descargarse otra vez. Solo se conocen los vídeos descargados desde que existe esta opción.'
 };

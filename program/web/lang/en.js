@@ -347,5 +347,14 @@ window.I18N.en = {
   'set.import': 'Restore from a backup file',
   'set.importHint': 'The subscriptions in the file are added (the ones that already exist stay as they are). The links are put in the box on the page, ready to be downloaded.',
   'set.importBad': 'This file cannot be read: it is not a backup made by YT Grabber.',
-  'set.importedMsg': 'Subscriptions added: {n}. Links put in the box: {m}.'
+  'set.importedMsg': 'Subscriptions added: {n}. Links put in the box: {m}.',
+  'hint.reencode': 'FLAC, WAV and OGG are always re-encoded (slower). FLAC and WAV are lossless, but YouTube audio is already compressed: the files are much bigger without sounding better.',
+  'toggle.subtitles': 'Subtitles inside the video',
+  'opt.subLangs': 'Subtitle languages (codes such as en, it)',
+  'toggle.sponsor': 'Cut out sponsor segments (SponsorBlock)',
+  'act.top': 'Move to top',
+  'toast.movedTop': 'This list will be served first',
+  'set.libraryTitle': 'Library',
+  'set.skipKnown': 'Do not download a video twice',
+  'set.skipKnownHint': 'When a video is already in another folder, in the same format, its file is linked into the new folder (or copied) instead of being downloaded again. Only videos downloaded since this option exists are known.'
 };

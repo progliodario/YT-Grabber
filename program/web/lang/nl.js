@@ -335,5 +335,14 @@ window.I18N.nl = {
   'set.import': 'Herstellen uit een back-upbestand',
   'set.importHint': 'De abonnementen in het bestand worden toegevoegd (bestaande blijven zoals ze zijn). De links komen in het vak op de pagina, klaar om te downloaden.',
   'set.importBad': 'Dit bestand kan niet worden gelezen: het is geen back-up van YT Grabber.',
-  'set.importedMsg': 'Toegevoegde abonnementen: {n}. In het vak gezette links: {m}.'
+  'set.importedMsg': 'Toegevoegde abonnementen: {n}. In het vak gezette links: {m}.',
+  'hint.reencode': 'FLAC, WAV en OGG worden altijd opnieuw gecodeerd (langzamer). FLAC en WAV zijn verliesvrij, maar het geluid van YouTube is al gecomprimeerd: de bestanden worden veel groter zonder beter te klinken.',
+  'toggle.subtitles': 'Ondertitels in de video',
+  'opt.subLangs': 'Talen van de ondertitels (codes zoals en, it)',
+  'toggle.sponsor': 'Sponsorsegmenten wegknippen (SponsorBlock)',
+  'act.top': 'Naar boven',
+  'toast.movedTop': 'Deze lijst wordt als eerste bediend',
+  'set.libraryTitle': 'Bibliotheek',
+  'set.skipKnown': 'Een video niet twee keer downloaden',
+  'set.skipKnownHint': 'Staat een video al in een andere map, in hetzelfde formaat, dan wordt het bestand in de nieuwe map gekoppeld (of gekopieerd) in plaats van opnieuw gedownload. Alleen video\'s die sinds deze optie bestaat zijn gedownload, zijn bekend.'
 };

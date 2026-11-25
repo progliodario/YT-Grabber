@@ -43,10 +43,11 @@ selection, range selection, and saving and restoring the subscriptions and links
 
 ## Features people may want (by value)
 
-1. Format and folder per subscription (S-M). 2. Subtitles and a template for the file names (M). 3. Better tags: track number and album
-from the playlist, loudness normalisation, FLAC/OGG/WAV (M). 4. An archive that avoids downloading the same video twice from different
-playlists (S-M). 5. SponsorBlock and splitting by chapters (M). 6. History and statistics (M). 7. "Keep the latest N" and notifications per subscription (S). 8. Reorder jobs and priorities (M).
-(Done: speed limit, allowed hours, proxy, pause everything, range selection, "invert", and saving and restoring the subscriptions and links.)
+1. Folder per subscription and a way to change the format of an existing one (S-M). 2. A template for the file names (M).
+3. Better tags: track number and album from the playlist, loudness normalisation (M). 4. Splitting by chapters (M).
+5. History and statistics (M). 6. "Keep the latest N" and notifications per subscription (S). 7. Drag and drop to reorder the lists (S).
+(Done: speed limit, allowed hours, proxy, pause everything, range selection, "invert", saving and restoring the subscriptions and links,
+FLAC/WAV/OGG, subtitles, SponsorBlock, not downloading a video twice, and moving a list to the top.)
 
 ## Distribution
 

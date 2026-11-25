@@ -84,6 +84,9 @@
             <input type="radio" name="audioFormat" id="afMp3" value="mp3"><label for="afMp3">MP3</label>
             <input type="radio" name="audioFormat" id="afM4a" value="m4a"><label for="afM4a">M4A<em class="tag" data-i18n="tag.fast">fast</em></label>
             <input type="radio" name="audioFormat" id="afOpus" value="opus"><label for="afOpus">Opus<em class="tag" data-i18n="tag.fast">fast</em></label>
+            <input type="radio" name="audioFormat" id="afFlac" value="flac"><label for="afFlac">FLAC</label>
+            <input type="radio" name="audioFormat" id="afWav" value="wav"><label for="afWav">WAV</label>
+            <input type="radio" name="audioFormat" id="afOgg" value="ogg"><label for="afOgg">OGG</label>
           </div>
         </div>
 
@@ -113,6 +116,9 @@
 
       <div class="toggles">
         <label class="sw"><input type="checkbox" role="switch" id="embed"><span class="knob"></span><span data-i18n="toggle.embed">Cover art and metadata</span></label>
+        <label class="sw"><input type="checkbox" role="switch" id="sponsorblock"><span class="knob"></span><span data-i18n="toggle.sponsor">Cut out sponsor segments (SponsorBlock)</span></label>
+        <label class="sw" id="subsRow" hidden><input type="checkbox" role="switch" id="subtitles"><span class="knob"></span><span data-i18n="toggle.subtitles">Subtitles inside the video</span></label>
+        <input type="text" id="subLangs" class="mini-input" hidden spellcheck="false" autocomplete="off" maxlength="60" aria-label="Subtitle languages (codes such as en, it)" data-i18n-attr="aria-label:opt.subLangs">
         <label class="sw"><input type="checkbox" role="switch" id="singleOnly"><span class="knob"></span><span data-i18n="toggle.single">Video+playlist links: only the video</span></label>
         <label class="sw"><input type="checkbox" role="switch" id="force"><span class="knob"></span><span data-i18n="toggle.force">Download again even if already present</span></label>
         <label class="sw"><input type="checkbox" role="switch" id="chooseFirst"><span class="knob"></span><span data-i18n="toggle.choose">Let me choose the videos first</span></label>
@@ -219,6 +225,13 @@
         <p class="hint" data-i18n="set.updatesHint">Now and then YT Grabber asks GitHub whether a newer version exists. Nothing else is sent.</p>
         <button class="btn" id="btnCheckUpdate" type="button" data-i18n="set.checkNow">Check now</button>
         <p class="hint" id="updateInfo"></p>
+      </div>
+      <div class="grp">
+        <span class="lbl" data-i18n="set.libraryTitle">Library</span>
+        <div class="toggles">
+          <label class="sw"><input type="checkbox" role="switch" id="setSkipKnown"><span class="knob"></span><span data-i18n="set.skipKnown">Do not download a video twice</span></label>
+        </div>
+        <p class="hint" data-i18n="set.skipKnownHint">When a video is already in another folder, in the same format, its file is linked into the new folder (or copied) instead of being downloaded again. Only videos downloaded since this option exists are known.</p>
       </div>
       <div class="grp">
         <span class="lbl" data-i18n="set.backupTitle">Backup</span>

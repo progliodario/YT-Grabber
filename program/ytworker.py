@@ -94,7 +94,8 @@ def match_filter(info, incomplete=False):
 
 def get_ydl(opts, wid):
     sig = json.dumps([opts['mode'], opts['audio_format'], opts['mp3_bitrate'], opts['video_height'], opts['embed'],
-                      opts['cookies_browser'], opts.get('cookies_mtime', 0), opts.get('ratelimit', 0), opts.get('proxy', '')])
+                      opts['cookies_browser'], opts.get('cookies_mtime', 0), opts.get('ratelimit', 0), opts.get('proxy', ''),
+                      opts.get('subtitles', False), opts.get('sub_langs', ''), opts.get('sponsorblock', False)])
     if S.ydl is not None and S.sig == sig:
         return S.ydl
     if S.ydl is not None:

@@ -335,5 +335,14 @@ window.I18N.ko = {
   'set.import': '백업 파일에서 복원',
   'set.importHint': '파일에 있는 구독이 추가됩니다(이미 있는 것은 그대로 둡니다). 링크는 페이지의 입력란에 들어가 바로 다운로드할 수 있습니다.',
   'set.importBad': '이 파일을 읽을 수 없습니다: YT Grabber에서 만든 백업이 아닙니다.',
-  'set.importedMsg': '추가된 구독: {n}. 입력란에 넣은 링크: {m}.'
+  'set.importedMsg': '추가된 구독: {n}. 입력란에 넣은 링크: {m}.',
+  'hint.reencode': 'FLAC, WAV, OGG는 항상 다시 인코딩됩니다(더 느림). FLAC와 WAV는 무손실이지만 YouTube 음원은 이미 압축되어 있어 파일만 훨씬 커지고 소리는 나아지지 않습니다.',
+  'toggle.subtitles': '동영상에 자막 넣기',
+  'opt.subLangs': '자막 언어(en, it 같은 코드)',
+  'toggle.sponsor': '스폰서 구간 잘라내기(SponsorBlock)',
+  'act.top': '맨 위로 이동',
+  'toast.movedTop': '이 목록이 가장 먼저 처리됩니다',
+  'set.libraryTitle': '라이브러리',
+  'set.skipKnown': '같은 동영상을 두 번 받지 않기',
+  'set.skipKnownHint': '동영상이 이미 다른 폴더에 같은 형식으로 있으면 다시 받는 대신 그 파일을 새 폴더에 링크(또는 복사)합니다. 이 옵션이 생긴 뒤에 받은 동영상만 알 수 있습니다.'
 };

@@ -335,5 +335,14 @@ window.I18N.tr = {
   'set.import': 'Yedek dosyasından geri yükle',
   'set.importHint': 'Dosyadaki abonelikler eklenir (zaten var olanlar olduğu gibi kalır). Bağlantılar sayfadaki kutuya konur, indirilmeye hazırdır.',
   'set.importBad': 'Bu dosya okunamıyor: YT Grabber tarafından alınmış bir yedek değil.',
-  'set.importedMsg': 'Eklenen abonelikler: {n}. Kutuya konan bağlantılar: {m}.'
+  'set.importedMsg': 'Eklenen abonelikler: {n}. Kutuya konan bağlantılar: {m}.',
+  'hint.reencode': 'FLAC, WAV ve OGG her zaman yeniden kodlanır (daha yavaş). FLAC ve WAV kayıpsızdır, ancak YouTube sesi zaten sıkıştırılmıştır: dosyalar daha iyi duyulmadan çok daha büyük olur.',
+  'toggle.subtitles': 'Videonun içinde altyazı',
+  'opt.subLangs': 'Altyazı dilleri (en, it gibi kodlar)',
+  'toggle.sponsor': 'Sponsor bölümlerini kes (SponsorBlock)',
+  'act.top': 'En üste taşı',
+  'toast.movedTop': 'Bu liste ilk sırada işlenecek',
+  'set.libraryTitle': 'Kitaplık',
+  'set.skipKnown': 'Bir videoyu iki kez indirme',
+  'set.skipKnownHint': 'Bir video başka bir klasörde zaten aynı biçimde varsa, dosyası yeniden indirilmek yerine yeni klasöre bağlanır (veya kopyalanır). Yalnızca bu seçenek var olduğundan beri indirilen videolar bilinir.'
 };

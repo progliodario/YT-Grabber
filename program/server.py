@@ -415,6 +415,7 @@ class Manager:
             except Exception as e:
                 log('saving job failed', jid, e)
         MANIFESTS.flush()
+        save_archive()
 
     # ---- scheduler
     def next_work(self):
@@ -535,6 +536,9 @@ def run_item(proc, job, it):
                     job.set_state(it, 's')
                     job.recent.append(time.time())
                 return
+    # --- already downloaded to another folder? (no network either)
+    if SETTINGS.get('skip_known') and not o.get('force') and reuse_known(job, it, manifest, key):
+        return
     # --- download
     with LOCK:
         it.attempts += 1
@@ -546,6 +550,9 @@ def run_item(proc, job, it):
     proc.ensure()
     tid = '%s-%d-%d' % (job.id, it.idx, it.attempts)
     topts = {k: o[k] for k in ('mode', 'audio_format', 'mp3_bitrate', 'video_height', 'embed', 'cookies_browser')}
+    for k in ('subtitles', 'sub_langs', 'sponsorblock'):   # (lists saved by an older version do not have them)
+        if k in o:
+            topts[k] = o[k]
     topts['ratelimit'] = int(SETTINGS.get('speed_limit') or 0) * 1024   # bytes per second for this download (0 = no limit)
     topts['proxy'] = SETTINGS.get('proxy') or ''
     if os.path.exists(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
@@ -606,6 +613,83 @@ def run_item(proc, job, it):
 
 NAME_LOCK = threading.Lock()
 
+# What has been downloaded, wherever it is: "video id|format" -> {path, title}. With the setting "do not download a video twice" a video
+# that is already in another folder is not downloaded again: its file is linked (or copied) into the new folder.
+ARCHIVE_FILE = os.path.join(DATA, 'archive.json')
+ARCHIVE = {}
+ARCHIVE_DIRTY = [False]
+ARCHIVE_MAX = 200000
+
+
+def load_archive():
+    try:
+        with open(ARCHIVE_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
+    ARCHIVE.clear()
+    for k, v in (data.items() if isinstance(data, dict) else []):
+        if isinstance(v, dict) and isinstance(v.get('path'), str):
+            ARCHIVE[k] = {'path': v['path'], 'title': str(v.get('title') or '')}
+
+
+def save_archive():
+    with LOCK:
+        if not ARCHIVE_DIRTY[0]:
+            return
+        ARCHIVE_DIRTY[0] = False
+        text = json.dumps(ARCHIVE, ensure_ascii=False)
+    try:
+        atomic_write(ARCHIVE_FILE, text)
+    except Exception as e:  # noqa: BLE001
+        log('archive not saved:', e)
+
+
+def archive_key(o, it):
+    if not it.vid:
+        return ''
+    return '%s|%s' % (it.vid, o['audio_format'] if o['mode'] == 'audio' else 'v%s' % o['video_height'])
+
+
+def archive_add(o, it, path, title):
+    k = archive_key(o, it)
+    if k and len(ARCHIVE) < ARCHIVE_MAX:
+        ARCHIVE[k] = {'path': path, 'title': title}
+        ARCHIVE_DIRTY[0] = True
+
+
+def reuse_known(job, it, manifest, key):
+    """True if this video was already downloaded to another folder (same kind of file) and has been linked or copied here."""
+    k = archive_key(job.opts, it)
+    rec = ARCHIVE.get(k) if k else None
+    src = rec['path'] if rec else ''
+    if not rec or not os.path.isfile(src) or os.path.normcase(os.path.dirname(src)) == os.path.normcase(job.dir):
+        return False
+    title = rec.get('title') or it.title or it.vid
+    with NAME_LOCK:
+        name = free_name(job, it, title, os.path.splitext(src)[1], manifest, key)
+        dst = os.path.join(job.dir, name)
+        try:
+            os.link(src, dst)   # no second copy on the disk (when the two folders are on the same drive)
+        except OSError:
+            try:
+                shutil.copy2(src, dst)
+            except OSError:
+                return False
+    with LOCK:
+        manifest[key] = {'file': name, 'title': title, 'id': it.vid}
+        MANIFESTS.mark(job.dir)
+        it.file = name
+        it.title = title
+        it.progress = 100.0
+        it.stage = 'Already present'
+        it.speed = 0
+        it.eta = None
+        it.size = os.path.getsize(dst)
+        job.set_state(it, 's')
+        job.recent.append(time.time())
+    return True
+
 
 def free_name(job, it, title, ext, manifest, key):
     """The file name for this item. When another video already has that name (the same title, in a folder without numbers), a
@@ -641,6 +725,9 @@ def finalize_item(job, it, ev, tmpd, manifest, key):
     with LOCK:
         manifest[key] = {'file': name, 'title': title, 'id': info.get('id') or it.vid}
         MANIFESTS.mark(job.dir)
+        if not it.vid:
+            it.vid = info.get('id') or ''
+        archive_add(o, it, dst, title)
         it.file = name
         if not it.vid:
             it.vid = info.get('id') or ''
@@ -1134,8 +1221,15 @@ def _act_redownload(job, arg):
         job.status = 'running'
 
 
+def _act_top(job, arg):
+    # the scheduler takes the next video from the first list that has one: a list moved to the top is served first
+    if job.id in JOB_ORDER:
+        JOB_ORDER.remove(job.id)
+        JOB_ORDER.insert(0, job.id)
+
+
 ACTIONS = {'pause': _act_pause, 'resume': _act_resume, 'cancel': _act_cancel, 'retry_failed': _act_retry_failed,
-           'redownload': _act_redownload, 'skip': _act_skip, 'unskip': _act_unskip}
+           'redownload': _act_redownload, 'skip': _act_skip, 'unskip': _act_unskip, 'top': _act_top}
 JOB_ACTIONS = tuple(ACTIONS)   # what the page may ask for (also: remove, open_folder)
 
 
@@ -1277,7 +1371,7 @@ def add_sub(url, opts, hours, only_new=False):
 
 EXPORT_FORMAT = 1
 MAX_IMPORT = 1000   # subscriptions or links taken from one file
-EXPORT_OPTS = ('mode', 'audio_format', 'mp3_bitrate', 'video_height', 'embed', 'single_only')
+EXPORT_OPTS = ('mode', 'audio_format', 'mp3_bitrate', 'video_height', 'embed', 'single_only', 'subtitles', 'sub_langs', 'sponsorblock')
 
 
 def export_data():
@@ -2076,6 +2170,7 @@ def main():
                 pass
     load_settings()
     load_subs()
+    load_archive()
     if a.dir:
         SETTINGS['download_dir'] = os.path.abspath(a.dir)
         save_settings()

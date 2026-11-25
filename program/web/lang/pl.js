@@ -335,5 +335,14 @@ window.I18N.pl = {
   'set.import': 'Przywróć z pliku kopii',
   'set.importHint': 'Subskrypcje z pliku zostaną dodane (te, które już istnieją, pozostaną bez zmian). Linki trafią do pola na stronie, gotowe do pobrania.',
   'set.importBad': 'Nie można odczytać tego pliku: to nie jest kopia wykonana przez YT Grabber.',
-  'set.importedMsg': 'Dodane subskrypcje: {n}. Linki wstawione do pola: {m}.'
+  'set.importedMsg': 'Dodane subskrypcje: {n}. Linki wstawione do pola: {m}.',
+  'hint.reencode': 'FLAC, WAV i OGG są zawsze kodowane ponownie (wolniej). FLAC i WAV są bezstratne, ale dźwięk z YouTube jest już skompresowany: pliki są dużo większe, a nie brzmią lepiej.',
+  'toggle.subtitles': 'Napisy w filmie',
+  'opt.subLangs': 'Języki napisów (kody, np. en, it)',
+  'toggle.sponsor': 'Wytnij fragmenty sponsorowane (SponsorBlock)',
+  'act.top': 'Przenieś na górę',
+  'toast.movedTop': 'Ta lista będzie obsłużona jako pierwsza',
+  'set.libraryTitle': 'Biblioteka',
+  'set.skipKnown': 'Nie pobieraj filmu dwa razy',
+  'set.skipKnownHint': 'Jeśli film jest już w innym folderze, w tym samym formacie, jego plik zostanie dowiązany w nowym folderze (lub skopiowany) zamiast pobrany ponownie. Znane są tylko filmy pobrane, odkąd istnieje ta opcja.'
 };
