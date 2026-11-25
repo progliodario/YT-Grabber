@@ -176,6 +176,12 @@ language of the device. Arabic is shown right to left. The translations were wri
   start goes through midnight (22:00 to 06:00). *Proxy* is the address of a proxy server used by all the downloads and by the reading
   of the lists: `http://host:port`, `https://host:port`, `socks4://host:port` or `socks5://host:port`, with `user:password@` before
   the host if the proxy asks for one. The address is kept in the settings file of the data folder.
+- **Backup**: *Save subscriptions and links* downloads `yt-grabber-backup.json`, a small file with the subscriptions (link, interval,
+  format, *only new videos*) and the links of the lists that are on the page. It holds no cookies, settings, folders or files.
+  *Restore from a backup file* adds the subscriptions of such a file (the ones that already exist stay as they are; a restored
+  subscription is first checked about a minute later, and the following ones half a minute apart) and puts its links in the box
+  of the page, ready to be downloaded: nothing is downloaded until *Download* is pressed. Only YouTube playlists and channels are
+  accepted as subscriptions.
 - **Text size**: 100%, 125%, 150% or 200%, in addition to the zoom of the browser. The choice is remembered on the device.
 - **Notifications and updates**: see above.
 

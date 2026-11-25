@@ -328,5 +328,12 @@ window.I18N.id = {
   'choose.invert': 'Balik pilihan',
   'choose.range': 'Pilih rentang…',
   'choose.rangePrompt': 'Nomor atau rentang video yang akan diunduh, dari {t} (misalnya 1-20, 25, 30-35). Semua yang lain dilewati.',
-  'choose.rangeBad': 'Tulis nomor atau rentang seperti 1-20, 25, 30-35.'
+  'choose.rangeBad': 'Tulis nomor atau rentang seperti 1-20, 25, 30-35.',
+  'set.backupTitle': 'Cadangan',
+  'set.export': 'Simpan langganan dan tautan',
+  'set.exportHint': 'Menulis berkas kecil berisi langganan dan tautan yang ada di halaman. Tidak berisi cookie, pengaturan, atau berkas.',
+  'set.import': 'Pulihkan dari berkas cadangan',
+  'set.importHint': 'Langganan dalam berkas ditambahkan (yang sudah ada tetap seperti semula). Tautan dimasukkan ke kotak di halaman, siap diunduh.',
+  'set.importBad': 'Berkas ini tidak dapat dibaca: bukan cadangan buatan YT Grabber.',
+  'set.importedMsg': 'Langganan ditambahkan: {n}. Tautan dimasukkan ke kotak: {m}.'
 };

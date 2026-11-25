@@ -340,5 +340,12 @@ window.I18N.en = {
   'choose.invert': 'Invert selection',
   'choose.range': 'Select a range…',
   'choose.rangePrompt': 'Numbers or ranges of the videos to download, out of {t} (for example 1-20, 25, 30-35). All the others are left out.',
-  'choose.rangeBad': 'Write numbers or ranges such as 1-20, 25, 30-35.'
+  'choose.rangeBad': 'Write numbers or ranges such as 1-20, 25, 30-35.',
+  'set.backupTitle': 'Backup',
+  'set.export': 'Save subscriptions and links',
+  'set.exportHint': 'Writes a small file with the subscriptions and the links that are on the page. It holds no cookies, settings or files.',
+  'set.import': 'Restore from a backup file',
+  'set.importHint': 'The subscriptions in the file are added (the ones that already exist stay as they are). The links are put in the box on the page, ready to be downloaded.',
+  'set.importBad': 'This file cannot be read: it is not a backup made by YT Grabber.',
+  'set.importedMsg': 'Subscriptions added: {n}. Links put in the box: {m}.'
 };

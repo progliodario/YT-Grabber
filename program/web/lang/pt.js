@@ -328,5 +328,12 @@ window.I18N.pt = {
   'choose.invert': 'Inverter seleção',
   'choose.range': 'Selecionar um intervalo…',
   'choose.rangePrompt': 'Números ou intervalos dos vídeos a descarregar, de {t} (por exemplo 1-20, 25, 30-35). Todos os outros ficam de fora.',
-  'choose.rangeBad': 'Escreva números ou intervalos como 1-20, 25, 30-35.'
+  'choose.rangeBad': 'Escreva números ou intervalos como 1-20, 25, 30-35.',
+  'set.backupTitle': 'Cópia de segurança',
+  'set.export': 'Guardar subscrições e links',
+  'set.exportHint': 'Escreve um ficheiro pequeno com as subscrições e os links que estão na página. Não contém cookies, definições nem ficheiros.',
+  'set.import': 'Restaurar a partir de um ficheiro de cópia',
+  'set.importHint': 'As subscrições do ficheiro são adicionadas (as que já existem ficam como estão). Os links são colocados na caixa da página, prontos a descarregar.',
+  'set.importBad': 'Não é possível ler este ficheiro: não é uma cópia feita pelo YT Grabber.',
+  'set.importedMsg': 'Subscrições adicionadas: {n}. Links colocados na caixa: {m}.'
 };

@@ -1291,6 +1291,22 @@
       };
       rd.readAsText(f);
     });
+    $('#setImport').addEventListener('change', function () {   // a backup made with "Save subscriptions and links"
+      var f = this.files && this.files[0], input = this;
+      if (!f) { return; }
+      var rd = new FileReader();
+      rd.onload = function () {
+        var data;
+        try { data = JSON.parse(String(rd.result)); } catch (e) { setMsg(tr('set.importBad')); input.value = ''; return; }
+        api('POST', '/api/import', { data: data }).then(function (r) {
+          var box = $('#urls');
+          if (r.links.length) { box.value = (box.value.trim() ? box.value.replace(/\s+$/, '') + '\n' : '') + r.links.join('\n'); updateDetect(); }
+          setMsg(tr('set.importedMsg', { n: r.added, m: r.links.length }), true);
+          pollState();
+        }).catch(function (e) { setMsg(e.message); }).then(function () { input.value = ''; });
+      };
+      rd.readAsText(f);
+    });
     $('#setCookiesClear').addEventListener('click', function () {
       api('POST', '/api/cookies', { text: '' }).then(function () { S.hasCookies = false; $('#cookiesState').textContent = tr('set.cookiesNone'); setMsg(tr('set.cookiesRemovedMsg'), true); })
         .catch(function (e) { setMsg(e.message); });

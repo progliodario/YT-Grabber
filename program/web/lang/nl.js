@@ -328,5 +328,12 @@ window.I18N.nl = {
   'choose.invert': 'Selectie omkeren',
   'choose.range': 'Een bereik selecteren…',
   'choose.rangePrompt': 'Nummers of bereiken van de te downloaden video\'s, van {t} (bijvoorbeeld 1-20, 25, 30-35). Alle andere worden overgeslagen.',
-  'choose.rangeBad': 'Schrijf nummers of bereiken zoals 1-20, 25, 30-35.'
+  'choose.rangeBad': 'Schrijf nummers of bereiken zoals 1-20, 25, 30-35.',
+  'set.backupTitle': 'Back-up',
+  'set.export': 'Abonnementen en links opslaan',
+  'set.exportHint': 'Schrijft een klein bestand met de abonnementen en de links die op de pagina staan. Het bevat geen cookies, instellingen of bestanden.',
+  'set.import': 'Herstellen uit een back-upbestand',
+  'set.importHint': 'De abonnementen in het bestand worden toegevoegd (bestaande blijven zoals ze zijn). De links komen in het vak op de pagina, klaar om te downloaden.',
+  'set.importBad': 'Dit bestand kan niet worden gelezen: het is geen back-up van YT Grabber.',
+  'set.importedMsg': 'Toegevoegde abonnementen: {n}. In het vak gezette links: {m}.'
 };

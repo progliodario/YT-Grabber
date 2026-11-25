@@ -328,5 +328,12 @@ window.I18N.pl = {
   'choose.invert': 'Odwróć zaznaczenie',
   'choose.range': 'Zaznacz zakres…',
   'choose.rangePrompt': 'Numery lub zakresy filmów do pobrania, z {t} (na przykład 1-20, 25, 30-35). Wszystkie pozostałe zostaną pominięte.',
-  'choose.rangeBad': 'Wpisz numery lub zakresy, np. 1-20, 25, 30-35.'
+  'choose.rangeBad': 'Wpisz numery lub zakresy, np. 1-20, 25, 30-35.',
+  'set.backupTitle': 'Kopia zapasowa',
+  'set.export': 'Zapisz subskrypcje i linki',
+  'set.exportHint': 'Zapisuje mały plik z subskrypcjami i linkami, które są na stronie. Nie zawiera ciasteczek, ustawień ani plików.',
+  'set.import': 'Przywróć z pliku kopii',
+  'set.importHint': 'Subskrypcje z pliku zostaną dodane (te, które już istnieją, pozostaną bez zmian). Linki trafią do pola na stronie, gotowe do pobrania.',
+  'set.importBad': 'Nie można odczytać tego pliku: to nie jest kopia wykonana przez YT Grabber.',
+  'set.importedMsg': 'Dodane subskrypcje: {n}. Linki wstawione do pola: {m}.'
 };

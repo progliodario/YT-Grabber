@@ -328,5 +328,12 @@ window.I18N.it = {
   'choose.invert': 'Inverti selezione',
   'choose.range': 'Seleziona un intervallo…',
   'choose.rangePrompt': 'Numeri o intervalli dei video da scaricare, su {t} (ad esempio 1-20, 25, 30-35). Tutti gli altri vengono esclusi.',
-  'choose.rangeBad': 'Scrivi numeri o intervalli come 1-20, 25, 30-35.'
+  'choose.rangeBad': 'Scrivi numeri o intervalli come 1-20, 25, 30-35.',
+  'set.backupTitle': 'Copia di sicurezza',
+  'set.export': 'Salva iscrizioni e link',
+  'set.exportHint': 'Scrive un piccolo file con le iscrizioni e i link che sono nella pagina. Non contiene cookie, impostazioni né file.',
+  'set.import': 'Ripristina da un file di copia',
+  'set.importHint': 'Le iscrizioni del file vengono aggiunte (quelle già esistenti restano come sono). I link vengono messi nella casella della pagina, pronti da scaricare.',
+  'set.importBad': 'Questo file non si può leggere: non è una copia fatta da YT Grabber.',
+  'set.importedMsg': 'Iscrizioni aggiunte: {n}. Link messi nella casella: {m}.'
 };

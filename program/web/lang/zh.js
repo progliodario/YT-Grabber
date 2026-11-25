@@ -328,5 +328,12 @@ window.I18N.zh = {
   'choose.invert': '反选',
   'choose.range': '选择范围…',
   'choose.rangePrompt': '要下载的视频编号或范围，共 {t} 个（例如 1-20, 25, 30-35）。其余的都会跳过。',
-  'choose.rangeBad': '请输入编号或范围，例如 1-20, 25, 30-35。'
+  'choose.rangeBad': '请输入编号或范围，例如 1-20, 25, 30-35。',
+  'set.backupTitle': '备份',
+  'set.export': '保存订阅和链接',
+  'set.exportHint': '写出一个小文件，其中包含页面上的订阅和链接。不含 Cookie、设置或文件。',
+  'set.import': '从备份文件恢复',
+  'set.importHint': '文件中的订阅会被添加（已存在的保持不变）。链接会放入页面上的输入框，可直接下载。',
+  'set.importBad': '无法读取此文件：它不是 YT Grabber 生成的备份。',
+  'set.importedMsg': '已添加订阅：{n}。已放入输入框的链接：{m}。'
 };

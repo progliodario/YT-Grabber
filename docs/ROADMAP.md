@@ -20,7 +20,7 @@ against what their makers publish, and of the zip that the Termux installer rece
 naming race tested without the network (the fake worker in `tests/fake_worker.py`); errors classified by exception type;
 `do_POST` and `job_action` split into route and action tables; `THIRD_PARTY_NOTICES.md`; CI on Python 3.10, 3.12 and 3.14 with pyflakes,
 bandit and CodeQL in CI, actions pinned by commit, Dependabot alerts and security updates; speed limit, allowed hours, proxy, pause all, invert
-selection and range selection.
+selection, range selection, and saving and restoring the subscriptions and links.
 
 ## Next: 1.7 (what is left of it)
 
@@ -45,9 +45,8 @@ selection and range selection.
 
 1. Format and folder per subscription (S-M). 2. Subtitles and a template for the file names (M). 3. Better tags: track number and album
 from the playlist, loudness normalisation, FLAC/OGG/WAV (M). 4. An archive that avoids downloading the same video twice from different
-playlists (S-M). 5. SponsorBlock and splitting by chapters (M). 6. Export and import of the list of links and of the subscriptions (S).
-7. History and statistics (M). 8. "Keep the latest N" and notifications per subscription (S). 9. Reorder jobs and priorities (M).
-(Done: speed limit, allowed hours, proxy, pause everything, range selection and "invert".)
+playlists (S-M). 5. SponsorBlock and splitting by chapters (M). 6. History and statistics (M). 7. "Keep the latest N" and notifications per subscription (S). 8. Reorder jobs and priorities (M).
+(Done: speed limit, allowed hours, proxy, pause everything, range selection, "invert", and saving and restoring the subscriptions and links.)
 
 ## Distribution
 

@@ -328,5 +328,12 @@ window.I18N.fr = {
   'choose.invert': 'Inverser la sélection',
   'choose.range': 'Sélectionner une plage…',
   'choose.rangePrompt': 'Numéros ou plages des vidéos à télécharger, sur {t} (par exemple 1-20, 25, 30-35). Toutes les autres sont ignorées.',
-  'choose.rangeBad': 'Écrivez des numéros ou des plages comme 1-20, 25, 30-35.'
+  'choose.rangeBad': 'Écrivez des numéros ou des plages comme 1-20, 25, 30-35.',
+  'set.backupTitle': 'Sauvegarde',
+  'set.export': 'Enregistrer les abonnements et les liens',
+  'set.exportHint': 'Écrit un petit fichier avec les abonnements et les liens qui sont dans la page. Il ne contient ni cookies, ni réglages, ni fichiers.',
+  'set.import': 'Restaurer depuis un fichier de sauvegarde',
+  'set.importHint': 'Les abonnements du fichier sont ajoutés (ceux qui existent déjà restent tels quels). Les liens sont placés dans la zone de la page, prêts à être téléchargés.',
+  'set.importBad': 'Ce fichier est illisible : ce n\'est pas une sauvegarde faite par YT Grabber.',
+  'set.importedMsg': 'Abonnements ajoutés : {n}. Liens placés dans la zone : {m}.'
 };

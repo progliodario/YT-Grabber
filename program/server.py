@@ -1275,6 +1275,66 @@ def add_sub(url, opts, hours, only_new=False):
     return sid
 
 
+EXPORT_FORMAT = 1
+MAX_IMPORT = 1000   # subscriptions or links taken from one file
+EXPORT_OPTS = ('mode', 'audio_format', 'mp3_bitrate', 'video_height', 'embed', 'single_only')
+
+
+def export_data():
+    """What can be saved to a file and restored later: the subscriptions and the links of the lists that are on the page. Never the
+    cookies, the settings, the folders or the files."""
+    with LOCK:
+        subs = [{'url': s['url'], 'title': s.get('title', ''), 'hours': s['hours'], 'enabled': bool(s.get('enabled', True)),
+                 'only_new': bool(s.get('only_new')), 'opts': {k: s['opts'][k] for k in EXPORT_OPTS if k in s['opts']}}
+                for s in SUBS.values()]
+        links, seen = [], set()
+        for jid in JOB_ORDER:
+            job = MANAGER_JOBS.get(jid)
+            for u in ((job.urls or [job.url]) if job else []):
+                if u not in seen and classify_url(u):
+                    seen.add(u)
+                    links.append(u)
+    return {'app': 'yt-grabber', 'format': EXPORT_FORMAT, 'version': APP_VERSION, 'exported': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'subscriptions': subs, 'links': links}
+
+
+def import_data(data):
+    """Restores the subscriptions of a file made by export_data (the ones that already exist are left as they are) and returns
+    (added, skipped, links): the links are for the page to put in the box, nothing is downloaded from them."""
+    if not isinstance(data, dict) or data.get('app') != 'yt-grabber' or data.get('format') != EXPORT_FORMAT:
+        raise ValueError('This file is not a YT Grabber backup.')
+    subs = data.get('subscriptions') if isinstance(data.get('subscriptions'), list) else []
+    added = skipped = 0
+    now = time.time()
+    with LOCK:
+        known = {s['url'] for s in SUBS.values()}
+    for s in subs[:MAX_IMPORT]:
+        c = classify_url(str(s.get('url') or '')) if isinstance(s, dict) else None
+        if not c or c[0] != 'playlist' or c[1] in known:   # (a file from somewhere else must not make the program visit other sites)
+            skipped += 1
+            continue
+        known.add(c[1])
+        hours = s.get('hours') if s.get('hours') in SUB_INTERVALS else 24
+        opts = clean_opts(s.get('opts') if isinstance(s.get('opts'), dict) else {})
+        opts['force'] = False
+        with LOCK:
+            sid = 's%x%02x' % (int(now), random.randint(0, 255))
+            while sid in SUBS:
+                sid += 'x'
+            SUBS[sid] = {'id': sid, 'url': c[1], 'title': str(s.get('title') or '')[:200], 'opts': opts, 'hours': hours,
+                         'enabled': bool(s.get('enabled', True)), 'created': now, 'last_check': None,
+                         'next_check': now + 60 + 30 * added,   # one after the other, not all at once
+                         'last_new': None, 'status': 'ok', 'message': '', 'only_new': bool(s.get('only_new')), 'seen': None}
+        added += 1
+    links = []
+    for u in (data.get('links') if isinstance(data.get('links'), list) else [])[:MAX_IMPORT]:
+        if isinstance(u, str) and len(u) <= 500 and classify_url(u.strip()):
+            links.append(u.strip())
+    if added:
+        save_subs()
+    return added, skipped, links
+
+
 def run_sub(sub):
     """Starts a check of a subscription: a normal job on the same link (same folder; the files already there are
     skipped without touching the network). Returns False if that link is already being downloaded."""
@@ -1502,6 +1562,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({'app': APP_NAME, 'version': APP_VERSION})
             if path == '/api/state':
                 return self.send_json(self.state())
+            if path == '/api/export':
+                text = json.dumps(export_data(), ensure_ascii=False, indent=1)
+                return self.send_bytes(200, text, 'application/json; charset=utf-8',
+                                       {'Content-Disposition': 'attachment; filename="yt-grabber-backup.json"'})
             m = re.fullmatch(r'/api/jobs/([\w]+)', path)
             if m:
                 return self.job_detail(m.group(1), int((qs.get('since') or ['0'])[0] or 0))
@@ -1620,6 +1684,13 @@ class Handler(BaseHTTPRequestHandler):
         save_subs()
         return self.send_json({'ok': True})
 
+    def post_import(self, body):
+        try:
+            added, skipped, links = import_data(body.get('data'))
+        except ValueError as e:
+            return self.err(400, str(e))
+        return self.send_json({'ok': True, 'added': added, 'skipped': skipped, 'links': links})
+
     def post_pause_all(self, body):
         return self.send_json({'ok': True, 'changed': bulk_pause(True)})
 
@@ -1675,6 +1746,7 @@ class Handler(BaseHTTPRequestHandler):
         '/api/jobs': post_jobs, '/api/settings': post_settings, '/api/cookies': post_cookies, '/api/choose-dir': post_choose_dir,
         '/api/update': post_update, '/api/appupdate': post_appupdate, '/api/quit': post_quit,
         '/api/appupdate/install': post_appupdate_install, '/api/pause-all': post_pause_all, '/api/resume-all': post_resume_all,
+        '/api/import': post_import,
     }
     POST_PATTERNS = [(r'/api/jobs/([\w]+)/action', post_job_action), (r'/api/subs/([\w]+)/action', post_sub_action)]
 

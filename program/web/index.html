@@ -221,6 +221,14 @@
         <p class="hint" id="updateInfo"></p>
       </div>
       <div class="grp">
+        <span class="lbl" data-i18n="set.backupTitle">Backup</span>
+        <a class="btn" id="setExport" href="/api/export" download="yt-grabber-backup.json" data-i18n="set.export">Save subscriptions and links</a>
+        <p class="hint" data-i18n="set.exportHint">Writes a small file with the subscriptions and the links that are on the page. It holds no cookies, settings or files.</p>
+        <label class="sublbl" for="setImport" data-i18n="set.import">Restore from a backup file</label>
+        <input type="file" id="setImport" accept=".json,application/json">
+        <p class="hint" data-i18n="set.importHint">The subscriptions in the file are added (the ones that already exist stay as they are). The links are put in the box on the page, ready to be downloaded.</p>
+      </div>
+      <div class="grp">
         <label class="lbl" for="setTextSize" data-i18n="set.textSize">Text size</label>
         <select id="setTextSize"></select>
       </div>

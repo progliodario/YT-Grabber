@@ -328,5 +328,12 @@ window.I18N.de = {
   'choose.invert': 'Auswahl umkehren',
   'choose.range': 'Bereich auswählen…',
   'choose.rangePrompt': 'Nummern oder Bereiche der Videos, die geladen werden sollen, von {t} (zum Beispiel 1-20, 25, 30-35). Alle anderen werden ausgelassen.',
-  'choose.rangeBad': 'Schreibe Nummern oder Bereiche wie 1-20, 25, 30-35.'
+  'choose.rangeBad': 'Schreibe Nummern oder Bereiche wie 1-20, 25, 30-35.',
+  'set.backupTitle': 'Sicherung',
+  'set.export': 'Abos und Links speichern',
+  'set.exportHint': 'Schreibt eine kleine Datei mit den Abos und den Links, die auf der Seite stehen. Sie enthält keine Cookies, Einstellungen oder Dateien.',
+  'set.import': 'Aus einer Sicherungsdatei wiederherstellen',
+  'set.importHint': 'Die Abos aus der Datei werden hinzugefügt (bereits vorhandene bleiben unverändert). Die Links kommen in das Feld der Seite, bereit zum Herunterladen.',
+  'set.importBad': 'Diese Datei kann nicht gelesen werden: Sie ist keine Sicherung von YT Grabber.',
+  'set.importedMsg': 'Hinzugefügte Abos: {n}. In das Feld gesetzte Links: {m}.'
 };

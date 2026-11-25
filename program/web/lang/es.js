@@ -328,5 +328,12 @@ window.I18N.es = {
   'choose.invert': 'Invertir selección',
   'choose.range': 'Seleccionar un intervalo…',
   'choose.rangePrompt': 'Números o intervalos de los vídeos que descargar, de {t} (por ejemplo 1-20, 25, 30-35). Todos los demás se omiten.',
-  'choose.rangeBad': 'Escribe números o intervalos como 1-20, 25, 30-35.'
+  'choose.rangeBad': 'Escribe números o intervalos como 1-20, 25, 30-35.',
+  'set.backupTitle': 'Copia de seguridad',
+  'set.export': 'Guardar suscripciones y enlaces',
+  'set.exportHint': 'Escribe un archivo pequeño con las suscripciones y los enlaces que hay en la página. No contiene cookies, ajustes ni archivos.',
+  'set.import': 'Restaurar desde un archivo de copia',
+  'set.importHint': 'Se añaden las suscripciones del archivo (las que ya existen se quedan como están). Los enlaces se ponen en el cuadro de la página, listos para descargar.',
+  'set.importBad': 'No se puede leer este archivo: no es una copia hecha por YT Grabber.',
+  'set.importedMsg': 'Suscripciones añadidas: {n}. Enlaces puestos en el cuadro: {m}.'
 };

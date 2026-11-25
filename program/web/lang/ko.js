@@ -328,5 +328,12 @@ window.I18N.ko = {
   'choose.invert': '선택 반전',
   'choose.range': '범위 선택…',
   'choose.rangePrompt': '다운로드할 동영상의 번호 또는 범위(전체 {t}개, 예: 1-20, 25, 30-35). 나머지는 모두 제외됩니다.',
-  'choose.rangeBad': '1-20, 25, 30-35 같은 번호 또는 범위를 입력하세요.'
+  'choose.rangeBad': '1-20, 25, 30-35 같은 번호 또는 범위를 입력하세요.',
+  'set.backupTitle': '백업',
+  'set.export': '구독과 링크 저장',
+  'set.exportHint': '페이지에 있는 구독과 링크를 담은 작은 파일을 만듭니다. 쿠키, 설정, 파일은 들어 있지 않습니다.',
+  'set.import': '백업 파일에서 복원',
+  'set.importHint': '파일에 있는 구독이 추가됩니다(이미 있는 것은 그대로 둡니다). 링크는 페이지의 입력란에 들어가 바로 다운로드할 수 있습니다.',
+  'set.importBad': '이 파일을 읽을 수 없습니다: YT Grabber에서 만든 백업이 아닙니다.',
+  'set.importedMsg': '추가된 구독: {n}. 입력란에 넣은 링크: {m}.'
 };

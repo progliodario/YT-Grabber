@@ -328,5 +328,12 @@ window.I18N.tr = {
   'choose.invert': 'Seçimi tersine çevir',
   'choose.range': 'Bir aralık seç…',
   'choose.rangePrompt': 'İndirilecek videoların numaraları veya aralıkları, {t} içinden (örneğin 1-20, 25, 30-35). Diğerlerinin hepsi dışarıda bırakılır.',
-  'choose.rangeBad': '1-20, 25, 30-35 gibi numaralar veya aralıklar yazın.'
+  'choose.rangeBad': '1-20, 25, 30-35 gibi numaralar veya aralıklar yazın.',
+  'set.backupTitle': 'Yedek',
+  'set.export': 'Abonelikleri ve bağlantıları kaydet',
+  'set.exportHint': 'Sayfadaki abonelikleri ve bağlantıları içeren küçük bir dosya yazar. Çerez, ayar veya dosya içermez.',
+  'set.import': 'Yedek dosyasından geri yükle',
+  'set.importHint': 'Dosyadaki abonelikler eklenir (zaten var olanlar olduğu gibi kalır). Bağlantılar sayfadaki kutuya konur, indirilmeye hazırdır.',
+  'set.importBad': 'Bu dosya okunamıyor: YT Grabber tarafından alınmış bir yedek değil.',
+  'set.importedMsg': 'Eklenen abonelikler: {n}. Kutuya konan bağlantılar: {m}.'
 };
