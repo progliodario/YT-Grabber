@@ -8,6 +8,11 @@ All notable changes are listed here, newest first. Version numbers follow `MAJOR
   the name and taking it is now one step. Found by the new tests of the whole pipeline.
 - Tests: the download pipeline is now tested end to end without the network (a fake worker and fake lists): numbering, errors,
   retries, the limit of 10 downloads, cancelling, choosing the videos, resuming after a restart and the HTTP API (13 tests).
+- **Failures are told by the type of the exception first** (geo block, live stream, conversion, network, HTTP 429/5xx) and by the words
+  of the message only as a fallback: yt-dlp rewords its messages, its exception types change rarely.
+- **With very long playlists the list of downloads is saved less often** (every 2 seconds up to 10,000 videos, then proportionally, at most
+  every 30): rewriting 8 MB twice a second was wasteful.
+- Code: `do_POST` is now a table of routes and `job_action` a table of small functions (both had a complexity of about 48).
 - A worker process that has been stopped is now collected (on Linux and macOS it stayed as a zombie until the program ended).
 
 - Maintenance, nothing changes for users: `CLAUDE.md` (notes for whoever continues the work), `docs/ROADMAP.md` (what to do next),

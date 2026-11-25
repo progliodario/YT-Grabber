@@ -69,14 +69,14 @@ def log(*a):
 # --------------------------------------------------------------------------- settings
 
 # --------------------------------------------------------------------------- errors
-from ytcommon import ERR, clean_msg, classify_text, human_title, base_ydl_params  # noqa: E402
+from ytcommon import ERR, clean_msg, classify_text, classify_exception, human_title, base_ydl_params  # noqa: E402
 
 
 def classify_error(e):
     """Exception -> (kind, cleaned message)."""
     m = clean_msg(e)
     eno = getattr(e, 'errno', None) if isinstance(e, OSError) and not isinstance(e, (ConnectionError, TimeoutError)) else None
-    return classify_text(m, eno), m
+    return classify_exception(e) or classify_text(m, eno), m
 
 
 # --------------------------------------------------------------------------- model (Item and Job are in model.py)
@@ -485,7 +485,9 @@ class Manager:
 
         def saver():
             while not SHUTDOWN.is_set():
-                time.sleep(2)
+                with LOCK:
+                    total = sum(len(j.items) for j in MANAGER_JOBS.values())
+                time.sleep(min(30.0, max(2.0, total / 5000.0)))   # the whole list of a job is rewritten: with 50,000 videos not every 2 seconds
                 try:
                     self.save_dirty()
                 except Exception as e:
@@ -1001,112 +1003,139 @@ def write_reports(job):
 
 # --------------------------------------------------------------------------- job actions
 
+# Every action takes (job, arg) and runs with COND held (see job_action). arg is the list of item numbers the page sent, or None
+# for all of them.
+
+def _wanted(arg):
+    return None if arg is None else set(arg)
+
+
+def _act_pause(job, arg):
+    job.paused = True
+    job.interrupted = False
+
+
+def _act_resume(job, arg):
+    job.paused = False
+    job.interrupted = False
+    job.choosing = False
+    if job.status == 'cancelled' or job.cancel:
+        job.cancel = False
+        job.status = 'running' if job.enum_done else 'enumerating'
+        job.finished = None
+        for it in job.items:
+            if it.state == 'c':
+                it.attempts = 0
+                job.set_state(it, 'q')
+                job.queue.append(it)
+        if not job.enum_done:
+            MGR.start_enum(job)
+    elif job.status == 'enumerating' and not (job.enum_thread and job.enum_thread.is_alive()):
+        MGR.start_enum(job)
+    elif job.status == 'error' and not job.enum_done:
+        job.status = 'enumerating'
+        job.message = ''
+        MGR.start_enum(job)
+    elif job.status == 'error' and not job.items:
+        job.status = 'enumerating'
+        job.enum_done = False
+        job.message = ''
+        MGR.start_enum(job)
+
+
+def _act_skip(job, arg):
+    # the user does not want these videos: only the queued ones can still be left out (the others are already on their way)
+    ids = _wanted(arg)
+    for it in job.items:
+        if it.state == 'q' and (ids is None or it.idx in ids):
+            it.emsg = SKIP_BY_USER
+            it.stage = 'Skipped'
+            job.set_state(it, 'k')   # the scheduler ignores queued items whose state is no longer q
+
+
+def _act_unskip(job, arg):
+    ids = _wanted(arg)
+    n = 0
+    for it in job.items:
+        if it.state == 'k' and (ids is None or it.idx in ids):
+            it.emsg = ''
+            it.stage = ''
+            job.set_state(it, 'q')
+            job.queue.append(it)
+            n += 1
+    if n and job.status in ('done', 'cancelled'):
+        job.cancel = False
+        job.finished = None
+        job.status = 'running'
+        job.enum_done = True
+
+
+def _act_cancel(job, arg):
+    job.cancel = True
+    job.paused = False
+    job.choosing = False
+    job.status = 'cancelled'
+    job.finished = time.time()
+    job.queue.clear()
+    job.delayed.clear()
+    for it in job.items:
+        if it.state in ('q', 'a', 'p'):
+            it.stage = 'Cancelled'
+            job.set_state(it, 'c')
+
+
+def _act_retry_failed(job, arg):
+    ids = _wanted(arg)
+    n = 0
+    for it in job.items:
+        if it.state == 'e' and (ids is None or it.idx in ids):
+            it.attempts = 0
+            it.fb = False
+            it.ekind = ''
+            it.emsg = ''
+            it.progress = 0.0
+            it.stage = ''
+            job.set_state(it, 'q')
+            job.queue.append(it)
+            n += 1
+    if n:
+        job.cancel = False
+        job.paused = False
+        job.interrupted = False
+        job.finished = None
+        if job.status in ('done', 'cancelled'):
+            job.status = 'running'
+            job.enum_done = True
+
+
+def _act_redownload(job, arg):
+    ids = _wanted(arg)
+    for it in job.items:
+        if it.state in ('d', 's', 'e', 'c') and (ids is None or it.idx in ids):
+            mf = MANIFESTS.get(job.dir)
+            mf.pop(it.key(), None)
+            MANIFESTS.mark(job.dir)
+            it.attempts = 0
+            it.fb = False
+            it.ekind = it.emsg = it.file = ''
+            it.progress = 0.0
+            job.set_state(it, 'q')
+            job.queue.append(it)
+    job.cancel = False
+    job.paused = False
+    job.finished = None
+    if job.status in ('done', 'cancelled'):
+        job.status = 'running'
+
+
+ACTIONS = {'pause': _act_pause, 'resume': _act_resume, 'cancel': _act_cancel, 'retry_failed': _act_retry_failed,
+           'redownload': _act_redownload, 'skip': _act_skip, 'unskip': _act_unskip}
+JOB_ACTIONS = tuple(ACTIONS)   # what the page may ask for (also: remove, open_folder)
+
+
 def job_action(job, action, arg=None):
     with COND:
-        if action == 'pause':
-            job.paused = True
-            job.interrupted = False
-        elif action == 'resume':
-            job.paused = False
-            job.interrupted = False
-            job.choosing = False
-            if job.status == 'cancelled' or job.cancel:
-                job.cancel = False
-                job.status = 'running' if job.enum_done else 'enumerating'
-                job.finished = None
-                for it in job.items:
-                    if it.state == 'c':
-                        it.attempts = 0
-                        job.set_state(it, 'q')
-                        job.queue.append(it)
-                if not job.enum_done:
-                    MGR.start_enum(job)
-            elif job.status == 'enumerating' and not (job.enum_thread and job.enum_thread.is_alive()):
-                MGR.start_enum(job)
-            elif job.status == 'error' and not job.enum_done:
-                job.status = 'enumerating'
-                job.message = ''
-                MGR.start_enum(job)
-            elif job.status == 'error' and not job.items:
-                job.status = 'enumerating'
-                job.enum_done = False
-                job.message = ''
-                MGR.start_enum(job)
-        elif action == 'skip':
-            # the user does not want these videos: only the queued ones can still be left out (the others are already on their way)
-            ids = None if arg is None else set(arg)
-            for it in job.items:
-                if it.state == 'q' and (ids is None or it.idx in ids):
-                    it.emsg = SKIP_BY_USER
-                    it.stage = 'Skipped'
-                    job.set_state(it, 'k')   # the scheduler ignores queued items whose state is no longer q
-        elif action == 'unskip':
-            ids = None if arg is None else set(arg)
-            n = 0
-            for it in job.items:
-                if it.state == 'k' and (ids is None or it.idx in ids):
-                    it.emsg = ''
-                    it.stage = ''
-                    job.set_state(it, 'q')
-                    job.queue.append(it)
-                    n += 1
-            if n and job.status in ('done', 'cancelled'):
-                job.cancel = False
-                job.finished = None
-                job.status = 'running'
-                job.enum_done = True
-        elif action == 'cancel':
-            job.cancel = True
-            job.paused = False
-            job.choosing = False
-            job.status = 'cancelled'
-            job.finished = time.time()
-            job.queue.clear()
-            job.delayed.clear()
-            for it in job.items:
-                if it.state in ('q', 'a', 'p'):
-                    it.stage = 'Cancelled'
-                    job.set_state(it, 'c')
-        elif action == 'retry_failed':
-            ids = None if arg is None else set(arg)
-            n = 0
-            for it in job.items:
-                if it.state == 'e' and (ids is None or it.idx in ids):
-                    it.attempts = 0
-                    it.fb = False
-                    it.ekind = ''
-                    it.emsg = ''
-                    it.progress = 0.0
-                    it.stage = ''
-                    job.set_state(it, 'q')
-                    job.queue.append(it)
-                    n += 1
-            if n:
-                job.cancel = False
-                job.paused = False
-                job.interrupted = False
-                job.finished = None
-                if job.status in ('done', 'cancelled'):
-                    job.status = 'running'
-                    job.enum_done = True
-        elif action == 'redownload':
-            ids = None if arg is None else set(arg)
-            for it in job.items:
-                if it.state in ('d', 's', 'e', 'c') and (ids is None or it.idx in ids):
-                    mf = MANIFESTS.get(job.dir)
-                    mf.pop(it.key(), None)
-                    MANIFESTS.mark(job.dir)
-                    it.attempts = 0
-                    it.fb = False
-                    it.ekind = it.emsg = it.file = ''
-                    it.progress = 0.0
-                    job.set_state(it, 'q')
-                    job.queue.append(it)
-            job.cancel = False
-            job.paused = False
-            job.finished = None
-            if job.status in ('done', 'cancelled'):
-                job.status = 'running'
+        ACTIONS[action](job, arg)
         if action in ('skip', 'resume'):
             maybe_finish(job)   # everything was left out: there is nothing to wait for
         job.dirty = True
@@ -1439,101 +1468,13 @@ class Handler(BaseHTTPRequestHandler):
                 return
             path = urllib.parse.urlparse(self.path).path
             body = self.read_json()
-            if path == '/api/jobs':
-                sub_hours = body.get('subscribe')
-                created, rejected, dups = create_jobs(body.get('urls', ''), body.get('opts') or {},
-                                                      sub_hours if isinstance(sub_hours, int) else None,
-                                                      bool(body.get('only_new')), bool(body.get('choose')))
-                if not created:
-                    if dups:
-                        return self.err(409, 'This link is already in progress: you can find it in the list below.')
-                    return self.err(400, 'No valid YouTube link found' + (': ' + ', '.join(rejected[:3]) if rejected else ''))
-                return self.send_json({'created': created, 'rejected': rejected, 'duplicates': dups})
-            m = re.fullmatch(r'/api/jobs/([\w]+)/action', path)
-            if m:
-                job = MANAGER_JOBS.get(m.group(1))
-                if not job:
-                    return self.err(404, 'Job not found')
-                act = body.get('action')
-                if act == 'remove':
-                    remove_job(job)
-                elif act == 'open_folder':
-                    if not self.is_local_client():
-                        return self.err(403, 'Only from the computer running the server')
-                    open_folder(job.dir)
-                elif act in ('pause', 'resume', 'cancel', 'retry_failed', 'redownload', 'skip', 'unskip'):
-                    job_action(job, act, body.get('ids'))
-                else:
-                    return self.err(400, 'Unknown action')
-                return self.send_json({'ok': True})
-            m = re.fullmatch(r'/api/subs/([\w]+)/action', path)
-            if m:
-                sub = SUBS.get(m.group(1))
-                if not sub:
-                    return self.err(404, 'Subscription not found')
-                act, now = body.get('action'), time.time()
-                if act == 'remove':
-                    with LOCK:
-                        SUBS.pop(sub['id'], None)
-                elif act == 'toggle':
-                    with LOCK:
-                        sub['enabled'] = not sub.get('enabled')
-                        if sub['enabled']:
-                            sub['next_check'] = min(sub.get('next_check') or now, now + 60)
-                elif act == 'interval':
-                    hours = body.get('hours')
-                    if hours not in SUB_INTERVALS:
-                        return self.err(400, 'Invalid interval')
-                    with LOCK:
-                        sub['hours'] = hours
-                        sub['next_check'] = (sub.get('last_check') or now) + hours * 3600
-                elif act == 'check':
-                    if not run_sub(sub):
-                        return self.err(409, 'This link is already being downloaded.')
-                else:
-                    return self.err(400, 'Unknown action')
-                save_subs()
-                return self.send_json({'ok': True})
-            if path == '/api/settings':
-                return self.save_settings_req(body)
-            if path == '/api/cookies':
-                if not self.is_local_client():   # the cookies are the user's sign-in to YouTube: not for other devices on the network
-                    return self.err(403, 'Only from the computer running the server')
-                txt = body.get('text', '')
-                if txt.strip():
-                    if '# Netscape' not in txt[:200] and '\t' not in txt:
-                        return self.err(400, 'Invalid format: a cookies.txt file in Netscape format is required')
-                    atomic_write(COOKIES_FILE, txt.replace('\r\n', '\n'), private=True)
-                else:
-                    if os.path.exists(COOKIES_FILE):
-                        os.remove(COOKIES_FILE)
-                return self.send_json({'ok': True, 'has_cookies': os.path.exists(COOKIES_FILE)})
-            if path == '/api/choose-dir':
-                if not self.is_local_client():
-                    return self.err(403, 'Only from the computer running the server')
-                return self.send_json({'path': choose_dir(body.get('start') or SETTINGS['download_dir'])})
-            if path == '/api/update':
-                return self.update_ytdlp()
-            if path == '/api/appupdate':   # "check now" for a new version of YT Grabber itself
-                if time.time() - updates.UPDATE['checked'] > 30:
-                    updates.check_update()
-                return self.send_json(updates.update_state())
-            if path == '/api/quit':   # clean shutdown (used by the Android app when "Close" is pressed)
-                if not self.is_local_client():
-                    return self.err(403, 'Only from the device running the server')
-                self.send_json({'ok': True})
-                shutdown_now()
-                return
-            if path == '/api/appupdate/install':   # "Update now" (Windows app): download, check, install, restart
-                if not self.is_local_client():
-                    return self.err(403, 'Only from the computer running the server')
-                if not updates.install_supported():
-                    return self.err(400, 'The one-click update is only available in the Windows app installed with its setup.')
-                if not updates.update_state()['can_install']:
-                    return self.err(409, 'There is no update ready to install.')
-                if updates.UPDATE_INSTALL['state'] not in ('downloading', 'installing'):
-                    threading.Thread(target=updates.run_update_install, daemon=True, name='update-install').start()
-                return self.send_json({'ok': True})
+            handler = self.POST_ROUTES.get(path)
+            if handler:
+                return handler(self, body)
+            for pattern, handler in self.POST_PATTERNS:
+                m = re.fullmatch(pattern, path)
+                if m:
+                    return handler(self, body, m.group(1))
             return self.err(404, 'Not found')
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             pass
@@ -1543,6 +1484,122 @@ class Handler(BaseHTTPRequestHandler):
                 self.err(500, clean_msg(e))
             except Exception:
                 pass
+
+    def local_only(self, who='computer'):
+        """True if the request comes from this computer; otherwise answers 403 and returns False."""
+        if self.is_local_client():
+            return True
+        self.err(403, 'Only from the %s running the server' % who)
+        return False
+
+    # --- the POST routes: each takes (self, body), or (self, body, id) when the address has an id in it
+    def post_jobs(self, body):
+        sub_hours = body.get('subscribe')
+        created, rejected, dups = create_jobs(body.get('urls', ''), body.get('opts') or {},
+                                              sub_hours if isinstance(sub_hours, int) else None,
+                                              bool(body.get('only_new')), bool(body.get('choose')))
+        if not created:
+            if dups:
+                return self.err(409, 'This link is already in progress: you can find it in the list below.')
+            return self.err(400, 'No valid YouTube link found' + (': ' + ', '.join(rejected[:3]) if rejected else ''))
+        return self.send_json({'created': created, 'rejected': rejected, 'duplicates': dups})
+
+    def post_job_action(self, body, jid):
+        job = MANAGER_JOBS.get(jid)
+        if not job:
+            return self.err(404, 'Job not found')
+        act = body.get('action')
+        if act == 'remove':
+            remove_job(job)
+        elif act == 'open_folder':
+            if not self.local_only():
+                return
+            open_folder(job.dir)
+        elif act in JOB_ACTIONS:
+            job_action(job, act, body.get('ids'))
+        else:
+            return self.err(400, 'Unknown action')
+        return self.send_json({'ok': True})
+
+    def post_sub_action(self, body, sid):
+        sub = SUBS.get(sid)
+        if not sub:
+            return self.err(404, 'Subscription not found')
+        act, now = body.get('action'), time.time()
+        if act == 'remove':
+            with LOCK:
+                SUBS.pop(sub['id'], None)
+        elif act == 'toggle':
+            with LOCK:
+                sub['enabled'] = not sub.get('enabled')
+                if sub['enabled']:
+                    sub['next_check'] = min(sub.get('next_check') or now, now + 60)
+        elif act == 'interval':
+            hours = body.get('hours')
+            if hours not in SUB_INTERVALS:
+                return self.err(400, 'Invalid interval')
+            with LOCK:
+                sub['hours'] = hours
+                sub['next_check'] = (sub.get('last_check') or now) + hours * 3600
+        elif act == 'check':
+            if not run_sub(sub):
+                return self.err(409, 'This link is already being downloaded.')
+        else:
+            return self.err(400, 'Unknown action')
+        save_subs()
+        return self.send_json({'ok': True})
+
+    def post_settings(self, body):
+        return self.save_settings_req(body)
+
+    def post_cookies(self, body):
+        if not self.local_only():   # the cookies are the user's sign-in to YouTube: not for other devices on the network
+            return
+        txt = body.get('text', '')
+        if txt.strip():
+            if '# Netscape' not in txt[:200] and '\t' not in txt:
+                return self.err(400, 'Invalid format: a cookies.txt file in Netscape format is required')
+            atomic_write(COOKIES_FILE, txt.replace('\r\n', '\n'), private=True)
+        elif os.path.exists(COOKIES_FILE):
+            os.remove(COOKIES_FILE)
+        return self.send_json({'ok': True, 'has_cookies': os.path.exists(COOKIES_FILE)})
+
+    def post_choose_dir(self, body):
+        if not self.local_only():
+            return
+        return self.send_json({'path': choose_dir(body.get('start') or SETTINGS['download_dir'])})
+
+    def post_update(self, body):
+        return self.update_ytdlp()
+
+    def post_appupdate(self, body):   # "check now" for a new version of YT Grabber itself
+        if time.time() - updates.UPDATE['checked'] > 30:
+            updates.check_update()
+        return self.send_json(updates.update_state())
+
+    def post_quit(self, body):   # clean shutdown (used by the Android app when "Close" is pressed)
+        if not self.local_only('device'):
+            return
+        self.send_json({'ok': True})
+        shutdown_now()
+
+    def post_appupdate_install(self, body):   # "Update now" (Windows app): download, check, install, restart
+        if not self.local_only():
+            return
+        if not updates.install_supported():
+            return self.err(400, 'The one-click update is only available in the Windows app installed with its setup.')
+        if not updates.update_state()['can_install']:
+            return self.err(409, 'There is no update ready to install.')
+        if updates.UPDATE_INSTALL['state'] not in ('downloading', 'installing'):
+            threading.Thread(target=updates.run_update_install, daemon=True, name='update-install').start()
+        return self.send_json({'ok': True})
+
+    POST_ROUTES = {
+        '/api/jobs': post_jobs, '/api/settings': post_settings, '/api/cookies': post_cookies, '/api/choose-dir': post_choose_dir,
+        '/api/update': post_update, '/api/appupdate': post_appupdate, '/api/quit': post_quit,
+        '/api/appupdate/install': post_appupdate_install,
+    }
+    POST_PATTERNS = [(r'/api/jobs/([\w]+)/action', post_job_action), (r'/api/subs/([\w]+)/action', post_sub_action)]
 
     # --- specific handlers
     def state(self):

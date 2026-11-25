@@ -168,6 +168,30 @@ def classify_text(m, errno=None):
     return 'other'
 
 
+# What the type of an exception says about a failure. Messages change with every version of yt-dlp, types rarely do, so this is
+# tried first; classify_text (the words of the message) is the fallback. Names, not classes: nothing here needs to import yt-dlp.
+TYPE_KINDS = {
+    'GeoRestrictedError': 'geo', 'UserNotLive': 'live', 'PostProcessingError': 'postproc', 'FFmpegPostProcessorError': 'postproc',
+    'UnavailableVideoError': 'unavailable', 'ContentTooShortError': 'network', 'TransportError': 'network', 'SSLError': 'network',
+    'IncompleteRead': 'network', 'ConnectionError': 'network', 'TimeoutError': 'network', 'timeout': 'network', 'URLError': 'network',
+    'ConnectionResetError': 'network', 'ConnectionAbortedError': 'network', 'ConnectionRefusedError': 'network',
+}
+
+
+def classify_exception(e):
+    """The kind of failure (a key of ERR) that the type of the exception tells, or None when the type says nothing."""
+    for x in ((getattr(e, 'exc_info', None) or (None, None))[1], e):   # yt-dlp wraps the real exception in a DownloadError
+        if x is None:
+            continue
+        status = getattr(x, 'status', None)
+        if type(x).__name__ == 'HTTPError' and isinstance(status, int):   # (the HTTPError of yt-dlp, which has the status)
+            return 'ratelimit' if status == 429 else ('network' if status >= 500 else None)
+        for cls in type(x).__mro__:
+            if cls.__name__ in TYPE_KINDS:
+                return TYPE_KINDS[cls.__name__]
+    return None
+
+
 def build_format(opts):
     """-> (format, format_sort, fallback_format, postprocessors, extra_params)"""
     pps = []

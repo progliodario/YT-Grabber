@@ -26,6 +26,36 @@ class ErrorTests(unittest.TestCase):
     def test_disk_errno(self):
         self.assertEqual(ytcommon.classify_text('x', errno=28), 'disk')
 
+    def test_the_type_of_the_exception_comes_first(self):
+        """yt-dlp rewords its messages from time to time; the type of the exception does not change."""
+        import yt_dlp.utils as U
+        kind = ytcommon.classify_exception
+        self.assertEqual(kind(U.GeoRestrictedError('whatever the words are')), 'geo')
+        self.assertEqual(kind(U.PostProcessingError('whatever')), 'postproc')
+        self.assertEqual(kind(ConnectionResetError('whatever')), 'network')
+        self.assertEqual(kind(TimeoutError()), 'network')
+        wrapped = U.DownloadError('ERROR: the words say nothing', exc_info=(U.GeoRestrictedError, U.GeoRestrictedError('x'), None))
+        self.assertEqual(kind(wrapped), 'geo')   # yt-dlp wraps the real exception
+
+    def test_an_http_error_is_told_by_its_status(self):
+        class HTTPError(Exception):   # the same name and shape as the one of yt-dlp
+            def __init__(self, status):
+                super().__init__('HTTP Error %d' % status)
+                self.status = status
+        kind = ytcommon.classify_exception
+        self.assertEqual(kind(HTTPError(429)), 'ratelimit')
+        self.assertEqual(kind(HTTPError(503)), 'network')
+        self.assertIsNone(kind(HTTPError(403)))   # says nothing: the words of the message decide
+
+    def test_a_type_that_says_nothing_falls_back_to_the_words(self):
+        self.assertIsNone(ytcommon.classify_exception(ValueError('Private video')))
+        self.assertIsNone(ytcommon.classify_exception(OSError(28, 'No space left on device')))   # the disk case goes by errno
+        self.assertEqual(ytcommon.classify_text('Private video', None), 'private')
+
+    def test_every_type_maps_to_a_real_kind(self):
+        for kind in ytcommon.TYPE_KINDS.values():
+            self.assertIn(kind, ytcommon.ERR)
+
     def test_every_kind_has_a_label(self):
         for kind in set(self.CASES.values()) | {'disk', 'postproc', 'copyright', 'live', 'premium'}:
             self.assertIn(kind, ytcommon.ERR)

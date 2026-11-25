@@ -190,8 +190,9 @@ def handle(task):
         if isinstance(e, (KeyboardInterrupt, SystemExit)):
             raise
         msg = C.clean_msg(e)
-        send({'ev': 'error', 'tid': S.tid, 'msg': msg, 'errno': getattr(e, 'errno', None) if isinstance(e, OSError) else None})
-        if C.classify_text(msg) in ('postproc', 'other'):
+        kind = C.classify_exception(e)   # from the type of the exception; the server falls back to the words of the message
+        send({'ev': 'error', 'tid': S.tid, 'msg': msg, 'kind': kind, 'errno': getattr(e, 'errno', None) if isinstance(e, OSError) else None})
+        if (kind or C.classify_text(msg)) in ('postproc', 'other'):
             try:
                 S.ydl.close()
             except Exception:

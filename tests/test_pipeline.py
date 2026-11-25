@@ -178,6 +178,7 @@ class PipelineTests(unittest.TestCase):
         job = start(playlist('PLpipe00000008', ['SLOW%07d' % i for i in range(24)]))
         self.assertTrue(wait(lambda: sum(1 for i in job.items if i.state == 'd') >= 2, 60))
         server.job_action(job, 'pause')
+        wait(lambda: not any(i.state in ('a', 'p') for i in job.items), 30)   # what was on its way finishes (a pause does not stop it)
         wait(lambda: server.SLOTS['used'] == 0, 20)
         server.MGR.save_dirty()
         done_before = sum(1 for i in job.items if i.state == 'd')
