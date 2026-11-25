@@ -263,6 +263,31 @@ def base_ydl_params():
     return p
 
 
+TOKEN_FILE = os.path.join(DATA, 'token.txt')
+
+
+def current_token():
+    """The access token of the page (see server.py), or '' if there is none: the environment (the Android app) or the file."""
+    t = os.environ.get('YTG_TOKEN', '').strip()
+    if t:
+        return t
+    try:
+        with open(TOKEN_FILE, encoding='utf-8') as f:
+            return f.read().strip()
+    except OSError:
+        return ''
+
+
+def load_or_create_token():
+    """The token kept in the data folder (made once, readable only by the owner), so that the link stays the same between runs."""
+    t = current_token()
+    if not t:
+        import secrets
+        t = secrets.token_urlsafe(24)
+        atomic_write(TOKEN_FILE, t, private=True)
+    return t
+
+
 def atomic_write(path, text, private=False):
     """Writes the file through a temporary copy. private=True: readable by the owner only (cookies); no effect on Windows."""
     os.makedirs(os.path.dirname(path), exist_ok=True)

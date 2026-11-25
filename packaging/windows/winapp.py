@@ -114,9 +114,12 @@ def message_box(text, flags=MB_ICONERROR):
 # ------------------------------------------------------------------ talking to the local server
 
 def _request(port, path, body=None, timeout=2.0):
+    headers = {'X-YTG': '1', 'Content-Type': 'application/json'}
+    token = ytcommon.current_token()   # when the server asks for an access token (--host 0.0.0.0 or --token)
+    if token:
+        headers['X-YTG-Token'] = token
     req = urllib.request.Request('http://127.0.0.1:%d%s' % (port, path),
-                                 data=None if body is None else json.dumps(body).encode(),
-                                 headers={'X-YTG': '1', 'Content-Type': 'application/json'})
+                                 data=None if body is None else json.dumps(body).encode(), headers=headers)
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return json.loads(r.read().decode() or '{}')
 
@@ -220,7 +223,8 @@ def open_window(port, profile_dir):
         user32.ShowWindow(hwnd, SW_RESTORE)
         user32.SetForegroundWindow(hwnd)
         return
-    url = 'http://localhost:%d/' % port
+    token = ytcommon.current_token()
+    url = 'http://localhost:%d/' % port + (('?t=' + token) if token else '')
     browser = find_browser()
     if not browser:
         os.startfile(url)   # no Edge or Chrome: the default browser, as a normal tab

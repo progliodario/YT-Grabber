@@ -22,6 +22,13 @@ object YtgRuntime {
     const val PORT = 8765
     private const val LIBS_ASSET = "ytg-libs.zip"
 
+    /**
+     * Access token of the server (a new one for every start of the app). All the applications of the phone can reach 127.0.0.1:
+     * without it any of them could use the downloader. The server asks for it from every request except the ping; the page
+     * gets it in the first address (?t=...) and keeps it in a cookie, the service sends it in a header.
+     */
+    val TOKEN: String = ByteArray(24).also { java.security.SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
+
     fun baseDir(ctx: Context) = File(ctx.noBackupFilesDir, "youtubedl-android")
     fun pythonHome(ctx: Context) = File(baseDir(ctx), "packages/python/usr")
     fun ffmpegHome(ctx: Context) = File(baseDir(ctx), "packages/ffmpeg")
@@ -124,6 +131,7 @@ object YtgRuntime {
             "YTG_FFMPEG" to File(native, "libffmpeg.so").path,
             "YTG_QJS" to File(native, "libqjs.so").path,
             "YTG_DEFAULT_DIR" to downloadDir,
+            "YTG_TOKEN" to TOKEN,
         )
     }
 }
@@ -136,6 +144,7 @@ object Http {
         val c = URL(BASE + path).openConnection() as HttpURLConnection
         c.connectTimeout = timeoutMs
         c.readTimeout = timeoutMs
+        c.setRequestProperty("X-YTG-Token", YtgRuntime.TOKEN)
         try {
             if (c.responseCode == 200) c.inputStream.bufferedReader().use { it.readText() } else null
         } finally {
@@ -154,6 +163,7 @@ object Http {
         c.requestMethod = "POST"
         c.doOutput = true
         c.setRequestProperty("X-YTG", "1")
+        c.setRequestProperty("X-YTG-Token", YtgRuntime.TOKEN)
         c.setRequestProperty("Content-Type", "application/json")
         c.outputStream.use { it.write(body.toByteArray()) }
         val ok = c.responseCode == 200

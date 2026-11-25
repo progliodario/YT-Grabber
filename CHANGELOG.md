@@ -8,6 +8,11 @@ All notable changes are listed here, newest first. Version numbers follow `MAJOR
   the name and taking it is now one step. Found by the new tests of the whole pipeline.
 - Tests: the download pipeline is now tested end to end without the network (a fake worker and fake lists): numbering, errors,
   retries, the limit of 10 downloads, cancelling, choosing the videos, resuming after a restart and the HTTP API (13 tests).
+- **Security: an access token for the page.** When it is set, every request except the ping needs it (cookie `ytg_token` or header
+  `X-YTG-Token`); the link with `?t=<token>` starts the session. It is on by itself with `--host 0.0.0.0` (`--no-token` turns it off) and
+  can be asked for with `--token` (the token is kept in the data folder, readable only by the owner, so the link stays the same). The Android
+  app now always uses a token of its own, new at every start: all the apps of a phone share `127.0.0.1`, and any of them could use the
+  downloader before. Tested in an Android 14 emulator.
 - **Failures are told by the type of the exception first** (geo block, live stream, conversion, network, HTTP 429/5xx) and by the words
   of the message only as a fallback: yt-dlp rewords its messages, its exception types change rarely.
 - **With very long playlists the list of downloads is saved less often** (every 2 seconds up to 10,000 videos, then proportionally, at most

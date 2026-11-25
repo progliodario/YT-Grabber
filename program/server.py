@@ -15,6 +15,7 @@ import argparse
 import atexit
 import gzip
 import heapq
+import hmac
 import json
 import mimetypes
 import queue
@@ -70,6 +71,7 @@ def log(*a):
 
 # --------------------------------------------------------------------------- errors
 from ytcommon import ERR, clean_msg, classify_text, classify_exception, human_title, base_ydl_params  # noqa: E402
+from ytcommon import current_token, load_or_create_token, TOKEN_FILE  # noqa: E402
 
 
 def classify_error(e):
@@ -1344,6 +1346,27 @@ SECURITY_HEADERS = {'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DEN
                     'Cross-Origin-Resource-Policy': 'same-origin'}
 
 
+# Access token. When it is set, every request except /api/ping needs it, as the cookie `ytg_token` or the header `X-YTG-Token`. It is set
+# when the program is reachable from other devices (--host 0.0.0.0), when --token is given, and by the Android app (where all the
+# applications of the phone share 127.0.0.1). The link with ?t=<token> sets the cookie and then goes to the page without it.
+TOKEN = ''
+PUBLIC_PATHS = ('/api/ping',)
+LOCKED_PAGE = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>YT Grabber: access link needed</title>
+<style>body{font:1.0625rem/1.6 system-ui,sans-serif;max-width:40rem;margin:12vh auto;padding:0 1rem}code{background:rgba(127,127,127,.2);padding:.1em .3em;border-radius:.3em}</style>
+</head><body><main><h1>An access link is needed</h1>
+<p>This copy of YT Grabber only accepts requests that carry its access token. Open it from the program (the window or the
+application) or use the address that the program prints when it starts, which ends with <code>?t=</code> and a long text.</p>
+<p>The token keeps other programs, other users of this computer and other devices on the network from using your downloader.</p>
+</main></body></html>
+"""
+
+
+def access_url(port, host='localhost'):
+    return 'http://%s:%d/' % (host, port) + (('?t=' + TOKEN) if TOKEN else '')
+
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
     timeout = 120   # a connection that sends nothing must not keep a thread for ever
@@ -1361,6 +1384,35 @@ class Handler(BaseHTTPRequestHandler):
         if self.server.allow_remote:
             return True
         return h.lower() in LOCAL_NAMES
+
+    def token_ok(self):
+        """True if there is no token to check, or the request carries the right one (cookie or header)."""
+        if not TOKEN:
+            return True
+        sent = self.headers.get('X-YTG-Token') or ''
+        if not sent:
+            for part in (self.headers.get('Cookie') or '').split(';'):
+                name, _, value = part.strip().partition('=')
+                if name == 'ytg_token':
+                    sent = value
+        return hmac.compare_digest(sent.encode('utf-8'), TOKEN.encode('utf-8'))
+
+    def refuse_without_token(self, path, qs):
+        """The answer to a request that has no token. A link with the right ?t= starts the session: it sets the cookie and goes to the
+        same page without the token in the address (the other parts of the query stay)."""
+        mine = (qs.get('t') or [''])[0]
+        if self.command in ('GET', 'HEAD') and mine and hmac.compare_digest(mine.encode('utf-8'), TOKEN.encode('utf-8')):
+            rest = urllib.parse.urlencode([(k, v) for k, vs in qs.items() if k != 't' for v in vs])
+            self.send_response(302)
+            self.send_header('Location', path + ('?' + rest if rest else ''))
+            self.send_header('Set-Cookie', 'ytg_token=%s; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000' % TOKEN)
+            self.send_header('Content-Length', '0')
+            self.send_header('Cache-Control', 'no-store')
+            self.end_headers()
+            return
+        if path in ('', '/') or 'text/html' in (self.headers.get('Accept') or ''):
+            return self.send_bytes(401, LOCKED_PAGE, 'text/html; charset=utf-8')
+        return self.err(401, 'Access token required')
 
     def is_local_client(self):
         return self.client_address[0] in ('127.0.0.1', '::1', '::ffff:127.0.0.1')
@@ -1429,6 +1481,8 @@ class Handler(BaseHTTPRequestHandler):
             u = urllib.parse.urlparse(self.path)
             path = u.path
             qs = urllib.parse.parse_qs(u.query)
+            if TOKEN and path not in PUBLIC_PATHS and not self.token_ok():
+                return self.refuse_without_token(path, qs)
             if path == '/api/ping':
                 return self.send_json({'app': APP_NAME, 'version': APP_VERSION})
             if path == '/api/state':
@@ -1464,6 +1518,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if not self.host_ok():
                 return self.err(403, 'Host not allowed')
+            if not self.token_ok():
+                return self.err(401, 'Access token required')
             if not self.check_post():
                 return
             path = urllib.parse.urlparse(self.path).path
@@ -1905,6 +1961,9 @@ def main():
     ap.add_argument('--port', type=int, default=8765)
     ap.add_argument('--dir', default=None, help='destination folder for downloads')
     ap.add_argument('--no-browser', action='store_true')
+    ap.add_argument('--token', action='store_true',
+                    help='require an access token (a long text kept in the data folder) from every request; on by itself with --host 0.0.0.0')
+    ap.add_argument('--no-token', action='store_true', help='with --host 0.0.0.0: do not require the token (anyone on the network can use the page)')
     ap.add_argument('--idle-exit', type=int, default=0, metavar='MINUTES',
                     help='quit when nothing is downloading and nobody has used the page for this many minutes '
                          '(ignored while subscriptions are active)')
@@ -1931,8 +1990,16 @@ def main():
                 break
             time.sleep(0.5)
 
+    global TOKEN
+    remote = a.host not in ('127.0.0.1', 'localhost', '::1')
+    if os.environ.get('YTG_TOKEN'):
+        TOKEN = os.environ['YTG_TOKEN'].strip()   # given by the application that starts the server (Android)
+    elif a.token or (remote and not a.no_token):
+        TOKEN = load_or_create_token()
+
     if already_running(a.port):
-        url = 'http://localhost:%d/' % a.port
+        TOKEN = TOKEN or current_token()   # the running copy may have one: its token is in the data folder
+        url = access_url(a.port)
         print('YT Grabber is already running: opening', url)
         if not a.no_browser:
             open_browser(url)
@@ -1950,7 +2017,7 @@ def main():
     if not srv:
         print('No free port found')
         sys.exit(1)
-    srv.allow_remote = a.host not in ('127.0.0.1', 'localhost', '::1')
+    srv.allow_remote = remote
 
     MGR.load_jobs()
     MGR.start()
@@ -1961,10 +2028,12 @@ def main():
         threading.Thread(target=idle_watch, args=(a.idle_exit * 60,), daemon=True, name='idle').start()
     atexit.register(MGR.save_dirty)
 
-    url = 'http://localhost:%d/' % port
+    url = access_url(port)
     print('=' * 60)
     print(' YT Grabber %s  -  yt-dlp %s' % (APP_VERSION, yt_dlp.version.__version__))
     print(' Open in the browser:  %s' % url)
+    if TOKEN:
+        print(' Access token required (kept in %s): the address above carries it, keep it private' % TOKEN_FILE)
     print(' Simultaneous downloads: %d   |   Folder: %s' % (CONCURRENCY, SETTINGS['download_dir']))
     if ANDROID_APP:
         print(' Android app: the server runs in a foreground service')
@@ -1975,10 +2044,13 @@ def main():
     if not HAVE_FFMPEG:
         print(' WARNING: ffmpeg not found - conversions not available')
     if srv.allow_remote:
-        print(' WARNING: server reachable from other devices on the network')
+        if TOKEN:
+            print(' The server is reachable from other devices on the network, but only with the token')
+        else:
+            print(' WARNING: server reachable from other devices on the network, with no token: anyone there can use it')
         ip = lan_address()
         if ip:
-            print(' From a phone or tablet on the same Wi-Fi, open:  http://%s:%d/' % (ip, port))
+            print(' From a phone or tablet on the same Wi-Fi, open:  %s' % access_url(port, ip))
     print(' Press Ctrl+C to quit (downloads in progress can be resumed)')
     print('=' * 60)
     if not a.no_browser:

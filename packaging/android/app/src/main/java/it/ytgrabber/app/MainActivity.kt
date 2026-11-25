@@ -55,6 +55,10 @@ class MainActivity : AppCompatActivity() {
     private val ui = Handler(Looper.getMainLooper())
     private val base = "http://127.0.0.1:${YtgRuntime.PORT}/"
 
+    /** The address of the page: with the access token (the server turns it into a cookie), and the shared text if there is one. */
+    private fun pageUrl(share: String? = null) =
+        base + "?t=" + YtgRuntime.TOKEN + (if (share != null) "&u=" + URLEncoder.encode(share, "UTF-8") else "")
+
     private var flowDone = false
     @Volatile private var serverReady = false
     private var pendingShare: String? = null
@@ -304,14 +308,14 @@ class MainActivity : AppCompatActivity() {
         web.visibility = View.VISIBLE
         val share = pendingShare
         pendingShare = null
-        web.loadUrl(if (share != null) base + "?u=" + URLEncoder.encode(share, "UTF-8") else base)
+        web.loadUrl(pageUrl(share))
     }
 
     private fun handleIntent(i: Intent?) {
         if (i?.action == Intent.ACTION_SEND && i.type?.startsWith("text/") == true) {
             val text = i.getStringExtra(Intent.EXTRA_TEXT)?.trim().orEmpty()
             if (text.isNotEmpty()) {
-                if (serverReady) web.loadUrl(base + "?u=" + URLEncoder.encode(text, "UTF-8")) else pendingShare = text
+                if (serverReady) web.loadUrl(pageUrl(text)) else pendingShare = text
             }
         }
     }
@@ -390,7 +394,9 @@ class MainActivity : AppCompatActivity() {
                 try {
                     val dir = File(YtgRuntime.downloadDir(this)).also { it.mkdirs() }
                     val out = File(dir, name)
-                    URL(url).openStream().use { input -> out.outputStream().use { input.copyTo(it) } }
+                    val conn = URL(url).openConnection()
+                    conn.setRequestProperty("X-YTG-Token", YtgRuntime.TOKEN)   // the server asks for its token on every request
+                    conn.getInputStream().use { input -> out.outputStream().use { input.copyTo(it) } }
                     ui.post { Toast.makeText(this, getString(R.string.saved_to, out.path), Toast.LENGTH_LONG).show() }
                 } catch (e: Exception) {
                     ui.post { Toast.makeText(this, getString(R.string.save_failed, e.message ?: ""), Toast.LENGTH_LONG).show() }
