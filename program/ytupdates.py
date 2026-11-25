@@ -126,7 +126,8 @@ def launch_installer(path):
     program_files = (os.environ.get('ProgramFiles') or '').lower()
     mode = '/ALLUSERS' if program_files and exe.startswith(program_files) else '/CURRENTUSER'   # keep the kind of installation it already has
     cmd = 'cmd /c ping -n 4 127.0.0.1 >nul & "%s" /SILENT /SUPPRESSMSGBOXES /NORESTART /RELAUNCH=1 %s' % (path, mode)
-    subprocess.Popen(cmd, shell=True, creationflags=0x00000008 | 0x00000200, close_fds=True)
+    # the path was checked above and the rest of the command is fixed text
+    subprocess.Popen(cmd, shell=True, creationflags=0x00000008 | 0x00000200, close_fds=True)  # nosec B602
 
 
 def run_update_install():

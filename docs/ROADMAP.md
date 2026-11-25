@@ -19,7 +19,7 @@ An access token for the page (on by itself with `--host 0.0.0.0`, also in the An
 against what their makers publish, and of the zip that the Termux installer receives; the download pipeline, the HTTP API and the
 naming race tested without the network (the fake worker in `tests/fake_worker.py`); errors classified by exception type;
 `do_POST` and `job_action` split into route and action tables; `THIRD_PARTY_NOTICES.md`; CI on Python 3.10, 3.12 and 3.14 with pyflakes,
-CodeQL weekly, actions pinned by commit, Dependabot alerts and security updates; speed limit, allowed hours, proxy, pause all, invert
+bandit and CodeQL in CI, actions pinned by commit, Dependabot alerts and security updates; speed limit, allowed hours, proxy, pause all, invert
 selection and range selection.
 
 ## Next: 1.7 (what is left of it)
@@ -27,7 +27,6 @@ selection and range selection.
 | What | Why | Effort |
 |---|---|---|
 | **pip with `--require-hashes`** where possible (the first start installs yt-dlp with pip) | the hashes of the downloads are checked, but not the ones of pip packages | M |
-| **bandit as a CI step** (`python -m bandit -r program -ll`) | it runs by hand today | S |
 | **Move the scheduler and the HTTP layer out of `server.py`** (`run_item` and `enumerate_playlist` are still the most complex functions) | maintainability index of `server.py` is the lowest grade | M |
 | **Protect `main`** (tests required) | deliberately not done: it would stop direct pushes by the only maintainer; do it when there are contributors | S |
 | **Have the licence combination reviewed** (mutagen GPL-2.0-or-later, FFmpeg GPL and the Android library GPL-3.0 inside MIT packages) | the notices list it, but only a lawyer can say whether it is right | S |
