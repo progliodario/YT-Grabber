@@ -1,6 +1,8 @@
 """Settings of the program: the defaults, the validation of what the page sends, and settings.json."""
 import json
 import os
+import re
+import time
 
 from ytcommon import DATA, IS_ANDROID, atomic_write  # noqa: E402  (first: sets the paths and sys.path)
 
@@ -34,7 +36,17 @@ DEFAULT_SETTINGS = {
     'check_updates': True,      # ask GitHub now and then whether a newer version of YT Grabber exists
     'notify_done': True,        # tell the user when a download has finished (browser notification, Windows tray)
     'auto_ytdlp': True,         # install a newer yt-dlp by itself (when nothing is downloading) and restart
+    # settings of the program as a whole (not of a single download): see clean_global
+    'speed_limit': 0,           # KB/s for each simultaneous download, 0 = no limit
+    'proxy': '',                # http://host:port, https://..., socks5://... ('' = none)
+    'hours_on': False,          # download only inside the allowed hours
+    'hours_from': '00:00',
+    'hours_to': '06:00',
 }
+GLOBAL_KEYS = ('speed_limit', 'proxy', 'hours_on', 'hours_from', 'hours_to')
+MAX_SPEED_LIMIT = 1000000   # KB/s (about 1 GB/s: more than any connection)
+PROXY_RE = re.compile(r'(?:https?|socks4a?|socks5h?)://(?:[^\s/@:]+(?::[^\s/@]*)?@)?(?:[\w.-]+|\[[0-9a-fA-F:]+\]):\d{1,5}/?')
+TIME_RE = re.compile(r'([01]\d|2[0-3]):([0-5]\d)')
 LANG_CODES = ('', 'en', 'it', 'es', 'fr', 'de', 'pt', 'nl', 'pl', 'ru', 'tr', 'ar', 'hi', 'id', 'zh', 'ja', 'ko')
 BROWSERS = ('', 'firefox', 'chrome', 'edge', 'brave', 'opera', 'vivaldi', 'chromium', 'whale', 'safari')
 
@@ -58,6 +70,43 @@ def clean_opts(o, base=None):
     return r
 
 
+def clean_global(o, base=None):
+    """The settings that belong to the program as a whole: the speed limit, the proxy and the allowed hours (what is not valid is
+    replaced by the value it had before)."""
+    base = base or SETTINGS
+    o = o or {}
+    r = {}
+    sl = o.get('speed_limit', base.get('speed_limit', 0))
+    try:
+        sl = int(float(sl))
+    except (TypeError, ValueError):
+        sl = base.get('speed_limit', 0)
+    r['speed_limit'] = max(0, min(sl, MAX_SPEED_LIMIT))
+    px = o.get('proxy', base.get('proxy', ''))
+    px = px.strip() if isinstance(px, str) else base.get('proxy', '')
+    r['proxy'] = px if px == '' or (len(px) <= 300 and PROXY_RE.fullmatch(px)) else base.get('proxy', '')
+    r['hours_on'] = bool(o['hours_on']) if 'hours_on' in o else bool(base.get('hours_on', False))
+    for k in ('hours_from', 'hours_to'):
+        v = o.get(k)
+        r[k] = v if isinstance(v, str) and TIME_RE.fullmatch(v) else base.get(k, DEFAULT_SETTINGS[k])
+    return r
+
+
+def in_allowed_hours(s, now=None):
+    """False if the allowed hours are on and the current time of the day is outside them. A window that ends before it starts
+    (22:00 to 06:00) goes through midnight; equal times mean the whole day."""
+    if not s.get('hours_on'):
+        return True
+    t = time.localtime(now)
+    cur = t.tm_hour * 60 + t.tm_min
+    a = [int(x) for x in s.get('hours_from', '00:00').split(':')]
+    b = [int(x) for x in s.get('hours_to', '00:00').split(':')]
+    start, end = a[0] * 60 + a[1], b[0] * 60 + b[1]
+    if start == end:
+        return True
+    return start <= cur < end if start < end else (cur >= start or cur < end)
+
+
 def load_settings():
     try:
         with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
@@ -65,6 +114,7 @@ def load_settings():
     except Exception:
         d = {}
     s = clean_opts(d, DEFAULT_SETTINGS)
+    s.update(clean_global(d, DEFAULT_SETTINGS))
     dd = d.get('download_dir')
     s['download_dir'] = dd if isinstance(dd, str) and dd.strip() else DEFAULT_SETTINGS['download_dir']
     if os.environ.get('YTG_DEFAULT_DIR'):

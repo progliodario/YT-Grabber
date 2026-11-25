@@ -43,6 +43,7 @@
   <div class="banner warn" id="throttle" role="status" hidden></div>
   <div class="banner err" id="offline" role="alert" hidden data-i18n="offline">Server not reachable. Check that YT Grabber is still running on the computer.</div>
   <div class="banner warn" id="toolsWarn" role="alert" hidden></div>
+  <div class="banner warn" id="hoursNote" role="status" hidden></div>
   <div class="banner info" id="updateBanner" role="status" hidden>
     <span id="updateText"></span>
     <a id="updateLink" href="https://github.com/progliodario/YT-Grabber/releases/latest" target="_blank" rel="noopener"><span data-i18n="update.link">See what's new and download it</span> <span class="sr-only" data-i18n="a11y.newTab">(opens in a new tab)</span></a>
@@ -139,6 +140,8 @@
     <div class="sec-h">
       <h2 id="jobsTitle" tabindex="-1" data-i18n="downloads">Downloads</h2>
       <span class="muted" id="jobsCount"></span>
+      <button class="btn sm ghost" id="btnPauseAll" type="button" hidden data-i18n="pauseAll">Pause all</button>
+      <button class="btn sm ghost" id="btnResumeAll" type="button" hidden data-i18n="resumeAll">Resume all</button>
       <button class="btn sm ghost" id="btnClearDone" type="button" hidden data-i18n="clearDone">Clear completed</button>
     </div>
     <div id="jobs"></div>
@@ -174,6 +177,23 @@
           <button class="btn" id="setCookiesClear" type="button" data-i18n="set.cookiesRemove">Remove cookies.txt</button>
         </div>
         <p class="hint" id="cookiesState"></p>
+      </div>
+      <div class="grp">
+        <span class="lbl" data-i18n="set.limitsTitle">Speed, schedule and proxy</span>
+        <label class="sublbl" for="setSpeed" data-i18n="set.speed">Speed limit for each download (KB/s, 0 = no limit)</label>
+        <input type="number" id="setSpeed" min="0" max="1000000" step="50" inputmode="numeric" autocomplete="off">
+        <p class="hint" data-i18n="set.speedHint">Up to 10 videos download at once, each one up to this speed. Useful to leave room for other uses of the connection.</p>
+        <div class="toggles">
+          <label class="sw"><input type="checkbox" role="switch" id="setHours"><span class="knob"></span><span data-i18n="set.hours">Download only during these hours</span></label>
+        </div>
+        <div class="row-in" id="hoursRow">
+          <label for="setHoursFrom" data-i18n="set.hoursFrom">From</label><input type="time" id="setHoursFrom">
+          <label for="setHoursTo" data-i18n="set.hoursTo">to</label><input type="time" id="setHoursTo">
+        </div>
+        <p class="hint" data-i18n="set.hoursHint">Outside these hours nothing new starts: what is already downloading finishes. For a night window put the end before the start (22:00 to 06:00).</p>
+        <label class="sublbl" for="setProxy" data-i18n="set.proxy">Proxy (optional)</label>
+        <input type="text" id="setProxy" spellcheck="false" autocomplete="off" placeholder="socks5://127.0.0.1:1080">
+        <p class="hint" data-i18n="set.proxyHint">Address of a proxy server for all the downloads: http://host:port, https://host:port or socks5://host:port. Leave it empty for none.</p>
       </div>
       <div class="grp">
         <span class="lbl" data-i18n="set.engine">Download engine</span>

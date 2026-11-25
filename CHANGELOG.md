@@ -4,6 +4,11 @@ All notable changes are listed here, newest first. Version numbers follow `MAJOR
 
 ## Unreleased
 
+- **New: speed limit, allowed hours and proxy** (Settings). The limit applies to each of the simultaneous downloads; outside the
+  allowed hours nothing new starts (what is already downloading finishes; a window like 22:00 to 06:00 goes through midnight); the
+  proxy (`http`, `https`, `socks4`, `socks5`) is used by the downloads and by the reading of the lists.
+- **New: Pause all / Resume all** in the list of downloads, and in the choice of the videos of a playlist **Invert selection** and
+  **Select a range** (for example `1-20, 25, 30-35`). All texts are translated in the 16 languages.
 - **Security: downloaded components are verified.** ffmpeg, deno and yt-dlp are checked against the SHA-256 published by their makers
   and a file that does not match is never used; if the list cannot be read a warning is said (set `YTG_REQUIRE_CHECKSUMS=1` to refuse
   instead). The Termux installer served from the computer also carries the SHA-256 of the zip and the phone refuses a different file.

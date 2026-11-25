@@ -196,6 +196,52 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(len([f for f in files(again) if f.endswith('.m4a')]), 24)
 
 
+class ProgramWideSettingsTests(unittest.TestCase):
+    """Pause everything, and the allowed hours: they act on the scheduler as a whole."""
+
+    def test_pause_all_and_resume_all(self):
+        a = start(playlist('PLpipe00000012', ['SLOW%07d' % i for i in range(30)]))
+        b = start(playlist('PLpipe00000013', ['SLOW%07d' % i for i in range(30)]))
+        self.assertTrue(wait(lambda: server.SLOTS['used'] > 0, 30))
+        self.assertEqual(server.bulk_pause(True), 2)
+        self.assertTrue(a.paused and b.paused)
+        self.assertEqual(server.bulk_pause(True), 0)   # nothing left to pause
+        self.assertTrue(wait(lambda: server.SLOTS['used'] == 0, 60))   # what was on its way finishes, nothing new starts
+        time.sleep(0.5)
+        self.assertEqual(server.SLOTS['used'], 0)
+        self.assertEqual(server.bulk_pause(False), 2)
+        self.assertFalse(a.paused or b.paused)
+        server.job_action(a, 'cancel')
+        server.job_action(b, 'cancel')
+        self.assertTrue(finished(a) and finished(b))
+
+    def test_choosing_lists_are_not_resumed_by_resume_all(self):
+        job = start(playlist('PLpipe00000014', ['OKA00000014', 'OKB00000014']), choose=True)
+        self.assertTrue(wait(lambda: job.enum_done, 30))
+        self.assertEqual(server.bulk_pause(False), 0)
+        self.assertTrue(job.choosing and job.paused)   # the user has not chosen yet
+        server.job_action(job, 'cancel')
+        finished(job)
+
+    def test_nothing_starts_outside_the_allowed_hours(self):
+        later = time.localtime(time.time() + 2 * 3600)
+        s = server.SETTINGS
+        saved = {k: s[k] for k in ('hours_on', 'hours_from', 'hours_to')}
+        s.update(hours_on=True, hours_from=time.strftime('%H:%M', later), hours_to=time.strftime('%H:%M', time.localtime(time.time() + 3 * 3600)))
+        try:
+            job = start(playlist('PLpipe00000015', ['OKA00000015', 'OKB00000015']))
+            self.assertTrue(wait(lambda: job.enum_done, 30))
+            time.sleep(1.5)
+            self.assertEqual([i.state for i in job.items], ['q', 'q'])
+            s['hours_on'] = False
+            with server.COND:
+                server.COND.notify_all()
+            self.assertTrue(finished(job))
+            self.assertEqual([i.state for i in job.items], ['d', 'd'])
+        finally:
+            s.update(saved)
+
+
 class ApiTests(unittest.TestCase):
     """The same thing through HTTP, the way the page does it."""
 
@@ -256,6 +302,18 @@ class ApiTests(unittest.TestCase):
         url = playlist('PLpipe00000010', ['SLOW%07d' % i for i in range(3)])
         self.assertEqual(self.call('POST', '/api/jobs', {'urls': url})[0], 200)
         self.assertEqual(self.call('POST', '/api/jobs', {'urls': url})[0], 409)
+
+    def test_pause_all_and_resume_all_over_http(self):
+        job = start(playlist('PLpipe00000016', ['SLOW%07d' % i for i in range(12)]))
+        self.assertEqual(json.loads(self.call('POST', '/api/pause-all', {})[2])['changed'], 1)
+        self.assertTrue(job.paused)
+        self.assertEqual(json.loads(self.call('POST', '/api/resume-all', {})[2])['changed'], 1)
+        self.assertFalse(job.paused)
+        server.job_action(job, 'cancel')
+        finished(job)
+
+    def test_the_state_tells_whether_it_is_inside_the_allowed_hours(self):
+        self.assertTrue(json.loads(self.call('GET', '/api/state')[2])['in_hours'])
 
     def test_a_text_without_links_is_refused(self):
         status, _, data = self.call('POST', '/api/jobs', {'urls': 'hello there'})

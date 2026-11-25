@@ -468,7 +468,28 @@
     document.title = running && tot ? '(' + pct + '%) YT Grabber' : 'YT Grabber';
     $('#jobsCount').textContent = S.jobs.length ? tr('items.count', { n: S.jobs.length }) : '';
     $('#btnClearDone').hidden = finishedJobs === 0;
+    $('#btnPauseAll').hidden = !canBulkPause(false);
+    $('#btnResumeAll').hidden = !canBulkPause(true);
     $('#empty').hidden = S.jobs.length > 0;
+    var hn = $('#hoursNote');
+    if (S.settings.hours_on && st.in_hours === false) {
+      hn.hidden = false; hn.textContent = tr('hours.waiting', { a: S.settings.hours_from, b: S.settings.hours_to });
+    } else { hn.hidden = true; }
+  }
+
+  // Pause all / resume all: shown only when there is something they would change (lists that are being chosen are left alone).
+  function canBulkPause(paused) {
+    var i, j;
+    for (i = 0; i < S.jobs.length; i++) {
+      j = S.jobs[i];
+      if ((j.status === 'running' || j.status === 'enumerating') && !j.choosing && !!j.paused === paused) { return true; }
+    }
+    return false;
+  }
+  function bulkPause(pause) {
+    api('POST', pause ? '/api/pause-all' : '/api/resume-all', {}).then(function () {
+      toast(tr(pause ? 'toast.pausedAll' : 'toast.resumedAll')); pollState();
+    }).catch(function (e) { toast(e.message, true); });
   }
 
   // ------------------------------------------------------------------ new version banner, "download finished" notices
@@ -848,7 +869,8 @@
     }
     if (s.choosing) {   // the videos are chosen here: all or none with one press, one by one with the boxes of the rows
       ph = '<div class="selbar"><b>' + esc(tr('choose.count', { n: c.q, t: s.total })) + '</b>' +
-        btn('sel_all', d.id, esc(tr('choose.all')), '', '') + btn('sel_none', d.id, esc(tr('choose.none')), '', '') + '</div>' + ph;
+        btn('sel_all', d.id, esc(tr('choose.all')), '', '') + btn('sel_none', d.id, esc(tr('choose.none')), '', '') +
+        btn('sel_invert', d.id, esc(tr('choose.invert')), '', '') + btn('sel_range', d.id, esc(tr('choose.range')), '', '') + '</div>' + ph;
     }
     if (ph !== d.panelHtml) { d.panelHtml = ph; setHtmlKeepFocus(d.panel, ph); }
     d.panel.className = c.e ? 'errpanel' : 'selpanel';
@@ -997,6 +1019,41 @@
     }).catch(function (e) { toast(e.message, true); });
   }
 
+  // Choosing the videos: wanted(item) says whether an item should be downloaded; the ones whose state differs are changed.
+  function applySelection(d, wanted) {
+    var skip = [], unskip = [], i, it, w;
+    for (i = 0; i < d.items.length; i++) {
+      it = d.items[i];
+      if (!it || (it.s !== 'q' && it.s !== 'k')) { continue; }
+      w = wanted(it);
+      if (w && it.s === 'k') { unskip.push(it.i); }
+      else if (!w && it.s === 'q') { skip.push(it.i); }
+    }
+    var chain = Promise.resolve();
+    if (unskip.length) { chain = chain.then(function () { return jobAction(d.id, 'unskip', unskip); }); }
+    if (skip.length) { chain = chain.then(function () { return jobAction(d.id, 'skip', skip); }); }
+  }
+  // "1-20, 25, 30-35" -> {1: true, ..., 20: true, 25: true, ...}; null if the text is not a list of numbers and ranges
+  function parseRanges(text, total) {
+    var set = {}, parts = String(text).split(/[,;\s]+/), i, m, a, b, k, any = false;
+    for (i = 0; i < parts.length; i++) {
+      if (!parts[i]) { continue; }
+      m = /^(\d+)(?:-(\d+))?$/.exec(parts[i]);
+      if (!m) { return null; }
+      a = parseInt(m[1], 10); b = m[2] ? parseInt(m[2], 10) : a;
+      if (a > b) { k = a; a = b; b = k; }
+      for (k = Math.max(1, a); k <= Math.min(total, b); k++) { set[k] = true; any = true; }
+    }
+    return any ? set : null;
+  }
+  function chooseRange(d) {
+    var text = window.prompt(tr('choose.rangePrompt', { t: d.summary.total }), '1-' + Math.min(20, d.summary.total)), set;
+    if (text === null) { return; }
+    set = parseRanges(text, d.summary.total);
+    if (!set) { toast(tr('choose.rangeBad'), true); return; }
+    applySelection(d, function (it) { return !!set[it.i]; });
+  }
+
   function clearFinished() {
     var ids = [], i, j;
     for (i = 0; i < S.jobs.length; i++) { j = S.jobs[i]; if (j.status === 'done' || j.status === 'cancelled') { ids.push(j.id); } }
@@ -1024,6 +1081,8 @@
       case 'unskip_item': jobAction(id, 'unskip', [parseInt(el.getAttribute('data-idx'), 10)]); break;
       case 'sel_all': jobAction(id, 'unskip'); break;
       case 'sel_none': jobAction(id, 'skip'); break;
+      case 'sel_invert': if (d) { applySelection(d, function (it) { return it.s === 'q' ? false : it.s === 'k'; }); } break;
+      case 'sel_range': if (d) { chooseRange(d); } break;
       case 'redownload': if (window.confirm(tr('confirm.redownload'))) { jobAction(id, 'redownload', null, tr('toast.redownloading')); } break;
       case 'open_folder': jobAction(id, 'open_folder'); break;
       case 'remove': if (window.confirm(tr('confirm.remove'))) { jobAction(id, 'remove'); } break;
@@ -1102,6 +1161,9 @@
     $('#setMsg').hidden = true; $('#setCookiesFile').value = '';
     $('#setNotify').checked = s.notify_done !== false; $('#setCheckUpdates').checked = s.check_updates !== false;
     $('#setAutoYtdlp').checked = s.auto_ytdlp !== false;
+    $('#setSpeed').value = s.speed_limit || 0; $('#setProxy').value = s.proxy || '';
+    $('#setHours').checked = !!s.hours_on; $('#setHoursFrom').value = s.hours_from || '00:00'; $('#setHoursTo').value = s.hours_to || '06:00';
+    $('#hoursRow').hidden = !s.hours_on;
     var ts = '', zi, cur = getTextSize();
     for (zi = 0; zi < TEXT_SIZES.length; zi++) { ts += '<option value="' + TEXT_SIZES[zi] + '"' + (TEXT_SIZES[zi] === cur ? ' selected' : '') + '>' + esc(tr('text.' + TEXT_SIZES[zi])) + '</option>'; }
     $('#setTextSize').innerHTML = ts;
@@ -1140,12 +1202,17 @@
   }
   function setMsg(t, ok) { var m = $('#setMsg'); m.hidden = !t; m.textContent = t || ''; m.className = 'msg' + (ok ? ' ok' : ''); }
 
+  var PROXY_RE = /^(https?|socks4a?|socks5h?):\/\/([^\s\/@:]+(:[^\s\/@]*)?@)?([\w.-]+|\[[0-9a-fA-F:]+\]):\d{1,5}\/?$/;
   function saveSettings() {
     var payload = {}, k;
     for (k in S.settings) { if (Object.prototype.hasOwnProperty.call(S.settings, k)) { payload[k] = S.settings[k]; } }
     payload.download_dir = $('#setDir').value.trim();
     payload.cookies_browser = $('#setCookiesBrowser').value;
     payload.notify_done = $('#setNotify').checked; payload.check_updates = $('#setCheckUpdates').checked; payload.auto_ytdlp = $('#setAutoYtdlp').checked;
+    payload.speed_limit = Math.max(0, parseInt($('#setSpeed').value, 10) || 0);
+    payload.proxy = $('#setProxy').value.trim();
+    if (payload.proxy && !PROXY_RE.test(payload.proxy)) { setMsg(tr('set.proxyBad')); $('#setProxy').focus(); return; }
+    payload.hours_on = $('#setHours').checked; payload.hours_from = $('#setHoursFrom').value || '00:00'; payload.hours_to = $('#setHoursTo').value || '06:00';
     api('POST', '/api/settings', payload).then(function (r) {
       S.settings = r.settings; form.fill(r.settings); closeSettings(); toast(tr('toast.saved'));
     }).catch(function (e) { setMsg(e.message); });
@@ -1201,6 +1268,8 @@
     });
     $('#btnChangeDir').addEventListener('click', function () { openSettings(); setTimeout(function () { $('#setDir').focus(); }, 30); });
     $('#btnClearDone').addEventListener('click', clearFinished);
+    $('#btnPauseAll').addEventListener('click', function () { bulkPause(true); });
+    $('#btnResumeAll').addEventListener('click', function () { bulkPause(false); });
     $('#btnSettings').addEventListener('click', openSettings);
     $('#setClose').addEventListener('click', closeSettings);
     $('#setCancel').addEventListener('click', closeSettings);
@@ -1231,6 +1300,7 @@
       try { localStorage.setItem('ytg-textsize', String(z)); } catch (e) { /* ignored */ }
       applyTextSize(z);
     });
+    $('#setHours').addEventListener('change', function () { $('#hoursRow').hidden = !this.checked; });
     $('#setNotify').addEventListener('change', function () { if (this.checked) { S.settings.notify_done = true; askNotifyPermission(); } });
     $('#updateInstall').addEventListener('click', function () {
       if (!window.confirm(tr('update.confirm'))) { return; }

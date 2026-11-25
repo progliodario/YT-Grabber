@@ -37,7 +37,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 # ytcommon must be imported first: it sets the paths (also inside YT-Grabber.exe) and the sys.path of yt-dlp
 from ytcommon import (ROOT, RES, DATA_ROOT, DATA, DENO, FROZEN, IS_ANDROID, ANDROID_APP,  # noqa: E402
                       HAVE_FFMPEG, atomic_write)
-from ytsettings import (DEFAULT_SETTINGS, BROWSERS, SETTINGS, clean_opts, load_settings, save_settings)  # noqa: E402
+from ytsettings import (DEFAULT_SETTINGS, BROWSERS, SETTINGS, clean_opts, clean_global, in_allowed_hours, load_settings, save_settings)  # noqa: E402
 from ytmodel import SKIP_BY_USER, ItemFailure, Item, Job  # noqa: E402
 from ytlinks import (PREFIX_RE, classify_url, hide_path, safe_name, build_filename, expected_for_existing)  # noqa: E402
 import ytupdates as updates  # noqa: E402
@@ -424,7 +424,7 @@ class Manager:
                 if now < THROTTLE.until:
                     COND.wait(min(1.0, THROTTLE.until - now))
                     continue
-                if SLOTS['used'] >= CONCURRENCY:
+                if SLOTS['used'] >= CONCURRENCY or not in_allowed_hours(SETTINGS, now):   # (outside the allowed hours what runs goes on, nothing new starts)
                     COND.wait(1.0)
                     continue
                 soonest = None
@@ -546,6 +546,8 @@ def run_item(proc, job, it):
     proc.ensure()
     tid = '%s-%d-%d' % (job.id, it.idx, it.attempts)
     topts = {k: o[k] for k in ('mode', 'audio_format', 'mp3_bitrate', 'video_height', 'embed', 'cookies_browser')}
+    topts['ratelimit'] = int(SETTINGS.get('speed_limit') or 0) * 1024   # bytes per second for this download (0 = no limit)
+    topts['proxy'] = SETTINGS.get('proxy') or ''
     if os.path.exists(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
         topts['cookies_file'] = COOKIES_FILE
         topts['cookies_mtime'] = os.path.getmtime(COOKIES_FILE)
@@ -777,6 +779,8 @@ def enumerate_singles(job):
 def make_flat_ydl(opts):
     p = base_ydl_params()
     p.update({'extract_flat': 'in_playlist', 'skip_download': True, 'noplaylist': False, 'lazy_playlist': True})
+    if SETTINGS.get('proxy'):
+        p['proxy'] = SETTINGS['proxy']
     if opts.get('cookies_browser'):
         p['cookiesfrombrowser'] = (opts['cookies_browser'],)
     elif os.path.exists(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
@@ -1142,6 +1146,17 @@ def job_action(job, action, arg=None):
             maybe_finish(job)   # everything was left out: there is nothing to wait for
         job.dirty = True
         COND.notify_all()
+
+
+def bulk_pause(pause):
+    """Pauses every list that is being read or downloaded, or resumes every list that was paused by hand (the ones the user is still
+    choosing videos from, finished or cancelled ones stay as they are). Returns how many lists changed."""
+    with LOCK:
+        todo = [j for j in MANAGER_JOBS.values()
+                if j.status in ('enumerating', 'running') and not j.choosing and j.paused != pause]
+    for job in todo:
+        job_action(job, 'pause' if pause else 'resume')
+    return len(todo)
 
 
 def remove_job(job):
@@ -1605,6 +1620,12 @@ class Handler(BaseHTTPRequestHandler):
         save_subs()
         return self.send_json({'ok': True})
 
+    def post_pause_all(self, body):
+        return self.send_json({'ok': True, 'changed': bulk_pause(True)})
+
+    def post_resume_all(self, body):
+        return self.send_json({'ok': True, 'changed': bulk_pause(False)})
+
     def post_settings(self, body):
         return self.save_settings_req(body)
 
@@ -1653,7 +1674,7 @@ class Handler(BaseHTTPRequestHandler):
     POST_ROUTES = {
         '/api/jobs': post_jobs, '/api/settings': post_settings, '/api/cookies': post_cookies, '/api/choose-dir': post_choose_dir,
         '/api/update': post_update, '/api/appupdate': post_appupdate, '/api/quit': post_quit,
-        '/api/appupdate/install': post_appupdate_install,
+        '/api/appupdate/install': post_appupdate_install, '/api/pause-all': post_pause_all, '/api/resume-all': post_resume_all,
     }
     POST_PATTERNS = [(r'/api/jobs/([\w]+)/action', post_job_action), (r'/api/subs/([\w]+)/action', post_sub_action)]
 
@@ -1665,7 +1686,7 @@ class Handler(BaseHTTPRequestHandler):
             thr = {'until': THROTTLE.until if THROTTLE.until > now else 0, 'reason': THROTTLE.reason}
         return {
             'app': APP_NAME, 'version': APP_VERSION, 'ytdlp': yt_dlp.version.__version__, 'concurrency': CONCURRENCY,
-            'settings': SETTINGS, 'jobs': jobs, 'throttle': thr, 'now': now,
+            'settings': SETTINGS, 'jobs': jobs, 'throttle': thr, 'now': now, 'in_hours': in_allowed_hours(SETTINGS, now),
             'tools': {'ffmpeg': HAVE_FFMPEG, 'deno': os.path.exists(DENO)},
             'has_cookies': os.path.exists(COOKIES_FILE), 'local': self.is_local_client(),
             'errmeta': {k: [v[0], v[3]] for k, v in ERR.items()}, 'android': IS_ANDROID,
@@ -1758,6 +1779,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def save_settings_req(self, body):
         s = clean_opts(body, SETTINGS)
+        s.update(clean_global(body, SETTINGS))
+        asked = body.get('proxy')
+        if isinstance(asked, str) and asked.strip() and asked.strip() != s['proxy']:
+            return self.err(400, 'Invalid proxy address: use http://host:port, https://host:port or socks5://host:port')
         dd = body.get('download_dir')
         if isinstance(dd, str) and dd.strip():
             dd = os.path.abspath(os.path.expanduser(dd.strip()))

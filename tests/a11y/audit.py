@@ -243,7 +243,7 @@ def main():
         time.sleep(1.5)
         check(b.js("document.querySelectorAll('.selbox').length === 5"), 'while the videos are chosen, each one has a box')
         check(b.js("[].every.call(document.querySelectorAll('.selbox'), function(x){return !!x.getAttribute('aria-label');})"), 'and the boxes have names')
-        check(b.js("!!document.querySelector('.selbar') && document.querySelectorAll('.selbar button').length === 2"), 'select all and select none are there')
+        check(b.js("!!document.querySelector('.selbar') && document.querySelectorAll('.selbar button').length === 4"), 'select all, none, invert and range are there')
         b.js("document.querySelector('.search').focus()")
         b.key('Tab')
         check(row() == 1, 'Tab enters the list of the choice on its first item')

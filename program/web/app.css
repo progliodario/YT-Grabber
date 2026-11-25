@@ -112,13 +112,13 @@ code { font: 0.7812rem/1.4 ui-monospace, "Cascadia Code", Consolas, Menlo, monos
 .compose-head { margin-bottom: 18px; }
 .compose-head p { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
 .urlbox { position: relative; }
-textarea, input[type=text], select, input[type=search] {
+textarea, input[type=text], input[type=number], input[type=time], select, input[type=search] {
   width: 100%; font: inherit; color: var(--fg); background: var(--field); border: 1.5px solid var(--ctrl); border-radius: 13px; padding: 11px 14px;
   transition: border-color .15s, box-shadow .15s;
 }
 textarea { resize: vertical; min-height: 96px; padding: 14px 16px 46px; font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace; font-size: 0.8438rem; line-height: 1.6; }
 textarea::placeholder, input::placeholder { color: var(--muted); opacity: 1; }
-textarea:focus-visible, input[type=text]:focus-visible, select:focus-visible, input[type=search]:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--focus); }
+textarea:focus-visible, input[type=text]:focus-visible, input[type=number]:focus-visible, input[type=time]:focus-visible, select:focus-visible, input[type=search]:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--focus); }
 .url-tools { position: absolute; left: 10px; bottom: 10px; display: flex; gap: 6px; }
 .detect { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .dchip { font-size: 0.7812rem; font-weight: 600; padding: 4px 11px; border-radius: 999px; background: var(--info-soft); color: var(--info); }
@@ -160,8 +160,8 @@ textarea:focus-visible, input[type=text]:focus-visible, select:focus-visible, in
 .msg.ok { color: var(--ok); }
 
 /* ============ Downloads section ============ */
-.sec-h { display: flex; align-items: center; gap: 12px; margin: 30px 0 12px; }
-.sec-h .btn { margin-left: auto; }
+.sec-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 30px 0 12px; }
+.sec-h .muted { margin-inline-end: auto; }   /* the buttons (pause all, resume all, clear) go to the end of the line */
 .empty { text-align: center; color: var(--muted); padding: 40px 18px; border: 1.5px dashed var(--line2); border-radius: 18px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .empty svg { width: 110px; color: var(--muted); margin-bottom: 6px; }
 .empty b { color: var(--fg); font-size: 1rem; }
@@ -313,6 +313,10 @@ button.stat.err:hover { filter: brightness(1.05); transform: translateY(-1px); }
 #btnCheckUpdate { margin-top: 12px; }
 .row-in { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .row-in input[type=text] { flex: 1; min-width: 180px; width: auto; }
+.row-in input[type=time] { width: auto; min-width: 8rem; }
+.row-in label { font-size: 0.875rem; color: var(--fg2); }
+.grp input[type=number] { max-width: 12rem; }
+.grp .sublbl { display: block; margin: 14px 0 6px; font-size: 0.875rem; font-weight: 600; }
 .row-in input[type=file] { flex: 1; min-width: 160px; font-size: 0.8125rem; color: var(--muted); }
 
 .toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 9px; z-index: 60; max-width: min(400px, calc(100vw - 32px)); }
@@ -367,7 +371,7 @@ main:focus-visible, #jobsTitle:focus-visible, #setTitle:focus-visible { outline:
 /* fingers: every control at least 44 x 44 CSS pixels */
 @media (pointer: coarse) {
   .selbox { width: 2.75rem; height: 2.75rem; }
-  .btn, .tab, .icon-btn, .errgroup, .banner-x, .link, .lang-select, .mini-select, select, input[type=search] { min-height: 2.75rem; }
+  .btn, .tab, .icon-btn, .errgroup, .banner-x, .link, .lang-select, .mini-select, select, input[type=search], input[type=number], input[type=time] { min-height: 2.75rem; }
   .icon-btn { min-width: 2.75rem; }
   .pills label, .seg label { min-height: 2.75rem; }
   .sw { min-height: 2.75rem; }
@@ -383,7 +387,7 @@ main:focus-visible, #jobsTitle:focus-visible, #setTitle:focus-visible { outline:
 /* Windows "contrast themes" and other forced colours: the system palette replaces ours, so shapes must still show */
 @media (forced-colors: active) {
   :focus-visible { outline: 3px solid Highlight; }
-  .btn, .tab, .icon-btn, textarea, input[type=text], input[type=search], select, .pills label, .seg, .job, .card, .sub, .modal, .vbox, .stat, .banner, .alert, .toast { border: 1px solid CanvasText; }
+  .btn, .tab, .icon-btn, textarea, input[type=text], input[type=number], input[type=time], input[type=search], select, .pills label, .seg, .job, .card, .sub, .modal, .vbox, .stat, .banner, .alert, .toast { border: 1px solid CanvasText; }
   .btn.primary { forced-color-adjust: none; background: ButtonFace; color: ButtonText; border: 2px solid ButtonText; }
   .pills input:checked + label, .seg input:checked + label, .tab[aria-pressed="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: HighlightText; }
   .knob { forced-color-adjust: none; background: Canvas; border: 2px solid CanvasText; }

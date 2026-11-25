@@ -94,7 +94,7 @@ def match_filter(info, incomplete=False):
 
 def get_ydl(opts, wid):
     sig = json.dumps([opts['mode'], opts['audio_format'], opts['mp3_bitrate'], opts['video_height'], opts['embed'],
-                      opts['cookies_browser'], opts.get('cookies_mtime', 0)])
+                      opts['cookies_browser'], opts.get('cookies_mtime', 0), opts.get('ratelimit', 0), opts.get('proxy', '')])
     if S.ydl is not None and S.sig == sig:
         return S.ydl
     if S.ydl is not None:
@@ -109,6 +109,10 @@ def get_ydl(opts, wid):
     p.update({'format': fmt, 'postprocessors': pps, 'outtmpl': {'default': '%(id)s.%(ext)s'}})
     if sort:
         p['format_sort'] = sort
+    if opts.get('ratelimit'):
+        p['ratelimit'] = int(opts['ratelimit'])
+    if opts.get('proxy'):
+        p['proxy'] = opts['proxy']
     if opts.get('cookies_browser'):
         p['cookiesfrombrowser'] = (opts['cookies_browser'],)
     elif opts.get('cookies_file') and os.path.exists(opts['cookies_file']):
