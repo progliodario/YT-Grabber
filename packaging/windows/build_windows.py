@@ -95,6 +95,7 @@ def build_installer(app_dir, version):
             os.remove(os.path.join(INSTALLER_DIR, old))
     run([find_iscc(), '/Qp', '/DAppVersion=' + version, '/DSourceDir=' + app_dir,
          '/DIconFile=' + os.path.join(HERE, 'icon.ico'), '/DLicenseFile=' + os.path.join(ROOT, 'LICENSE'),
+         '/DNoticesFile=' + os.path.join(ROOT, 'THIRD_PARTY_NOTICES.md'),
          '/DOutDir=' + INSTALLER_DIR, os.path.join(HERE, 'installer.iss')])
     return os.path.join(INSTALLER_DIR, 'YT-Grabber-Setup-%s.exe' % version)
 

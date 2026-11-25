@@ -1,4 +1,4 @@
-﻿; Inno Setup script (https://jrsoftware.org/isinfo.php) for the YT Grabber installer.
+; Inno Setup script (https://jrsoftware.org/isinfo.php) for the YT Grabber installer.
 ; build_windows.py passes the version, the paths and the output folder with /D options.
 #ifndef AppVersion
   #define AppVersion "1.0.0"
@@ -108,6 +108,7 @@ Name: "autostart"; Description: "{cm:AutoStart}"; GroupDescription: "{cm:Options
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#LicenseFile}"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
+Source: "{#NoticesFile}"; DestDir: "{app}"; DestName: "THIRD_PARTY_NOTICES.txt"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"

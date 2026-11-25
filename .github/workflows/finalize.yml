@@ -32,7 +32,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TAG: ${{ inputs.tag }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Download the files of the release
         run: |
           mkdir assets
@@ -65,7 +65,7 @@ jobs:
           cat SHA256SUMS
           gh release upload "$TAG" SHA256SUMS SHA256SUMS.asc --clobber
       - name: Attest the files built here (the APKs are built on the maintainer's computer, so they are left out)
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: |
             assets/*.exe
@@ -88,7 +88,7 @@ jobs:
           docker run --rm -v "$PWD/site:/site:ro" fedora:latest sh -c '
             sed "s#baseurl=.*#baseurl=file:///site/rpm#; s#gpgkey=.*#gpgkey=file:///site/yt-grabber.asc#" /site/yt-grabber.repo > /etc/yum.repos.d/yt-grabber.repo &&
             dnf install -y yt-grabber && test -x /usr/bin/yt-grabber && rpm -q yt-grabber'
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: site
 
@@ -103,4 +103,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

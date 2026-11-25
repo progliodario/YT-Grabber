@@ -109,7 +109,8 @@ start from [yt-dlp/FFmpeg-Builds](https://github.com/yt-dlp/FFmpeg-Builds)), [De
 [PyInstaller](https://pyinstaller.org/) and [Inno Setup](https://jrsoftware.org/isinfo.php) (the Windows application and its
 installer), [youtubedl-android](https://github.com/yausername/youtubedl-android) (Python and FFmpeg for the Android application)
 and [python-build-standalone](https://github.com/astral-sh/python-build-standalone) (the Python of the AppImage and of the Mac
-application). Packages and applications that include these components are also subject to their licences.
+application). Packages and applications that include these components are also subject to their licences. The list of
+what is bundled, with versions and licences, is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Responsible use
 

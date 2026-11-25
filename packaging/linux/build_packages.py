@@ -81,7 +81,7 @@ def build_stage(stage):
     shutil.copy(os.path.join(icons, 'icon-192.png'), os.path.join(stage, 'icon-192.png'))
     for name in ('yt-grabber', 'yt-grabber.desktop', 'yt-grabber.service'):
         copy_text(os.path.join(HERE, name), os.path.join(stage, name))
-    for name in ('README.md', 'LICENSE'):
+    for name in ('README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md'):
         copy_text(os.path.join(ROOT, name), os.path.join(stage, name))
     # nfpm's "tree" entry would give the folders the file mode (no x bit): list folders and files one by one
     entries = []
