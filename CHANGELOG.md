@@ -4,6 +4,12 @@ All notable changes are listed here, newest first. Version numbers follow `MAJOR
 
 ## Unreleased
 
+- **Fix: two videos that finished at the same moment could still take the same file name** (the second overwrote the first): choosing
+  the name and taking it is now one step. Found by the new tests of the whole pipeline.
+- Tests: the download pipeline is now tested end to end without the network (a fake worker and fake lists): numbering, errors,
+  retries, the limit of 10 downloads, cancelling, choosing the videos, resuming after a restart and the HTTP API (13 tests).
+- A worker process that has been stopped is now collected (on Linux and macOS it stayed as a zombie until the program ended).
+
 - Maintenance, nothing changes for users: `CLAUDE.md` (notes for whoever continues the work), `docs/ROADMAP.md` (what to do next),
   `tools/check.py` (all the checks in one command), `tools/verify_release.py` and `tools/update_channels.py` (the end of a release),
   `requirements-dev.txt`, `.editorconfig`, a documents-links step in CI, and the description and topics of the GitHub repository.

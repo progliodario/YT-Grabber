@@ -211,6 +211,7 @@ SLOTS = {'used': 0}          # downloads in progress (max CONCURRENCY)
 # child-process limit that Android imposes on Termux.
 MAX_PROCS = CONCURRENCY + (2 if IS_ANDROID else 4)
 WATCHDOG = 900               # seconds without events before a worker is considered stuck
+RETRY_SCALE = 1.0            # multiplies the waits before a new attempt (the tests make them short)
 NOWIN = 0x08000000 if os.name == 'nt' else 0
 LOG_DIR = os.path.join(DATA, 'logs')
 PROCS = []   # all the worker processes started: on exit they must be stopped one by one
@@ -259,6 +260,10 @@ class Proc:
                     f.close()
                 except Exception:
                     pass
+            try:
+                self.p.wait(timeout=5)   # collects the dead process (on Linux and macOS it would stay as a zombie until this program ends)
+            except Exception:
+                pass
             self.p = None
         if self.logf:
             try:
@@ -279,7 +284,8 @@ class Proc:
         if FROZEN:   # inside YT-Grabber.exe the worker is the same exe started with --worker
             cmd = [sys.executable, '--worker']
         else:
-            cmd = [os.environ.get('YTG_PYTHON') or sys.executable, '-u', os.path.join(ROOT, 'ytworker.py')]
+            # YTG_WORKER replaces the worker script: the tests use a fake one that never touches the network
+            cmd = [os.environ.get('YTG_PYTHON') or sys.executable, '-u', os.environ.get('YTG_WORKER') or os.path.join(ROOT, 'ytworker.py')]
         self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.logf,
                                   cwd=DATA_ROOT, env=env, creationflags=NOWIN, start_new_session=(os.name != 'nt'))
         if self not in PROCS:
@@ -592,6 +598,9 @@ def run_item(proc, job, it):
             raise ItemFailure(ev.get('kind') or classify_text(msg, ev.get('errno')), msg)
 
 
+NAME_LOCK = threading.Lock()
+
+
 def free_name(job, it, title, ext, manifest, key):
     """The file name for this item. When another video already has that name (the same title, in a folder without numbers), a
     number is added: the file of the first video must never be overwritten. A file of this very item (downloaded again) may be."""
@@ -610,17 +619,18 @@ def finalize_item(job, it, ev, tmpd, manifest, key):
     info = ev.get('info') or {}
     title = human_title(info, o['mode'], it.title)
     ext = os.path.splitext(fp)[1]
-    name = free_name(job, it, title, ext, manifest, key)
-    dst = os.path.join(job.dir, name)
-    for n in range(1, 30):
-        try:
-            os.replace(fp, dst)
-            break
-        except PermissionError:
-            if n >= 29:
-                raise
-            name = build_filename(job, it, '%s (%d)' % (title, n), ext)
-            dst = os.path.join(job.dir, name)
+    with NAME_LOCK:   # choosing a free name and taking it is one step: two videos finishing together must not choose the same one
+        name = free_name(job, it, title, ext, manifest, key)
+        dst = os.path.join(job.dir, name)
+        for n in range(1, 30):
+            try:
+                os.replace(fp, dst)
+                break
+            except PermissionError:
+                if n >= 29:
+                    raise
+                name = build_filename(job, it, '%s (%d)' % (title, n), ext)
+                dst = os.path.join(job.dir, name)
     shutil.rmtree(tmpd, ignore_errors=True)
     with LOCK:
         manifest[key] = {'file': name, 'title': title, 'id': info.get('id') or it.vid}
@@ -661,7 +671,7 @@ def fail_item(job, it, kind, msg):
             delay = 4 * it.attempts + random.randint(0, 3)
         else:
             delay = 3 + random.randint(0, 3)
-        it.not_before = time.time() + delay
+        it.not_before = time.time() + delay * RETRY_SCALE
         it.stage = 'Retry %d/%d' % (it.attempts + 1, maxatt)
         job.set_state(it, 'q')
         heapq.heappush(job.delayed, (it.not_before, it.idx))
