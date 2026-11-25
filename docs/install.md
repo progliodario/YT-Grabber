@@ -234,7 +234,9 @@ APK is preferable whenever possible, because it is simpler.
    `packaging\termux\Share-to-phone.bat`. It prints a command such as `curl -s http://192.168.1.20:8800/i | sh`. If Windows requests
    firewall permission, allow *private networks*. The window must remain open.
 3. **On the phone**, paste that command into Termux. It downloads Python, ffmpeg and yt-dlp (a few minutes). The window on the PC
-   can then be closed.
+   can then be closed. The PC also prints the SHA-256 of the program it offers; the phone computes the one of what it received and
+   stops, installing nothing, if they differ. (The command itself travels over the local network without encryption, so this should
+   be done only on a network that is trusted.)
 
 Without a shared Wi-Fi network, run `python packaging/termux/share_to_phone.py --zip-only` on the PC (it creates
 `generated/YT-Grabber-android.zip`), copy the zip to the *Download* folder of the phone and, in Termux, run:
@@ -264,13 +266,16 @@ Linux machine, such as a Raspberry Pi) on the same Wi-Fi network:
 1. On the computer, start the program so that it accepts other devices: `Start.bat --host 0.0.0.0` (Windows),
    `./Start.sh --host 0.0.0.0` (Linux, macOS) or `yt-grabber --host 0.0.0.0` (Linux package). With the Windows installer, run
    `YT-Grabber.exe --host 0.0.0.0` from `%LOCALAPPDATA%\Programs\YT Grabber`. The program prints the address to use, for example
-   `http://192.168.1.6:8765/`.
+   `http://192.168.1.6:8765/?t=...`. The last part is the **access token**: the address must be opened with it (the
+   page then keeps it in a cookie and removes it from the address), so it is best copied from the terminal or sent to the phone
+   as a message or a QR code.
 2. On the iPhone or iPad, open that address in **Safari**. To obtain an icon that behaves like an application, use Share →
    **Add to Home Screen**.
 3. Paste the links and press **Download**: the files are saved on the computer. To transfer a file to the phone, open the list and use
    the save button next to a finished item.
 
-This should be done only on a trusted network, because anyone on the same Wi-Fi network can open the page. Use on an iPhone and an
+Other devices on the network cannot use the page without the token, but the connection is not encrypted, so this should be done
+only on a trusted network. Use on an iPhone and an
 iPad has **not been tried** by the maintainer (no device was available); it is the same page that works in Chrome and Firefox.
 
 ---

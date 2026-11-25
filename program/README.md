@@ -7,7 +7,7 @@ the folders in [`../packaging`](../packaging/README.md) only add what each platf
 |---|---|
 | `server.py` | the entry point and the logic that ties everything together: the scheduler with exactly 10 download slots, the download of one item, the reading of playlists, the actions on a job, subscriptions, the HTTP API, shutdown |
 | `ytworker.py` | one download worker. The server starts 10 of them as persistent processes and talks to them with JSON lines |
-| `ytcommon.py` | what the server and the workers share: paths, the catalogue of errors and their causes, how a format is chosen, `atomic_write` |
+| `ytcommon.py` | what the server and the workers share: paths, the catalogue of errors and their causes (by exception type and by message), how a format is chosen, `atomic_write`, the access token, and the SHA-256 checks of downloads |
 | `ytsettings.py` | the settings: defaults, validation of what the page sends, `settings.json` |
 | `ytmodel.py` | what a download is: `Item` (one video, with its state) and `Job` (a link and its items). Data only |
 | `ytlinks.py` | what a pasted link is (video, playlist, channel) and how the files of a playlist are named |

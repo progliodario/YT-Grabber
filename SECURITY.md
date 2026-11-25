@@ -55,20 +55,30 @@ requires a paid Apple developer account; the [installation guide](docs/install.m
 ## What the program does and does not do
 
 - It listens on `127.0.0.1` only, unless it is started with `--host 0.0.0.0` to allow use from a phone on the same network.
-  **There is no password**: with `--host 0.0.0.0`, anyone on that network can use the page, so it should be done only on a network
-  that is trusted. Even then, other devices cannot choose another destination folder or upload cookies, and the actions that
-  affect the machine (opening a folder, quitting, updating) are refused.
+  In that case an **access token** is required (a long random text kept in `token.txt` of the data folder, readable only by the
+  owner): every request except `/api/ping` must carry it, as the cookie `ytg_token` (`HttpOnly`, `SameSite=Strict`) or the header
+  `X-YTG-Token`. The address printed at start contains it (`?t=...`); the server sets the cookie and removes it from the address. The
+  token can be switched off with `--no-token`, which should be done only on a network that is trusted. The token is compared in constant
+  time. Even with the token, other devices cannot choose another destination folder or upload cookies, and the actions that affect the
+  machine (opening a folder, quitting, updating) are refused.
+- The Android application starts its server with a **new token at every start**, so that the other applications of the phone, which
+  share `127.0.0.1`, cannot use it. `--token` asks for the same protection on a computer, for example when other users share it.
 - Every request that changes something must carry a custom header, so that other web pages cannot make the browser start
   downloads. The `Host` and `Origin` headers are checked, cross-site requests (CORS) are not allowed, and the page is served with a
   Content-Security-Policy (no inline script, only this server and the YouTube thumbnails), `X-Frame-Options: DENY` and
   `Referrer-Policy: no-referrer`. The server does not tell its version and closes connections that stay idle.
-- On the computer that runs it, any other program or user can still reach `127.0.0.1` (this is also true on a phone, where all the
-  applications share it). A password or token for the page is planned for a later version.
+- Without `--token`, on the computer that runs it any other program or user can still reach `127.0.0.1` (the page is meant for
+  one person on their own computer).
 - It never sends cookies, settings or the download list anywhere. The only outgoing connections are to YouTube; to GitHub (yt-dlp
   updates and, twice a day, one request asking for the latest YT Grabber release, which carries only the program name and
   version and can be disabled in *Settings → Notifications and updates*), including, once a day, one request asking for the latest
   yt-dlp release and, when there is one, the download of yt-dlp from the official yt-dlp releases (this can be disabled in
   *Settings → Download engine*); and, at the first start, to the site that provides the ffmpeg build for the system.
+- What is downloaded at the first start is **verified**: ffmpeg and deno against the SHA-256 that their makers publish next to
+  each build, and yt-dlp (the single-file version used by the exe and the APK) against the `SHA2-256SUMS` of its release. A file that
+  does not match is deleted and not used; if the list of checksums cannot be read the program says so and goes on (set the
+  environment variable `YTG_REQUIRE_CHECKSUMS=1` to refuse instead). The Termux installer served by `share_to_phone.py` carries the
+  SHA-256 of the zip and the phone refuses a different file.
 - Cookies supplied to the program (a `cookies.txt` file, or read from a browser) are used only to communicate with YouTube. They
   are stored in the program's data folder, never in the download folder; on Linux and macOS that folder and the cookie files are
   readable only by the owner.

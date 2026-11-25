@@ -12,10 +12,12 @@ the network and they write only in a temporary folder.
 | [`support.py`](support.py) | not a test: the paths, a data folder of its own and the modules of the program, shared by the test files |
 | `test_links.py` | what a pasted link is |
 | `test_errors_and_formats.py` | error messages and their causes; the choice of the format |
-| `test_settings.py` | the defaults and the validation of what the page sends |
+| `test_settings.py` | the defaults and the validation of what the page sends, including the speed limit, the proxy and the allowed hours |
+| `test_checksums.py` | the SHA-256 checks of what is downloaded (parsing the published lists, a mismatch refused, a missing list only warns) and the checksum put into the Termux installer |
+| `test_notices.py` | `tools/gen_notices.py`, which writes `THIRD_PARTY_NOTICES.md` |
 | `test_subscriptions.py` | subscriptions, including "only new videos" |
 | `test_jobs.py` | retrying items, choosing the videos of a playlist, the notice when a download has finished |
-| `test_pipeline.py` | the whole download pipeline without the network: the real scheduler, workers, files and HTTP API with a fake worker (`fake_worker.py`) and fake lists: numbering, errors and retries, the limit of 10 downloads, cancelling, choosing the videos, resuming after a restart, files with the same title |
+| `test_pipeline.py` | the whole download pipeline without the network: the real scheduler, workers, files and HTTP API with a fake worker (`fake_worker.py`) and fake lists: numbering, errors and retries, the limit of 10 downloads, cancelling, choosing the videos, resuming after a restart, files with the same title, pause all and the allowed hours |
 | `test_http.py` | the HTTP server: what it refuses, the security headers, and what only the computer running it may do |
 | `test_updates.py` | the check for new versions, the one-click install on Windows, the automatic update of yt-dlp |
 | `test_interface.py` | the language files (every language has every key and the same placeholders; no key is unused) and the texts the page uses |

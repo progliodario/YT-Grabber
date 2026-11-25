@@ -13,20 +13,24 @@ videos no longer refetches the whole list; other devices cannot choose the folde
 Content-Security-Policy; no server version; idle timeout; private cookie files; checks of the installer name and path; the file
 properties of the exe in English; the first HTTP tests.
 
-## Next: 1.7 (security and confidence)
+## Done after 1.6.1 (waiting for the release of 1.7.0)
+
+An access token for the page (on by itself with `--host 0.0.0.0`, also in the Android app); the SHA-256 of ffmpeg, deno and yt-dlp checked
+against what their makers publish, and of the zip that the Termux installer receives; the download pipeline, the HTTP API and the
+naming race tested without the network (the fake worker in `tests/fake_worker.py`); errors classified by exception type;
+`do_POST` and `job_action` split into route and action tables; `THIRD_PARTY_NOTICES.md`; CI on Python 3.10, 3.12 and 3.14 with pyflakes,
+CodeQL weekly, actions pinned by commit, Dependabot alerts and security updates; speed limit, allowed hours, proxy, pause all, invert
+selection and range selection.
+
+## Next: 1.7 (what is left of it)
 
 | What | Why | Effort |
 |---|---|---|
-| **A token for the page** (random per run, passed in the first URL, kept in a cookie, checked on every request) | any program on the same computer, or on the same phone, can use `127.0.0.1:8765`; it is also what makes `--host 0.0.0.0` safe | M |
-| **Verify what is downloaded at the first start**: ffmpeg and deno against the checksums their makers publish, yt-dlp (exe and APK) against `SHA2-256SUMS`; pip with `--require-hashes` where possible | today a download is only checked for being a zip or an archive | M |
-| **Termux installer over a trusted channel**: show a hash on the PC, check it on the phone (or serve over HTTPS) | `curl http://PC:8800/i \| sh` can be altered on the network | S |
-| **Test the download without the network**: a fake yt-dlp that writes files, to run `run_item`, `finalize_item`, `fail_item`, retries, 429/bot pauses, resume after a restart | coverage is 34% (`server.py` 25%, `ytworker.py` 0%): the bug of the same-title files would have been found | M |
-| **Test the HTTP API end to end** (create a job with a fake yt-dlp, skip, resume, cancel, remove) | most of `do_POST` is untested | M |
-| **Split `do_POST`, `job_action`, `enumerate_playlist`, `run_item`** (complexity 48, 49, 47, 34) and move the scheduler and the HTTP layer out of `server.py` | maintainability index of `server.py` is the lowest grade | M |
-| **`THIRD_PARTY_NOTICES`**: licences and versions of what is bundled (mutagen is GPL-2.0-or-later, certifi MPL-2.0, ffmpeg GPL); have the combination reviewed | the program is MIT but the exe, APK and AppImage bundle these | S |
-| **CI**: pyflakes, bandit and the docs-links check as steps; Python 3.10 to 3.14 in the matrix (the docs say 3.10+, CI runs 3.12); actions pinned by commit | | S |
-| **GitHub**: protect `main` (tests required), turn on Dependabot alerts and CodeQL | | S |
-
+| **pip with `--require-hashes`** where possible (the first start installs yt-dlp with pip) | the hashes of the downloads are checked, but not the ones of pip packages | M |
+| **bandit as a CI step** (`python -m bandit -r program -ll`) | it runs by hand today | S |
+| **Move the scheduler and the HTTP layer out of `server.py`** (`run_item` and `enumerate_playlist` are still the most complex functions) | maintainability index of `server.py` is the lowest grade | M |
+| **Protect `main`** (tests required) | deliberately not done: it would stop direct pushes by the only maintainer; do it when there are contributors | S |
+| **Have the licence combination reviewed** (mutagen GPL-2.0-or-later, FFmpeg GPL and the Android library GPL-3.0 inside MIT packages) | the notices list it, but only a lawyer can say whether it is right | S |
 ## Later: 2.0
 
 | What | Why | Effort |
@@ -40,11 +44,11 @@ properties of the exe in English; the first HTTP tests.
 
 ## Features people may want (by value)
 
-1. Speed limit and allowed hours (S-M). 2. Format and folder per subscription (S-M). 3. Subtitles and a template for the file names (M).
-4. Better tags: track number and album from the playlist, loudness normalisation, FLAC/OGG/WAV (M). 5. An archive that avoids downloading the
-same video twice from different playlists (S-M). 6. Proxy (S). 7. SponsorBlock and splitting by chapters (M). 8. Export and import of the
-list of links and of the subscriptions (S). 9. History and statistics (M). 10. "Keep the latest N" and notifications per subscription (S).
-11. Range selection ("from 20 to 50") and "invert" in the choice of the videos (S). 12. Pause everything, reorder jobs, priorities (M).
+1. Format and folder per subscription (S-M). 2. Subtitles and a template for the file names (M). 3. Better tags: track number and album
+from the playlist, loudness normalisation, FLAC/OGG/WAV (M). 4. An archive that avoids downloading the same video twice from different
+playlists (S-M). 5. SponsorBlock and splitting by chapters (M). 6. Export and import of the list of links and of the subscriptions (S).
+7. History and statistics (M). 8. "Keep the latest N" and notifications per subscription (S). 9. Reorder jobs and priorities (M).
+(Done: speed limit, allowed hours, proxy, pause everything, range selection and "invert".)
 
 ## Distribution
 

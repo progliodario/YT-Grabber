@@ -54,9 +54,10 @@ By default a whole playlist is downloaded. To leave some videos out, there are t
 
 - **Before the download starts.** Select **Let me choose the videos first** under the link box (the choice is remembered) and press
   **Download**. The program reads the list but downloads nothing: the card says *Choose the videos* and its list opens with a box in
-  every row. Untick the videos that are not wanted (*Select all* and *Select none* act on the whole list; with the keyboard, the arrow
-  keys move between the rows and Space ticks or unticks the one that has the focus), then press **Start**, which shows how many
-  videos are selected.
+  every row. Untick the videos that are not wanted (*Select all* and *Select none* act on the whole list, *Invert selection* swaps ticked and unticked, and
+  *Select a range…* asks for numbers and ranges such as `1-20, 25, 30-35`, ticking those and leaving out all the others; with the
+  keyboard, the arrow keys move between the rows and Space ticks or unticks the one that has the focus), then press **Start**, which
+  shows how many videos are selected.
 - **While the download runs.** Every video that is still waiting has a **Do not download this video** button. A video that was left
   out shows **Download this video after all**, also when the job has already finished.
 
@@ -85,6 +86,12 @@ and so on). The folder also contains `_playlist.m3u8` and, if errors occurred, `
 - Private and deleted videos are reported immediately, while the playlist is still being read.
 - Temporary errors (network, rate limit) are retried automatically. If YouTube limits the requests, an **automatic pause** starts
   and downloading resumes by itself.
+
+## Pausing everything
+
+When several downloads are on the list, **Pause all** and **Resume all** (next to *Clear completed*) act on all of them at once. They
+appear only when there is something to pause or resume; lists that are waiting for the choice of the videos are left as they are. A
+pause does not stop the videos that are already downloading: they finish, and nothing new starts.
 
 ## Resuming after a stop
 
@@ -163,6 +170,12 @@ language of the device. Arabic is shown right to left. The translations were wri
   When a newer one exists, it is installed as soon as nothing is downloading and nobody has pressed anything in the page for two
   minutes, and the program restarts by itself (queued and paused downloads are saved and can be resumed). The same version is never
   installed more than once a day, so a failed update cannot cause repeated restarts.
+- **Speed, schedule and proxy**: *Speed limit* is in KB/s and applies to **each** of the (up to 10) simultaneous downloads, 0 meaning
+  no limit. *Download only during these hours* lets nothing new start outside the chosen window (for example 01:00 to 07:00); what is
+  already downloading finishes, and a note at the top of the page says that the program is waiting. A window whose end is before its
+  start goes through midnight (22:00 to 06:00). *Proxy* is the address of a proxy server used by all the downloads and by the reading
+  of the lists: `http://host:port`, `https://host:port`, `socks4://host:port` or `socks5://host:port`, with `user:password@` before
+  the host if the proxy asks for one. The address is kept in the settings file of the data folder.
 - **Text size**: 100%, 125%, 150% or 200%, in addition to the zoom of the browser. The choice is remembered on the device.
 - **Notifications and updates**: see above.
 
@@ -175,6 +188,8 @@ These options are passed to `Start.bat`, `./Start.sh`, `yt-grabber`, the AppImag
 | `--port 9000` | the port of the page (default 8765; if it is busy, the next free port is used) |
 | `--dir D:\Music` | the destination folder |
 | `--host 0.0.0.0` | accept other devices on the network (a phone or a tablet), which open `http://COMPUTER-IP:8765/`; the files are still saved on the computer. To be used only on a trusted network |
+| `--token` | require an access token for the page: the address printed at start (and the one of the window) carries it, and a browser that opens it keeps it in a cookie. The token is kept in the data folder (`token.txt`), so the address stays the same between runs |
+| `--no-token` | with `--host 0.0.0.0` only: do not ask for the token (anyone on the network can use the page; to be used only on a network that is trusted) |
 | `--no-browser` | do not open the page |
 | `--idle-exit 10` | quit after this many minutes without use (used by the AppImage and the Flatpak; never while something is downloading or a subscription is active) |
 | `--background` | Windows application only: start in the notification area without opening the window |
@@ -203,8 +218,10 @@ The logs of the download processes are in the `data/logs` folder of the first co
   because ffmpeg is downloaded at start. On Linux it can also be installed with the package manager.
 - **The page does not open:** read the address printed in the terminal (the port may differ if 8765 was busy). On Windows, check that
   YT Grabber is running in the notification area.
-- **A phone cannot reach the page:** start the program with `--host 0.0.0.0`, use the address of the computer, and allow the program
-  through the firewall on private networks.
+- **A phone cannot reach the page:** start the program with `--host 0.0.0.0`, use the address of the computer **as printed by
+  the program** (it ends with `/?t=...`: that part is the access token), and allow the program through the firewall on private networks.
+- **"An access link is needed":** the page was opened without its token. Use the address printed when the program starts, or open the
+  page from the program (the window, the tray menu, the Android application).
 - **Slow MP3:** MP3 is re-encoded, whereas M4A and Opus are not and are much faster for large playlists.
 
 If the problem persists, [open an issue](https://github.com/progliodario/YT-Grabber/issues/new/choose) and attach the log.

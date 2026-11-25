@@ -53,7 +53,16 @@ address, SHA-256 fingerprint and size of the Windows installer asset. In the fro
 **Security of the local server:** it listens on `127.0.0.1` unless started with `--host`. Every request that changes something must
 carry the header `X-YTG: 1` (so that another web page cannot make the browser start a download). The `Host` header is checked. The
 operations that affect the machine (choosing a folder, opening a folder, quitting, updating) are accepted only from the local
-computer.
+computer. When an **access token** is set (always with `--host 0.0.0.0` unless `--no-token`, with `--token`, and in the Android app via
+`YTG_TOKEN`), every request except `/api/ping` needs it as the cookie `ytg_token` or the header `X-YTG-Token`; `GET /?t=<token>` sets the
+cookie and redirects to the same address without it (`token_ok` and `refuse_without_token` in `server.py`).
+
+The HTTP layer is table-driven: `Handler.POST_ROUTES` (exact paths) and `POST_PATTERNS` (paths with an identifier) map to `post_*`
+methods, and the actions on a job are the small `_act_*` functions listed in `ACTIONS` (`job_action` takes the lock and runs one). To
+add an action, write the function and add it to the table; the page may ask for exactly the names in `JOB_ACTIONS`. The settings that
+belong to the whole program (speed limit, allowed hours, proxy) are validated by `clean_global` in `ytsettings.py`; the hours are
+applied in the scheduler (`next_work`: outside the window nothing new starts) and the speed limit and proxy travel to the worker in
+the options of each task.
 
 The **interface** is translated by `window.I18N.<code> = {...}` files and `tr('key', {vars})`. Plural forms are objects
 (`{one, other}`) resolved with `Intl.PluralRules`, and static texts use `data-i18n` attributes. See
@@ -72,10 +81,10 @@ packaging/
     flatpak/        Flatpak manifest and AppStream metadata
   macos/            the .app (assembled, no Mac needed): build.bat, build_app.py, launcher, run.sh
   termux/           installation on a phone with Termux: Share-to-phone.bat, share_to_phone.py, install-termux.sh
-tools/              bump_version.py
+tools/              check.py, bump_version.py, verify_release.py, update_channels.py, gen_notices.py (THIRD_PARTY_NOTICES.md)
 tests/              one test file per subject, support.py (shared set-up), a11y/ (seed.py: sample data; audit.py: axe-core and keyboard audit)
 docs/               guides, release-key.asc (public GPG key), screenshots/
-.github/            workflows/ (ci, release, finalize), scripts/, issue and pull request templates, dependabot.yml
+.github/            workflows/ (ci, codeql, release, finalize), scripts/, issue and pull request templates, dependabot.yml
 Start.bat Start.sh  run from the sources
 dist/               (not in git) the packages built locally
 generated/          (not in git) data created when running from the sources: yt-dlp, ffmpeg, settings, logs, build files

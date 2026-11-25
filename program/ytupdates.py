@@ -194,7 +194,11 @@ def install_ytdlp():
         with urllib.request.urlopen(req, timeout=90) as r, open(tmp, 'wb') as f:
             shutil.copyfileobj(r, f)
         # the makers publish the SHA-256 of every file of the release: a file that does not match is never used
-        verify_from_url(tmp, 'yt-dlp', 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS')
+        try:
+            verify_from_url(tmp, 'yt-dlp', 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS')
+        except ValueError:
+            os.remove(tmp)
+            raise
         import zipfile
         with zipfile.ZipFile(tmp) as z:
             if not any(n.startswith('yt_dlp/') for n in z.namelist()):

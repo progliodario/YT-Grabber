@@ -36,6 +36,7 @@ python program/server.py --no-browser             # run it: http://localhost:876
 python tests/a11y/seed.py DIR                     # sample data; then YTG_DATA_ROOT=DIR python program/server.py --port 8782
 python tools/verify_release.py 1.6.1              # check a published release from outside
 python tools/update_channels.py 1.6.1 --apply     # Homebrew and Scoop
+python tools/gen_notices.py                       # rewrites THIRD_PARTY_NOTICES.md from generated/vendor (run it when the dependencies change)
 ```
 
 Tests need yt-dlp importable. On this machine it lives in `generated/vendor` (installed by `program/setup_tools.py`): `tools/check.py`
