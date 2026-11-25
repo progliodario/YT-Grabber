@@ -9,6 +9,7 @@ The PC is needed ONLY for this first installation: afterwards the program runs b
 Only the program files are shared, never your downloads, cookies or settings.
 """
 import argparse
+import hashlib
 import http.server
 import io
 import os
@@ -73,15 +74,17 @@ def lan_ips():
     return ips
 
 
-def install_script(base):
+def install_script(base, zip_sha256=''):
     with open(os.path.join(HERE, 'install-termux.sh'), 'rb') as f:
         text = f.read().decode('utf-8').replace('\r\n', '\n')
-    # the line BASE="${YTG_BASE:-}" becomes the real address of the PC
-    return text.replace('BASE="${YTG_BASE:-}"', 'BASE="%s"' % base).encode('utf-8')
+    # the line BASE="${YTG_BASE:-}" becomes the real address of the PC, and the next one the checksum of the zip
+    text = text.replace('BASE="${YTG_BASE:-}"', 'BASE="%s"' % base)
+    return text.replace('ZIP_SHA256="${YTG_ZIP_SHA256:-}"', 'ZIP_SHA256="%s"' % zip_sha256).encode('utf-8')
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
     zip_bytes = b''
+    zip_sha256 = ''
 
     def log_message(self, fmt, *args):
         print('  phone:', self.client_address[0], self.path)
@@ -90,7 +93,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         host = self.headers.get('Host') or ''
         base = 'http://%s' % host
         if self.path in ('/i', '/install.sh'):
-            body, ctype = install_script(base), 'text/x-shellscript'
+            body, ctype = install_script(base, self.zip_sha256), 'text/x-shellscript'
         elif self.path == '/yt-grabber-android.zip':
             body, ctype = self.zip_bytes, 'application/zip'
         else:
@@ -126,6 +129,7 @@ def main():
         return 0
 
     Handler.zip_bytes = data
+    Handler.zip_sha256 = hashlib.sha256(data).hexdigest()
     socketserver.ThreadingTCPServer.allow_reuse_address = True
     try:
         srv = socketserver.ThreadingTCPServer(('0.0.0.0', a.port), Handler)
@@ -140,6 +144,9 @@ def main():
     print()
     for ip in ips:
         print('     curl -s http://%s:%d/i | sh' % (ip, a.port))
+    print()
+    print(' The phone checks the downloaded program against this SHA-256 and refuses it if it differs:')
+    print('     %s' % Handler.zip_sha256)
     print()
     print(' If Windows asks for firewall permission, allow private networks.')
     print(' When the installation on the phone is finished, press Ctrl+C here.')

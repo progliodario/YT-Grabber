@@ -11,6 +11,8 @@
 
 # When the script comes from the PC, the line below is replaced with the address of the PC.
 BASE="${YTG_BASE:-}"
+# ...and this one with the SHA-256 of the zip that the PC offers: the phone refuses a file that does not match.
+ZIP_SHA256="${YTG_ZIP_SHA256:-}"
 
 if [ -z "$PREFIX" ] || [ ! -d /data/data/com.termux ]; then
   echo "This script must be run inside the Termux app (install it from F-Droid)."
@@ -36,6 +38,9 @@ if [ -n "$BASE" ]; then
   echo "4/5 Downloading YT Grabber from the PC"
   mkdir -p "$APP"
   curl -fsS "$BASE/yt-grabber-android.zip" -o "$HOME/yt-grabber.zip" </dev/null || { echo "Download from the PC failed: is the PC on and on the same network?"; exit 1; }
+  if [ -n "$ZIP_SHA256" ]; then
+    echo "$ZIP_SHA256  $HOME/yt-grabber.zip" | sha256sum -c - >/dev/null 2>&1 || { rm -f "$HOME/yt-grabber.zip"; echo "The downloaded file does not match the one the PC offers: nothing was installed."; exit 1; }
+  fi
   unzip -oq "$HOME/yt-grabber.zip" -d "$APP" </dev/null
   rm -f "$HOME/yt-grabber.zip"
 else

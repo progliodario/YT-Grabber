@@ -263,6 +263,53 @@ def base_ydl_params():
     return p
 
 
+def sha256_file(path):
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def find_checksum(text, name):
+    """The SHA-256 that a list of checksums gives for the file `name` (lines of the form "<hash>  <name>"), or for a file that holds
+    only the hash. None if it is not there."""
+    for line in text.splitlines():
+        parts = line.strip().split(None, 1)
+        if len(parts) == 2 and re.fullmatch(r'[0-9a-fA-F]{64}', parts[0]) and parts[1].lstrip('*').strip() == name:
+            return parts[0].lower()
+    m = re.fullmatch(r'\s*([0-9a-fA-F]{64})\s*', text)
+    return m.group(1).lower() if m else None
+
+
+def verify_checksum(path, expected):
+    """Raises if the file is not the one whose SHA-256 is `expected`."""
+    got = sha256_file(path)
+    if got != expected.lower():
+        raise ValueError('The downloaded file does not match the checksum published for it (%s...): it was not used.' % got[:12])
+
+
+def verify_from_url(path, name, sums_url, say=print, timeout=30):
+    """Checks a downloaded file against the checksums that its makers publish at `sums_url`. Returns True if it was checked, False if the
+    list could not be read or does not mention the file (a warning is said: the file is then used as it is, unless YTG_REQUIRE_CHECKSUMS
+    is set). Raises if the file does not match."""
+    import urllib.request
+    expected = None
+    try:
+        with urllib.request.urlopen(sums_url, timeout=timeout) as r:   # noqa: S310 (a https address of the makers, set in this program)
+            expected = find_checksum(r.read().decode('utf-8', 'replace'), name)
+    except Exception as e:  # noqa: BLE001
+        say('Could not read the checksums of %s (%s)' % (name, clean_msg(e)))
+    if not expected:
+        if os.environ.get('YTG_REQUIRE_CHECKSUMS'):
+            raise ValueError('There is no published checksum for %s and YTG_REQUIRE_CHECKSUMS is set.' % name)
+        say('WARNING: %s could not be verified against a published checksum.' % name)
+        return False
+    verify_checksum(path, expected)
+    return True
+
+
 TOKEN_FILE = os.path.join(DATA, 'token.txt')
 
 

@@ -4,6 +4,9 @@ All notable changes are listed here, newest first. Version numbers follow `MAJOR
 
 ## Unreleased
 
+- **Security: downloaded components are verified.** ffmpeg, deno and yt-dlp are checked against the SHA-256 published by their makers
+  and a file that does not match is never used; if the list cannot be read a warning is said (set `YTG_REQUIRE_CHECKSUMS=1` to refuse
+  instead). The Termux installer served from the computer also carries the SHA-256 of the zip and the phone refuses a different file.
 - **Fix: two videos that finished at the same moment could still take the same file name** (the second overwrote the first): choosing
   the name and taking it is now one step. Found by the new tests of the whole pipeline.
 - Tests: the download pipeline is now tested end to end without the network (a fake worker and fake lists): numbering, errors,

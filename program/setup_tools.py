@@ -18,7 +18,7 @@ import zipfile
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT)
-from ytcommon import IS_ANDROID, BIN, DENO, VENDOR  # noqa: E402
+from ytcommon import IS_ANDROID, BIN, DENO, VENDOR, verify_from_url  # noqa: E402
 
 EXE = '.exe' if os.name == 'nt' else ''
 BASE = 'https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/'
@@ -140,6 +140,8 @@ def install_ffmpeg():
                     last[0] = pct
                     say('  %d%%' % pct)
         download(BASE + name, arc, prog)
+        if verify_from_url(arc, name, BASE + 'checksums.sha256', say):   # the makers publish the SHA-256 of every build
+            say('ffmpeg checked against the published checksum.')
         want = ('ffmpeg' + EXE, 'ffprobe' + EXE)
         found = 0
         if name.endswith('.zip'):
@@ -180,6 +182,7 @@ def install_deno():
     try:
         arc = os.path.join(tmp, 'deno.zip')
         download(DENO_URL % arch, arc)
+        verify_from_url(arc, DENO_URL.rsplit('/', 1)[-1] % arch, DENO_URL % arch + '.sha256sum', say)
         with zipfile.ZipFile(arc) as z:
             with z.open('deno.exe') as src, open(DENO, 'wb') as dst:
                 shutil.copyfileobj(src, dst)
